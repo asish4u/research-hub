@@ -244,7 +244,7 @@
         <span class="badge badge-leanright">Lean Right</span>
         <span class="badge badge-right">Right</span>
         <span class="badge badge-factual">Factual</span>
-        <span style="margin-left:0.5rem;">↑ Bias ratings by <a href="https://www.allsides.com/media-bias" target="_blank" style="color:var(--accent);">AllSides</a></span>
+        <span style="margin-left:0.5rem;">News via <strong>BBC RSS</strong> (CORS-enabled) · ↑ Bias ratings by <a href="https://www.allsides.com/media-bias" target="_blank" style="color:var(--accent);">AllSides</a></span>
       </div>
 
       <div class="news-grid" id="newsGrid" role="feed" aria-label="News articles">
@@ -300,7 +300,7 @@
 </div>
 
 <div class="footer">
-  <p>Bias ratings from <a href="https://www.allsides.com/media-bias" target="_blank">AllSides</a> · News via RSS feeds (BBC, NPR, AP, Bloomberg, CNBC, HN, MIT, The Hindu, Indian Express, Reuters & more) · <a href="https://researchguides.waketech.edu/az/databases" target="_blank">Wake Tech A-Z</a> · <a href="https://www.nclive.org" target="_blank">NC LIVE</a></p>
+  <p>Bias ratings from <a href="https://www.allsides.com/media-bias" target="_blank">AllSides</a> · News via <a href="https://feeds.bbci.co.uk/news/world/rss.xml" target="_blank">BBC RSS</a> (CORS-enabled, no server) · <a href="https://researchguides.waketech.edu/az/databases" target="_blank">Wake Tech A-Z</a> · <a href="https://www.nclive.org" target="_blank">NC LIVE</a></p>
 </div>
 
 <script>
@@ -432,19 +432,18 @@ function biasBadge(bias) {
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// NEWS — Cloudflare Pages Function proxy (server-side RSS fetch, no CORS)
+// NEWS — client-side RSS fetch (zero server cost, BBC feeds = CORS open)
 // ═══════════════════════════════════════════════════════════════════
-// Proxy endpoint — served by Cloudflare Pages Function (no CORS)
-const NEWS_PROXY = '/api/news?category=';
-
 const NEWS_FEEDS = {
-  world:   { id: 'world',   label: 'World News' },
-  tech:    { id: 'tech',    label: 'Tech' },
-  business:{ id: 'business',label: 'Business' },
-  ai:      { id: 'ai',      label: 'AI' },
-  india:   { id: 'india',   label: 'India' },
-  us:      { id: 'us',      label: 'US News' }
+  world:    'https://feeds.bbci.co.uk/news/world/rss.xml',
+  tech:     'https://feeds.bbci.co.uk/news/technology/rss.xml',
+  business: 'https://feeds.bbci.co.uk/news/business/rss.xml',
+  ai:       'https://feeds.bbci.co.uk/news/technology/rss.xml', // BBC tech has AI coverage
+  india:    'https://feeds.bbci.co.uk/news/world/asia/india/rss.xml',
+  us:       'https://feeds.bbci.co.uk/news/world/us_and_canada/rss.xml'
 };
+
+const FEED_SOURCE_LABEL = 'BBC News';
 
 let activeNewsTab = 'world';
 let newsCache = {};
@@ -453,28 +452,49 @@ function extractDomain(url) {
   try { return new URL(url).hostname.replace(/^www\./, ''); } catch(e) { return ''; }
 }
 
+function decodeEntities(s) {
+  const t = document.createElement('textarea');
+  t.innerHTML = s;
+  return t.value;
+}
+
+function parseRSS(xmlText) {
+  const items = [];
+  const itemRe = /<item>([\s\S]*?)<\/item>/gi;
+  let m;
+  while ((m = itemRe.exec(xmlText)) !== null && items.length < 30) {
+    const block = m[1];
+    const get = (tag) => {
+      const r = new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, 'i').exec(block);
+      if (!r) return '';
+      let v = r[1].trim();
+      if (v.startsWith('<![CDATA[')) v = v.slice(9, v.lastIndexOf(']]>')).trim();
+      return decodeEntities(v);
+    };
+    const title = get('title');
+    let link = get('link') || '';
+    const pubDate = get('pubDate') || get('dc:date') || '';
+    if (title) {
+      items.push({ title, link, pubDate, pubDateMs: pubDate ? new Date(pubDate).getTime() : 0 });
+    }
+  }
+  return items;
+}
+
 function fetchNews(category) {
   const grid = document.getElementById('newsGrid');
-  const feed = NEWS_FEEDS[category];
-
   grid.innerHTML = '<div class="news-loader"><div class="spinner"></div><p>Loading news…</p></div>';
 
-  fetch(NEWS_PROXY + category)
-    .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
-    .then(data => {
-      if (data.status !== 'ok' || !data.items || data.items.length === 0) {
-        grid.innerHTML = '<div class="news-error">No articles found. Try another category.</div>';
-        return;
-      }
-
-      newsCache[category] = data.items;
-      renderNews(category, data.items);
+  fetch(NEWS_FEEDS[category], { mode: 'cors' })
+    .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.text(); })
+    .then(xml => {
+      const items = parseRSS(xml);
+      if (!items.length) throw new Error('no items');
+      newsCache[category] = items;
+      renderNews(category, items);
     })
     .catch(err => {
-      if (newsCache[category]) {
-        renderNews(category, newsCache[category]);
-        return;
-      }
+      if (newsCache[category]) { renderNews(category, newsCache[category]); return; }
       grid.innerHTML = `<div class="news-error">⚠️ Could not load news. ${err.message}</div>`;
     });
 }
@@ -482,29 +502,21 @@ function fetchNews(category) {
 function renderNews(category, items) {
   const grid = document.getElementById('newsGrid');
 
-  // Update count badges
   document.querySelectorAll('.news-tab').forEach(t => {
     const c = t.querySelector('.count');
-    if (t.dataset.news === category) {
-      c.textContent = items.length;
-    } else if (newsCache[t.dataset.news]) {
-      c.textContent = newsCache[t.dataset.news].length;
-    }
+    if (t.dataset.news === category) c.textContent = items.length;
+    else if (newsCache[t.dataset.news]) c.textContent = newsCache[t.dataset.news].length;
   });
 
-  // Server already sorts by pubDate (newest first = highest impact)
-  // Just add Breaking/Today badges
   const now = Date.now();
-  const today = new Date();
-  today.setHours(0,0,0,0);
+  const today = new Date(); today.setHours(0,0,0,0);
   const todayTs = today.getTime();
 
   grid.innerHTML = items.map((item) => {
-    const domain = extractDomain(item.link);
-    const bias = getBias(domain);
+    const bias = getBias('bbc.co.uk'); // BBC = Lean Left per AllSides
     const ago = timeAgo(item.pubDate);
-    const pubTs = item.pubDateMs || (item.pubDate ? new Date(item.pubDate).getTime() : 0);
-    const isBreaking = (now - pubTs) < 7200000; // within 2 hours
+    const pubTs = item.pubDateMs || 0;
+    const isBreaking = (now - pubTs) < 7200000;
     const isToday = pubTs >= todayTs;
 
     let impactBadge = '';
@@ -515,7 +527,7 @@ function renderNews(category, items) {
       <div class="news-body">
         <div class="news-title">${impactBadge} ${escapeHtml(item.title)}</div>
         <div class="news-meta">
-          <span class="news-source">${domain || (item.author || 'source')}</span>
+          <span class="news-source">${FEED_SOURCE_LABEL}</span>
           <span class="badge ${biasBadge(bias.bias)}" style="font-size:0.65rem;">${bias.label}</span>
           <span>${ago}</span>
           ${isToday ? '<span style="color:var(--green);">📅 Today</span>' : ''}
