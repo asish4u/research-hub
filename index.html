@@ -432,18 +432,17 @@ function biasBadge(bias) {
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// NEWS — client-side RSS fetch (zero server cost, BBC feeds = CORS open)
+// NEWS — Worker route /api/news (multi-source, server-side).
+//         Falls back to direct BBC RSS if the route isn't deployed yet.
 // ═══════════════════════════════════════════════════════════════════
-const NEWS_FEEDS = {
+const BBC_FALLBACK = {
   world:    'https://feeds.bbci.co.uk/news/world/rss.xml',
   tech:     'https://feeds.bbci.co.uk/news/technology/rss.xml',
   business: 'https://feeds.bbci.co.uk/news/business/rss.xml',
-  ai:       'https://feeds.bbci.co.uk/news/technology/rss.xml', // BBC tech has AI coverage
+  ai:       'https://feeds.bbci.co.uk/news/technology/rss.xml',
   india:    'https://feeds.bbci.co.uk/news/world/asia/india/rss.xml',
   us:       'https://feeds.bbci.co.uk/news/world/us_and_canada/rss.xml'
 };
-
-const FEED_SOURCE_LABEL = 'BBC News';
 
 let activeNewsTab = 'world';
 let newsCache = {};
@@ -485,17 +484,32 @@ function fetchNews(category) {
   const grid = document.getElementById('newsGrid');
   grid.innerHTML = '<div class="news-loader"><div class="spinner"></div><p>Loading news…</p></div>';
 
-  fetch(NEWS_FEEDS[category], { mode: 'cors' })
-    .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.text(); })
-    .then(xml => {
-      const items = parseRSS(xml);
-      if (!items.length) throw new Error('no items');
+  // Try the Worker API first
+  fetch('/api/news?category=' + category)
+    .then(r => {
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      return r.json();
+    })
+    .then(data => {
+      const items = data.items || [];
+      if (!items.length) throw new Error('empty');
       newsCache[category] = items;
       renderNews(category, items);
     })
-    .catch(err => {
-      if (newsCache[category]) { renderNews(category, newsCache[category]); return; }
-      grid.innerHTML = `<div class="news-error">⚠️ Could not load news. ${err.message}</div>`;
+    .catch(() => {
+      // Fallback: direct BBC fetch (CORS-enabled)
+      fetch(BBC_FALLBACK[category], { mode: 'cors' })
+        .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.text(); })
+        .then(xml => {
+          const items = parseRSS(xml);
+          if (!items.length) throw new Error('no items');
+          newsCache[category] = items;
+          renderNews(category, items);
+        })
+        .catch(err => {
+          if (newsCache[category]) { renderNews(category, newsCache[category]); return; }
+          grid.innerHTML = `<div class="news-error">⚠️ Could not load news. ${err.message}</div>`;
+        });
     });
 }
 
@@ -513,10 +527,11 @@ function renderNews(category, items) {
   const todayTs = today.getTime();
 
   grid.innerHTML = items.map((item) => {
-    const bias = getBias('bbc.co.uk'); // BBC = Lean Left per AllSides
+    const domain = extractDomain(item.link);
+    const bias = getBias(domain || 'bbc.co.uk');
     const ago = timeAgo(item.pubDate);
-    const pubTs = item.pubDateMs || 0;
-    const isBreaking = (now - pubTs) < 7200000;
+    const pubTs = item.pubDateMs || (item.pubDate ? new Date(item.pubDate).getTime() : 0);
+    const isBreaking = (now - pubTs) < 7200000; // within 2 hours
     const isToday = pubTs >= todayTs;
 
     let impactBadge = '';
@@ -527,7 +542,7 @@ function renderNews(category, items) {
       <div class="news-body">
         <div class="news-title">${impactBadge} ${escapeHtml(item.title)}</div>
         <div class="news-meta">
-          <span class="news-source">${FEED_SOURCE_LABEL}</span>
+          <span class="news-source">${domain || (item.author || 'source')}</span>
           <span class="badge ${biasBadge(bias.bias)}" style="font-size:0.65rem;">${bias.label}</span>
           <span>${ago}</span>
           ${isToday ? '<span style="color:var(--green);">📅 Today</span>' : ''}

@@ -1,0 +1,6 @@
+name = "research-hub"
+main = "worker.js"
+compatibility_date = "2024-09-23"
+
+# Serve only these files as static assets; node_modules excluded
+assets = { directory = "./public", binding = "ASSETS", html_handling = "auto-trailing-slash", not_found_handling = "single-page-application" }

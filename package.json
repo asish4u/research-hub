@@ -1,0 +1,14 @@
+{
+  "name": "library-dashboard",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Research Hub — unified library databases + bias-rated news. Deploys as a Cloudflare Worker (worker.js) serving static index.html + /api/news.",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}
