@@ -431,50 +431,47 @@ function biasBadge(bias) {
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// NEWS — Reddit JSON feeds (free, no API key)
+// NEWS — RSS feeds via rss2json.com (free, CORS enabled)
 // ═══════════════════════════════════════════════════════════════════
+const RSS2JSON = 'https://api.rss2json.com/v1/api.json?rss_url=';
+
 const NEWS_FEEDS = {
-  world:   { sub: 'worldnews', label: 'World News' },
-  tech:    { sub: 'technology', label: 'Tech' },
-  business:{ sub: 'business', label: 'Business' },
-  ai:      { sub: 'artificial', label: 'AI' },
-  india:   { sub: 'india', label: 'India' }
+  world:   { url: 'https://feeds.bbci.co.uk/news/rss.xml',             label: 'World News (BBC)' },
+  tech:    { url: 'https://hnrss.org/frontpage',                       label: 'Tech (Hacker News)' },
+  business:{ url: 'https://feeds.bloomberg.com/markets/news.rss',      label: 'Business (Bloomberg)' },
+  ai:      { url: 'https://www.technologyreview.com/feed/',            label: 'AI & Tech (MIT Review)' },
+  india:   { url: 'https://www.thehindu.com/feeder/default.rss',       label: 'India (The Hindu)' }
 };
 
 let activeNewsTab = 'world';
 let newsCache = {};
 
 function extractDomain(url) {
-  try { return new URL(url).hostname; } catch(e) { return ''; }
+  try { return new URL(url).hostname.replace(/^www\./, ''); } catch(e) { return ''; }
 }
 
 function fetchNews(category) {
   const grid = document.getElementById('newsGrid');
   const feed = NEWS_FEEDS[category];
-  const url = `https://www.reddit.com/r/${feed.sub}/hot/.json?limit=35`;
 
   grid.innerHTML = '<div class="news-loader"><div class="spinner"></div><p>Loading news…</p></div>';
 
-  fetch(url, { headers: { 'Accept': 'application/json' } })
+  const apiUrl = RSS2JSON + encodeURIComponent(feed.url);
+
+  fetch(apiUrl)
     .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
     .then(data => {
-      const items = data.data.children
-        .filter(c => !c.data.stickied && c.data.url && !c.data.url.includes('reddit.com/r/'))
-        .slice(0, 25);
-
-      if (items.length === 0) {
+      if (data.status !== 'ok' || !data.items || data.items.length === 0) {
         grid.innerHTML = '<div class="news-error">No articles found. Try another category.</div>';
         return;
       }
 
-      newsCache[category] = items;
-      renderNews(category, items);
+      newsCache[category] = data.items;
+      renderNews(category, data.items);
     })
     .catch(err => {
-      // Try cached
       if (newsCache[category]) {
         renderNews(category, newsCache[category]);
-        grid.querySelector('.news-loader')?.remove();
         return;
       }
       grid.innerHTML = `<div class="news-error">⚠️ Could not load news. ${err.message}</div>`;
@@ -483,9 +480,8 @@ function fetchNews(category) {
 
 function renderNews(category, items) {
   const grid = document.getElementById('newsGrid');
-  const feed = NEWS_FEEDS[category];
 
-  // Update count badge
+  // Update count badges
   document.querySelectorAll('.news-tab').forEach(t => {
     const c = t.querySelector('.count');
     if (t.dataset.news === category) {
@@ -496,8 +492,7 @@ function renderNews(category, items) {
   });
 
   grid.innerHTML = items.map((item, i) => {
-    const data = item.data;
-    const domain = extractDomain(data.url);
+    const domain = extractDomain(item.link);
     const bias = getBias(domain);
     const rank = i + 1;
     let rankClass = '';
@@ -505,19 +500,15 @@ function renderNews(category, items) {
     else if (rank === 2) rankClass = 'top2';
     else if (rank === 3) rankClass = 'top3';
 
-    const score = data.score || 0;
-    const comments = data.num_comments || 0;
-    const ago = timeAgo(data.created_utc);
+    const ago = timeAgo(item.pubDate);
 
-    return `<a href="${data.url}" target="_blank" rel="noopener" class="news-item">
+    return `<a href="${item.link}" target="_blank" rel="noopener" class="news-item">
       <div class="news-rank ${rankClass}">#${rank}</div>
       <div class="news-body">
-        <div class="news-title">${escapeHtml(data.title)}</div>
+        <div class="news-title">${escapeHtml(item.title)}</div>
         <div class="news-meta">
-          <span class="news-source">${domain}</span>
+          <span class="news-source">${domain || (item.author || 'source')}</span>
           <span class="badge ${biasBadge(bias.bias)}" style="font-size:0.65rem;">${bias.label}</span>
-          <span class="news-score">⬆ <strong>${score}</strong></span>
-          <span>💬 ${comments}</span>
           <span>${ago}</span>
         </div>
       </div>
@@ -525,8 +516,11 @@ function renderNews(category, items) {
   }).join('');
 }
 
-function timeAgo(utc) {
-  const sec = Math.floor(Date.now() / 1000) - utc;
+function timeAgo(pubDate) {
+  if (!pubDate) return '';
+  const utc = new Date(pubDate).getTime();
+  const sec = Math.floor((Date.now() - utc) / 1000);
+  if (sec < 0) return 'just now';
   if (sec < 60) return 'just now';
   if (sec < 3600) return `${Math.floor(sec/60)}m ago`;
   if (sec < 86400) return `${Math.floor(sec/3600)}h ago`;
