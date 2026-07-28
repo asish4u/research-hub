@@ -3,68 +3,43 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NC Research Hub — Wake Tech + Wake County Library Resources</title>
+<title>Research Hub — NC + International Resources</title>
 <style>
-  :root {
-    --bg: #0d1117;
-    --surface: #161b22;
-    --surface2: #1c2333;
-    --border: #30363d;
-    --text: #e6edf3;
-    --text2: #8b949e;
-    --accent: #58a6ff;
-    --green: #3fb950;
-    --orange: #d29922;
-    --pink: #f778ba;
-    --purple: #bc8cff;
-    --red: #f85149;
-    --radius: 8px;
-    --radius-sm: 6px;
-  }
   * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --bg: #0d1117; --surface: #161b22; --surface2: #1c2333;
+    --border: #30363d; --text: #e6edf3; --text2: #8b949e;
+    --accent: #58a6ff; --green: #3fb950; --orange: #d29922;
+    --pink: #f778ba; --purple: #bc8cff; --red: #f85149;
+    --radius: 8px; --radius-sm: 6px;
+  }
   body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    line-height: 1.6;
-    min-height: 100vh;
+    background: var(--bg); color: var(--text); line-height: 1.6; min-height: 100vh;
   }
-
-  /* Header */
   .header {
     background: linear-gradient(135deg, #0d1117 0%, #161b22 50%, #1c2333 100%);
-    border-bottom: 1px solid var(--border);
-    padding: 2rem 1.5rem 1.5rem;
-    text-align: center;
+    border-bottom: 1px solid var(--border); padding: 2rem 1.5rem 1.5rem; text-align: center;
   }
   .header h1 { font-size: 1.8rem; font-weight: 700; }
   .header h1 span { color: var(--accent); }
-  .header p { color: var(--text2); margin-top: 0.4rem; font-size: 0.95rem; max-width: 600px; margin-left: auto; margin-right: auto; }
-
-  /* Access type badges */
+  .header p { color: var(--text2); margin-top: 0.4rem; font-size: 0.95rem; max-width: 650px; margin-left: auto; margin-right: auto; }
   .badge { display: inline-block; font-size: 0.7rem; font-weight: 600; padding: 0.15rem 0.55rem; border-radius: 999px; letter-spacing: 0.02em; white-space: nowrap; }
   .badge-shared { background: #0b2e1a; color: var(--green); border: 1px solid #1a4f2e; }
   .badge-wtech { background: #1c1335; color: var(--purple); border: 1px solid #3b2870; }
   .badge-wake { background: #1c1a10; color: var(--orange); border: 1px solid #4d3d1a; }
-
-  /* Layout */
+  .badge-open { background: #1a1a2e; color: var(--pink); border: 1px solid #4a1a5e; }
+  .badge-scihub { background: #1a0e0e; color: var(--red); border: 1px solid #5a1a1a; }
   .container { max-width: 1100px; margin: 0 auto; padding: 1.5rem; }
 
-  /* Controls */
-  .controls {
-    display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;
-    margin-bottom: 1.5rem;
-  }
+  .controls { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center; margin-bottom: 1rem; }
   .search-box {
-    flex: 1; min-width: 200px;
+    flex: 1; min-width: 180px;
     background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
-    padding: 0.65rem 1rem;
-    color: var(--text); font-size: 0.9rem;
-    outline: none; transition: border-color 0.2s;
+    padding: 0.65rem 1rem; color: var(--text); font-size: 0.9rem; outline: none; transition: border-color 0.2s;
   }
   .search-box:focus { border-color: var(--accent); }
   .search-box::placeholder { color: var(--text2); }
-
   .filter-group { display: flex; gap: 0.4rem; flex-wrap: wrap; }
   .filter-btn {
     background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
@@ -74,56 +49,63 @@
   .filter-btn:hover { border-color: var(--text2); color: var(--text); }
   .filter-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
 
-  /* Stats bar */
   .stats { color: var(--text2); font-size: 0.85rem; margin-bottom: 1rem; }
 
-  /* Featured section */
+  .login-bar {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 0.75rem 1rem; margin-bottom: 1.25rem; display: flex; flex-wrap: wrap;
+    gap: 0.75rem; align-items: center; font-size: 0.85rem;
+  }
+  .login-bar a { color: var(--accent); text-decoration: none; font-weight: 500; }
+
+  /* Section toggles */
+  .section-toggle {
+    display: flex; gap: 0.5rem; margin-bottom: 1.25rem; flex-wrap: wrap;
+  }
+  .section-btn {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
+    color: var(--text2); font-size: 0.85rem; padding: 0.55rem 1.1rem;
+    cursor: pointer; transition: all 0.15s; font-weight: 500;
+  }
+  .section-btn:hover { border-color: var(--text2); color: var(--text); }
+  .section-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
   .featured-section { margin-bottom: 2rem; }
   .featured-section h2 {
     font-size: 1.1rem; font-weight: 600; margin-bottom: 0.75rem;
     display: flex; align-items: center; gap: 0.5rem;
   }
-  .featured-section h2::before { content: '★'; color: var(--orange); font-size: 1.2rem; }
+  .featured-section h2.hub { color: var(--accent); }
+  .featured-section h2.hub::before { content: '★'; color: var(--orange); font-size: 1.2rem; }
+  .featured-section h2.scihub-section { color: var(--red); }
+  .featured-section h2.scihub-section::before { content: '⚡'; color: var(--red); font-size: 1.2rem; }
+  .featured-section h2.international { color: var(--pink); }
+  .featured-section h2.international::before { content: '🌐'; font-size: 1.2rem; }
+
   .featured-grid {
     display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 0.75rem;
   }
-  .featured-card {
-    background: linear-gradient(135deg, var(--surface), var(--surface2));
-    border: 1px solid var(--border); border-radius: var(--radius);
-    padding: 1rem 1.1rem;
-    transition: border-color 0.2s, transform 0.15s;
-    cursor: pointer;
-  }
-  .featured-card:hover { border-color: var(--accent); transform: translateY(-1px); }
-  .featured-card .name { font-weight: 600; font-size: 0.95rem; margin-bottom: 0.25rem; color: var(--accent); }
-  .featured-card .desc { font-size: 0.82rem; color: var(--text2); line-height: 1.5; }
 
-  /* Database grid */
-  .db-grid {
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 0.75rem;
-  }
-  .db-card {
+  .card {
     background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
-    padding: 1rem 1.1rem;
-    transition: border-color 0.2s, transform 0.15s;
+    padding: 1rem 1.1rem; transition: all 0.2s; cursor: pointer; text-decoration: none; display: block;
   }
-  .db-card:hover { border-color: var(--accent); transform: translateY(-1px); }
-  .db-card .top { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; margin-bottom: 0.3rem; }
-  .db-card .name { font-weight: 600; font-size: 0.9rem; color: var(--accent); }
-  .db-card .desc { font-size: 0.8rem; color: var(--text2); line-height: 1.5; margin-bottom: 0.4rem; }
-  .db-card .subjects { display: flex; flex-wrap: wrap; gap: 0.3rem; }
-  .db-card .subject-tag {
-    font-size: 0.7rem; color: var(--text2); background: var(--bg);
-    padding: 0.1rem 0.45rem; border-radius: 3px; border: 1px solid var(--border);
+  .card.featured {
+    background: linear-gradient(135deg, var(--surface), var(--surface2));
   }
-  .db-card .name-wrapper { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
-  .popular-badge { font-size: 0.6rem; background: var(--orange); color: #000; padding: 0.1rem 0.4rem; border-radius: 3px; font-weight: 700; }
+  .card:hover { border-color: var(--accent); transform: translateY(-1px); }
+  .card.scihub-card {
+    background: linear-gradient(135deg, #1a0e0e, #2a1010);
+    border-color: #3a2020;
+  }
+  .card.scihub-card:hover { border-color: var(--red); }
+  .card .top { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; margin-bottom: 0.3rem; }
+  .card .name { font-weight: 600; font-size: 0.9rem; color: var(--accent); }
+  .card.scihub-card .name { color: var(--red); font-size: 1rem; }
+  .card .desc { font-size: 0.8rem; color: var(--text2); line-height: 1.5; }
+  .card .name-wrapper { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
+  .popular-badge { font-size: 0.65rem; background: var(--orange); color: #000; padding: 0.1rem 0.4rem; border-radius: 3px; font-weight: 700; }
 
-  /* Empty state */
-  .empty { text-align: center; padding: 3rem 1rem; color: var(--text2); }
-  .empty svg { width: 48px; height: 48px; margin-bottom: 1rem; opacity: 0.5; }
-
-  /* Category section divider */
   .category-section { margin-bottom: 1.5rem; }
   .category-section h3 {
     font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem;
@@ -132,7 +114,8 @@
   }
   .category-section h3 .count { color: var(--text2); font-weight: 400; font-size: 0.85rem; }
 
-  /* Subjects filter pills */
+  .db-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 0.75rem; }
+
   .subject-pills { display: flex; gap: 0.35rem; flex-wrap: wrap; margin-bottom: 1rem; }
   .subject-pill {
     background: var(--surface); border: 1px solid var(--border); border-radius: 999px;
@@ -142,7 +125,16 @@
   .subject-pill:hover { border-color: var(--text2); color: var(--text); }
   .subject-pill.active { background: var(--accent); border-color: var(--accent); color: #fff; }
 
-  /* Footer */
+  .sub-filter-group { display: flex; gap: 0.3rem; flex-wrap: wrap; margin-bottom: 0.75rem; }
+  .sub-filter {
+    font-size: 0.7rem; color: var(--text2); background: var(--surface);
+    border: 1px solid var(--border); border-radius: 3px; padding: 0.2rem 0.5rem;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .sub-filter:hover { border-color: var(--text2); }
+  .sub-filter.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  .empty { text-align: center; padding: 3rem 1rem; color: var(--text2); }
   .footer {
     border-top: 1px solid var(--border); padding: 1.5rem;
     text-align: center; color: var(--text2); font-size: 0.8rem;
@@ -151,7 +143,7 @@
 
   @media (max-width: 640px) {
     .header h1 { font-size: 1.3rem; }
-    .db-card .top { flex-direction: column; align-items: flex-start; }
+    .card .top { flex-direction: column; align-items: flex-start; }
     .badge { align-self: flex-start; }
   }
 </style>
@@ -159,236 +151,274 @@
 <body>
 
 <div class="header">
-  <h1>📚 <span>NC Research Hub</span></h1>
-  <p>All your Wake Tech + Wake County Public Library resources in one place.
-  Color-coded by access type — tap a database to open it.</p>
+  <h1>📚 <span>Research Hub</span></h1>
+  <p>Wake Tech + Wake County Library resources <strong>+</strong> International &amp; open-access databases.
+  Search, filter by access type, and open any resource with one click.</p>
 </div>
 
 <div class="container">
 
-  <!-- Login reminder -->
-  <div style="background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.75rem 1rem; margin-bottom: 1.25rem; display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; font-size: 0.85rem;">
-    <div style="display: flex; align-items: center; gap: 0.4rem;">
-      <span class="badge badge-shared">NC LIVE</span>
-      <span>Wake County card <strong>or</strong> Wake Tech ID</span>
-    </div>
-    <div style="display: flex; align-items: center; gap: 0.4rem;">
-      <span class="badge badge-wtech">Wake Tech</span>
-      <span>Wake Tech student/faculty login required</span>
-    </div>
-    <div style="display: flex; align-items: center; gap: 0.4rem;">
-      <span class="badge badge-wake">Wake County</span>
-      <span>Public library card required</span>
-    </div>
-    <a href="https://www.nclive.org/login/select-your-library" target="_blank" style="color: var(--accent); margin-left: auto; text-decoration: none; font-weight: 500;">🔑 NC LIVE Login →</a>
+  <!-- LOGIN BAR -->
+  <div class="login-bar">
+    <span style="display:flex;align-items:center;gap:0.4rem;"><span class="badge badge-shared">NC LIVE</span> Wake County card <strong>or</strong> Wake Tech ID</span>
+    <span style="display:flex;align-items:center;gap:0.4rem;"><span class="badge badge-wtech">Wake Tech</span> Student login required</span>
+    <span style="display:flex;align-items:center;gap:0.4rem;"><span class="badge badge-wake">Wake County</span> Public library card</span>
+    <span style="display:flex;align-items:center;gap:0.4rem;"><span class="badge badge-open">Open Access</span> Free to all</span>
+    <a href="https://www.nclive.org/login/select-your-library" target="_blank" style="margin-left:auto;">🔑 NC LIVE Login →</a>
   </div>
 
-  <!-- Search + filters -->
+  <!-- SECTION TOGGLE -->
+  <div class="section-toggle" id="sectionToggle">
+    <button class="section-btn active" data-section="all">All Resources</button>
+    <button class="section-btn" data-section="nc">📍 NC Libraries</button>
+    <button class="section-btn" data-section="intl">🌐 International & Open</button>
+  </div>
+
+  <!-- SEARCH + ACCESS FILTERS -->
   <div class="controls">
     <input type="text" class="search-box" id="search" placeholder="Search databases by name or keyword…" autofocus>
     <div class="filter-group" id="accessFilters">
       <button class="filter-btn active" data-filter="all">All</button>
-      <button class="filter-btn" data-filter="shared">Shared</button>
+      <button class="filter-btn" data-filter="shared">Shared (NC LIVE)</button>
       <button class="filter-btn" data-filter="wtech">Wake Tech</button>
       <button class="filter-btn" data-filter="wake">Wake County</button>
+      <button class="filter-btn" data-filter="open">Open Access</button>
     </div>
   </div>
 
-  <!-- Subject filters -->
+  <!-- SUBJECT PILLS -->
   <div class="subject-pills" id="subjectPills"></div>
 
   <div class="stats" id="stats"></div>
 
-  <!-- Featured picks -->
+  <!-- POPULAR PICKS -->
   <div class="featured-section" id="featuredSection">
-    <h2>Popular Picks</h2>
+    <h2 class="hub">Popular Picks</h2>
     <div class="featured-grid" id="featuredGrid"></div>
   </div>
 
-  <!-- Database list -->
+  <!-- SCI-HUB SPOTLIGHT -->
+  <div class="featured-section" id="scihubSection">
+    <h2 class="scihub-section">Sci-Hub — Free Research Papers</h2>
+    <div class="featured-grid" id="scihubGrid"></div>
+  </div>
+
+  <!-- INTERNATIONAL SPOTLIGHT -->
+  <div class="featured-section" id="intlSection">
+    <h2 class="international">Global Open Access</h2>
+    <div class="featured-grid" id="intlGrid"></div>
+  </div>
+
+  <!-- ALL DATABASES -->
   <div id="dbContainer"></div>
 
 </div>
 
 <div class="footer">
-  <p>Data sourced from <a href="https://researchguides.waketech.edu/az/databases" target="_blank">Wake Tech A-Z Databases</a> and <a href="https://www.nclive.org" target="_blank">NC LIVE</a>.
-  Not affiliated with Wake Tech or Wake County Public Libraries.</p>
+  <p>Sources: <a href="https://researchguides.waketech.edu/az/databases" target="_blank">Wake Tech A-Z</a> · <a href="https://www.nclive.org" target="_blank">NC LIVE</a> · <a href="https://github.com/beFitzgeraldFire/paper-xueshu-wenxian-download" target="_blank">Paper Xueshu</a> · Not affiliated with any listed institution.</p>
 </div>
 
 <script>
-// ── Database Catalog ──────────────────────────────────────────────────
-const CATEGORY_ORDER = [
-  'General / Multidisciplinary', 'Business & Economics', 'Technology & Computing',
-  'Health & Nursing', 'Science & Engineering', 'Arts & Humanities',
-  'Social Sciences', 'Education & Career', 'News & Current Events',
-  'Literature & Language', 'History & Genealogy', 'Music & Film',
-  'Ebooks & Reference', 'For Kids & Teens', 'North Carolina'
-];
-
 const databases = [
-  // ── General / Multidisciplinary ──
-  { name: 'NC LIVE', desc: 'Portal to hundreds of databases — articles, ebooks, video, and more for North Carolina residents. Start here.', cat: 'General / Multidisciplinary', access: 'shared', popular: true, url: 'https://www.nclive.org/' },
-  { name: 'ProQuest Central', desc: 'General article database for 175+ subjects — magazines, journals, newspapers, peer-reviewed.', cat: 'General / Multidisciplinary', access: 'shared', popular: true, url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/PQcentral' },
-  { name: 'ProQuest Research Library', desc: 'General reference with scholarly journals, trade pubs, magazines, and daily news.', cat: 'General / Multidisciplinary', access: 'shared', popular: true, url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/researchlibrary' },
-  { name: 'JSTOR', desc: 'Scanned journal archives across literature, science, history, languages, and education.', cat: 'General / Multidisciplinary', access: 'shared', popular: true, url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/jstor' },
-  { name: 'CQ Researcher', desc: 'In-depth reports on political and social issues — health, education, environment, technology.', cat: 'General / Multidisciplinary', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/CQresearcher' },
-  { name: 'SIRS Issues Researcher', desc: 'Articles about controversial issues from newspapers, magazines, journals, and government pubs.', cat: 'General / Multidisciplinary', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/SIRSissues' },
-  { name: 'eLibrary', desc: 'General reference with magazines, newspapers, books, transcripts, maps, images, and audio.', cat: 'General / Multidisciplinary', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/elibrary' },
-  { name: 'Wiley Online Library', desc: 'Journals, books, and research resources across life, health, social, and physical sciences.', cat: 'General / Multidisciplinary', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://onlinelibrary.wiley.com' },
-  { name: 'MasterFILE Premier', desc: 'Full-text magazines, reference books, and primary source documents for general research.', cat: 'General / Multidisciplinary', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/masterfile' },
-  { name: 'ProQuest Research Companion', desc: 'Cloud-based information literacy tool — guides students through research projects.', cat: 'General / Multidisciplinary', access: 'wtech', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/researchcompanion' },
-  { name: 'SIRS Discoverer', desc: 'Selected content for beginning researchers — newspapers, magazines, and reference.', cat: 'General / Multidisciplinary', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/sirsdiscoverer' },
+  // ═══════════════════════════════════════════════════════════
+  // NC — SHARED (NC LIVE — Wake County OR Wake Tech)
+  // ═══════════════════════════════════════════════════════════
+  { name: 'NC LIVE', desc: 'Portal to hundreds of databases — articles, ebooks, video. Start here.', cat: 'General', access: 'shared', section: 'nc', popular: true, url: 'https://www.nclive.org/' },
+  { name: 'ProQuest Central', desc: 'General articles for 175+ subjects — magazines, journals, newspapers, peer-reviewed.', cat: 'General', access: 'shared', section: 'nc', popular: true, url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/PQcentral' },
+  { name: 'ProQuest Research Library', desc: 'Scholarly journals, trade pubs, magazines, and daily news — general reference.', cat: 'General', access: 'shared', section: 'nc', popular: true, url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/researchlibrary' },
+  { name: 'JSTOR', desc: 'Archived journals across literature, science, history, languages, education.', cat: 'General', access: 'shared', section: 'nc', popular: true, url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/jstor' },
+  { name: 'CQ Researcher', desc: 'In-depth reports on political & social issues — health, education, environment.', cat: 'General', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/CQresearcher' },
+  { name: 'SIRS Issues Researcher', desc: 'Articles about controversial issues from newspapers, magazines, journals.', cat: 'General', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/SIRSissues' },
+  { name: 'eLibrary', desc: 'Magazines, newspapers, books, transcripts, maps, images, and audio.', cat: 'General', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/elibrary' },
+  { name: 'Wiley Online Library', desc: 'Journals, books, research across life, health, social, and physical sciences.', cat: 'General', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://onlinelibrary.wiley.com' },
+  { name: 'MasterFILE Premier', desc: 'Full-text magazines, reference books, primary source documents.', cat: 'General', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/masterfile' },
+  { name: 'Credo Reference', desc: 'Full-text reference — encyclopedias, dictionaries, atlases, handbooks.', cat: 'General', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/credo' },
+  { name: 'SIRS Discoverer', desc: 'Selected content for beginning researchers — newspapers, magazines, reference.', cat: 'For Kids', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/sirsdiscoverer' },
+  { name: 'ProQuest Research Companion', desc: 'Research skills and information literacy tutorials.', cat: 'General', access: 'wtech', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/researchcompanion' },
+  { name: 'Open Education North Carolina', desc: 'Free digital textbooks for NC college courses.', cat: 'Education', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/opennc' },
 
-  // ── Business & Economics ──
-  { name: 'ABI/INFORM Collection', desc: 'Business research — journals, trade publications, market reports, dissertations, working papers.', cat: 'Business & Economics', access: 'shared', popular: true, url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/abi-inform' },
-  { name: 'ProQuest One Business', desc: 'Business content — newspapers, dissertations, ebooks, video, cases, industry reports.', cat: 'Business & Economics', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/business' },
-  { name: 'Consumer Reports', desc: 'Product reviews and recommendations for cars, appliances, electronics, finance, health.', cat: 'Business & Economics', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/consumerreports' },
-  { name: 'Morningstar Investment Research Center', desc: 'Independent analysis of stocks, mutual funds, and ETFs.', cat: 'Business & Economics', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/morningstar' },
-  { name: 'Data-Axle Reference Solutions', desc: '48M+ businesses, 268M consumers — market research, job search, OneSource international.', cat: 'Business & Economics', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/referenceusa' },
-  { name: 'Accounting, Tax & Banking Collection', desc: 'Journals and trade publications on accounting, taxation, and banking.', cat: 'Business & Economics', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/accountingtax' },
-  { name: 'Business Market Research Collection', desc: 'Broker reports, market research, and key business data.', cat: 'Business & Economics', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/businessresearch' },
-  { name: 'Asian & European Business Collection', desc: 'Business information on Asian and European markets.', cat: 'Business & Economics', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/asiaeurope' },
-  { name: 'Canadian Business & Current Affairs', desc: 'Canadian business, current events, and academic content.', cat: 'Business & Economics', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/canadianbusiness' },
-  { name: 'Entrepreneurship Database', desc: 'Journals and resources on entrepreneurship and small business.', cat: 'Business & Economics', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/Entrepreneurship' },
-  { name: 'Triangle Business Journal', desc: 'Business news across 18 industries in the Triangle metro region. [Free registration]', cat: 'Business & Economics', access: 'wtech', url: 'https://www.bizjournals.com/register/triangle?r=%2Ftriangle%2F' },
+  // Business
+  { name: 'ABI/INFORM Collection', desc: 'Business research — journals, trade pubs, market reports, dissertations.', cat: 'Business', access: 'shared', section: 'nc', popular: true, url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/abi-inform' },
+  { name: 'ProQuest One Business', desc: 'Business sources — newspapers, dissertations, ebooks, video, cases, reports.', cat: 'Business', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/business' },
+  { name: 'Consumer Reports', desc: 'Product reviews — cars, appliances, electronics, finance, health.', cat: 'Business', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/consumerreports' },
+  { name: 'Morningstar Investment Center', desc: 'Independent stock, mutual fund, and ETF analysis.', cat: 'Business', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/morningstar' },
+  { name: 'Data-Axle Reference Solutions', desc: '48M+ businesses, 268M consumers — market research, jobs database.', cat: 'Business', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/referenceusa' },
+  { name: 'Accounting, Tax & Banking', desc: 'Journals on accounting, taxation, and banking.', cat: 'Business', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/accountingtax' },
+  { name: 'Business Market Research', desc: 'Broker reports, market research, and key business data.', cat: 'Business', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/businessresearch' },
+  { name: 'Entrepreneurship Database', desc: 'Journals on entrepreneurship and small business.', cat: 'Business', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/Entrepreneurship' },
+  { name: 'Triangle Business Journal', desc: 'Triangle region business news — 18 industries. [Free registration]', cat: 'Business', access: 'wtech', section: 'nc', url: 'https://www.bizjournals.com/register/triangle?r=%2Ftriangle%2F' },
 
-  // ── Technology & Computing ──
-  { name: "O'Reilly for Higher Education", desc: 'Tech and business ebooks, videos, learning paths — critical for CS, IT, engineering students.', cat: 'Technology & Computing', access: 'wtech', popular: true, url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/oreilly' },
-  { name: 'Computer Science Database', desc: 'Computing topics — AI, cybersecurity, programming, data science, and IT.', cat: 'Technology & Computing', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/computing' },
-  { name: 'Advanced Technologies & Aerospace', desc: 'Aerospace engineering, nanotechnology, robotics, and advanced manufacturing.', cat: 'Technology & Computing', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/aerospace' },
-  { name: 'Engineering Database', desc: 'Civil, mechanical, electrical, chemical engineering — journals and conference papers.', cat: 'Technology & Computing', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/engineeringdatabase' },
-  { name: 'Telecommunications Database', desc: 'Telecom, wireless, fiber optics, broadband — journals and trade pubs.', cat: 'Technology & Computing', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/telecommunications' },
-  { name: 'Materials Science Database', desc: 'Metallurgy, polymers, ceramics, composites, and materials engineering.', cat: 'Technology & Computing', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/materials' },
-  { name: 'Career & Technical Education DB', desc: 'Vocational topics — computing, health care, building trades, auto, accounting, graphic design.', cat: 'Technology & Computing', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/careertecheducation' },
+  // Tech
+  { name: "O'Reilly for Higher Education", desc: 'Tech & business ebooks, videos, learning paths — essential for CS/IT students.', cat: 'Technology', access: 'wtech', section: 'nc', popular: true, url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/oreilly' },
+  { name: 'Computer Science Database', desc: 'AI, cybersecurity, programming, data science, and IT.', cat: 'Technology', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/computing' },
+  { name: 'Engineering Database', desc: 'Civil, mechanical, electrical, chemical engineering.', cat: 'Technology', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/engineeringdatabase' },
+  { name: 'Advanced Technologies & Aerospace', desc: 'Aerospace, nanotechnology, robotics, advanced manufacturing.', cat: 'Technology', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/aerospace' },
+  { name: 'Telecommunications Database', desc: 'Telecom, wireless, fiber optics, broadband.', cat: 'Technology', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/telecommunications' },
+  { name: 'Career & Technical Education DB', desc: 'Vocational topics — health care, building trades, auto, accounting, design.', cat: 'Technology', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/careertecheducation' },
 
-  // ── Health & Nursing ──
-  { name: 'CINAHL Complete', desc: 'Essential nursing and allied health research — journals, care sheets, CEU materials.', cat: 'Health & Nursing', access: 'shared', popular: true, url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/cinahl' },
-  { name: 'Anatomy.TV', desc: '3D interactive anatomy — detailed models of human body systems. By Primal Pictures.', cat: 'Health & Nursing', access: 'wtech', popular: true, url: 'https://login.proxy189.nclive.org/login?url=https://online.statref.com/Entry.aspx?lt=Anatomy&grpalias=NCCS' },
-  { name: 'Nursing & Allied Health Database', desc: 'Full-text nursing journals, dissertations, and evidence-based practice resources.', cat: 'Health & Nursing', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/nursingallied' },
-  { name: 'Health & Medical Collection', desc: 'Comprehensive medical journals and consumer health information.', cat: 'Health & Nursing', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/healthmedical' },
-  { name: 'Healthcare Administration Database', desc: 'Health management, policy, and administration journals.', cat: 'Health & Nursing', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/healthmanagement' },
-  { name: 'Public Health Database', desc: 'Public health research — epidemiology, environmental health, community health.', cat: 'Health & Nursing', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/publichealth' },
-  { name: 'Consumer Health Database', desc: 'Family health, wellness, and medical information for the general reader.', cat: 'Health & Nursing', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/familyhealth' },
-  { name: 'APA PsycArticles', desc: 'Full-text peer-reviewed articles from APA journals — psychology and behavioral science.', cat: 'Health & Nursing', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://research.ebsco.com/c/4djixm/search?db=pdh' },
-  { name: 'Psychology Database', desc: 'Psychology journals — clinical, social, developmental, cognitive, and experimental.', cat: 'Health & Nursing', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/psychologydatabase' },
-  { name: 'Psychotherapy.net', desc: 'Streaming therapy sessions — watch real sessions with expert commentary.', cat: 'Health & Nursing', access: 'wtech', url: 'https://www.psychotherapy.net/stream/waketech' },
-  { name: 'R2 Digital Library', desc: 'Nursing and health sciences ebooks from leading publishers.', cat: 'Health & Nursing', access: 'wtech', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/r2digital' },
-  { name: 'Stat!Ref', desc: 'Full-text medical and nursing reference books, drug guides, and clinical tools.', cat: 'Health & Nursing', access: 'wtech', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/statref' },
-  { name: 'Visible Body', desc: 'Interactive 3D anatomy, physiology, and biology visualizations.', cat: 'Health & Nursing', access: 'wtech', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/vb' },
-  { name: 'Coronavirus Research Database', desc: 'Curated COVID-19 research — journals, preprints, clinical trials, and public health data.', cat: 'Health & Nursing', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/crb' },
+  // Health
+  { name: 'CINAHL Complete', desc: 'Nursing & allied health — journals, care sheets, CEU materials.', cat: 'Health', access: 'shared', section: 'nc', popular: true, url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/cinahl' },
+  { name: 'Anatomy.TV', desc: '3D interactive anatomy — human body systems. By Primal Pictures.', cat: 'Health', access: 'wtech', section: 'nc', popular: true, url: 'https://login.proxy189.nclive.org/login?url=https://online.statref.com/Entry.aspx?lt=Anatomy&grpalias=NCCS' },
+  { name: 'Nursing & Allied Health DB', desc: 'Full-text nursing journals, dissertations, evidence-based practice.', cat: 'Health', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/nursingallied' },
+  { name: 'Health & Medical Collection', desc: 'Comprehensive medical journals and consumer health.', cat: 'Health', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/healthmedical' },
+  { name: 'Healthcare Administration DB', desc: 'Health management, policy, administration journals.', cat: 'Health', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/healthmanagement' },
+  { name: 'Public Health Database', desc: 'Epidemiology, environmental health, community health.', cat: 'Health', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/publichealth' },
+  { name: 'Consumer Health Database', desc: 'Family health, wellness, medical info for general readers.', cat: 'Health', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/familyhealth' },
+  { name: 'APA PsycArticles', desc: 'Full-text APA journals — psychology and behavioral science.', cat: 'Health', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://research.ebsco.com/c/4djixm/search?db=pdh' },
+  { name: 'Psychology Database', desc: 'Psychology — clinical, social, developmental, cognitive research.', cat: 'Health', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/psychologydatabase' },
+  { name: 'Psychotherapy.net', desc: 'Streaming therapy sessions with expert commentary.', cat: 'Health', access: 'wtech', section: 'nc', url: 'https://www.psychotherapy.net/stream/waketech' },
+  { name: 'R2 Digital Library', desc: 'Nursing and health sciences ebooks.', cat: 'Health', access: 'wtech', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/r2digital' },
+  { name: 'Stat!Ref', desc: 'Medical & nursing reference books, drug guides, clinical tools.', cat: 'Health', access: 'wtech', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/statref' },
+  { name: 'Visible Body', desc: 'Interactive 3D anatomy, physiology, and biology visualizations.', cat: 'Health', access: 'wtech', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/vb' },
+  { name: 'Coronavirus Research DB', desc: 'Curated COVID-19 research — journals, preprints, clinical trials.', cat: 'Health', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/crb' },
 
-  // ── Science & Engineering ──
-  { name: 'Science Database', desc: 'Applied and general sciences — journals, magazines, and scholarly articles.', cat: 'Science & Engineering', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/sciencedatabase' },
-  { name: 'Biological Science Database', desc: 'Biology, biochemistry, biotechnology, ecology, and genomics.', cat: 'Science & Engineering', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/biologydatabase' },
-  { name: 'Agricultural & Environmental Science', desc: 'Agriculture, environmental science, ecology, climate change, and sustainability.', cat: 'Science & Engineering', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/environmentalscience' },
-  { name: 'Earth, Atmospheric & Aquatic Science', desc: 'Geology, oceanography, meteorology, hydrology, and environmental earth science.', cat: 'Science & Engineering', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/aquatic' },
-  { name: 'Journal of Chemical Education', desc: 'Chemistry education — classroom experiments, pedagogy, and curriculum resources.', cat: 'Science & Engineering', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/chemical' },
+  // Science
+  { name: 'Science Database', desc: 'Applied and general sciences — journals, magazines.', cat: 'Science', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/sciencedatabase' },
+  { name: 'Biological Science Database', desc: 'Biology, biochemistry, biotechnology, ecology, genomics.', cat: 'Science', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/biologydatabase' },
+  { name: 'Agricultural & Environmental Science', desc: 'Agriculture, ecology, climate change, sustainability.', cat: 'Science', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/environmentalscience' },
+  { name: 'Earth, Atmospheric & Aquatic Science', desc: 'Geology, oceanography, meteorology, hydrology.', cat: 'Science', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/aquatic' },
+  { name: 'Materials Science Database', desc: 'Metallurgy, polymers, ceramics, composites.', cat: 'Science', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/materials' },
 
-  // ── Arts & Humanities ──
-  { name: 'Arts & Humanities Database', desc: 'Art, architecture, design, history, philosophy, music, literature, theater.', cat: 'Arts & Humanities', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/arts' },
-  { name: 'Bloom\'s Literature', desc: 'Literary criticism, author bios, essays, and analysis of classic and contemporary works.', cat: 'Arts & Humanities', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/blooms' },
-  { name: 'Bloomsbury Collections (ABC-CLIO eBooks)', desc: 'Academic ebooks in history, literature, philosophy, and cultural studies.', cat: 'Arts & Humanities', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/bloomsbury' },
-  { name: 'Gale Literature Resource Center', desc: 'Biographies, bibliographies, and critical analysis of authors and literary works.', cat: 'Arts & Humanities', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/galeliterary' },
-  { name: 'Credo Reference', desc: 'Full-text reference works — encyclopedias, dictionaries, atlases, and handbooks.', cat: 'Arts & Humanities', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/credo' },
-  { name: 'Religion Database', desc: 'Theology, religious studies, and perspectives from worldwide religions.', cat: 'Arts & Humanities', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/religion' },
-  { name: 'Philosophy Database', desc: 'Scholarly journals in philosophy — ethics, metaphysics, logic, and history of philosophy.', cat: 'Arts & Humanities', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/philosophy' },
+  // Arts & Humanities
+  { name: 'Arts & Humanities Database', desc: 'Art, architecture, design, history, philosophy, music, literature.', cat: 'Arts & Humanities', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/arts' },
+  { name: "Bloom's Literature", desc: 'Literary criticism, author bios, essays on classic & contemporary works.', cat: 'Arts & Humanities', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/blooms' },
+  { name: 'Bloomsbury Collections', desc: 'Academic ebooks — history, literature, philosophy, cultural studies.', cat: 'Arts & Humanities', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/bloomsbury' },
+  { name: 'Gale Literature Resource Center', desc: 'Author bios, bibliographies, critical analysis.', cat: 'Arts & Humanities', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/galeliterary' },
+  { name: 'Religion Database', desc: 'Theology, religious studies, worldwide faith perspectives.', cat: 'Arts & Humanities', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/religion' },
 
-  // ── Social Sciences ──
-  { name: 'Criminal Justice Database', desc: 'Crime, its causes and impacts, litigation, and crime trends — scholarly and trade.', cat: 'Social Sciences', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/criminaljustice' },
-  { name: 'Sociology Database', desc: 'Sociology, social work, social policy, gender studies, gerontology, and population studies.', cat: 'Social Sciences', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/sociology' },
-  { name: 'Political Science Database', desc: 'Political science, international relations, comparative politics, and public policy.', cat: 'Social Sciences', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/politicalsciencedb' },
-  { name: 'Social Science Database', desc: 'Broad social sciences — anthropology, criminology, economics, education, and sociology.', cat: 'Social Sciences', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/socialscience' },
-  { name: 'Library Science Database', desc: 'Library and information science — journals, trade publications, and conference proceedings.', cat: 'Social Sciences', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/libraryscience' },
-  { name: 'Education Database', desc: 'Education research — K-12 through higher ed, curriculum, policy, and special education.', cat: 'Social Sciences', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/educationdatabase' },
-  { name: 'Linguistics Database', desc: 'Language, speech, and communication — journals and dissertations.', cat: 'Social Sciences', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/linguistics' },
-  { name: 'Military Database', desc: 'Military science, defense, and national security — journals and trade pubs.', cat: 'Social Sciences', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/military' },
+  // Social Sciences
+  { name: 'Criminal Justice Database', desc: 'Crime, its causes, litigation, and crime trends.', cat: 'Social Sciences', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/criminaljustice' },
+  { name: 'Sociology Database', desc: 'Sociology, social work, gender studies, gerontology, population.', cat: 'Social Sciences', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/sociology' },
+  { name: 'Political Science Database', desc: 'Political science, international relations, public policy.', cat: 'Social Sciences', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/politicalsciencedb' },
+  { name: 'Social Science Database', desc: 'Anthropology, criminology, economics, education, sociology.', cat: 'Social Sciences', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/socialscience' },
+  { name: 'Education Database', desc: 'K-12 through higher ed — curriculum, policy, special education.', cat: 'Social Sciences', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/educationdatabase' },
+  { name: 'Military Database', desc: 'Military science, defense, national security.', cat: 'Social Sciences', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/military' },
 
-  // ── Education & Career ──
-  { name: 'LearningExpress Library / PrepSTEP', desc: 'Practice tests (SAT, ACT, ASVAB, NCLEX), academic skill-building, career prep, and ebooks.', cat: 'Education & Career', access: 'shared', popular: true, url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/learningexpress' },
-  { name: 'Career Coach', desc: 'Local wage, employment, job posting data, and associated education/training info.', cat: 'Education & Career', access: 'wtech', url: 'https://waketech.emsicc.com/' },
-  { name: 'Ferguson\'s Career Guidance Center', desc: 'Explore industries, plan education, build resumes, cover letters, and interview skills.', cat: 'Education & Career', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/fergusons' },
-  { name: 'Chronicle of Higher Education', desc: 'News, jobs, and analysis for higher education professionals.', cat: 'Education & Career', access: 'wtech', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/chronicle' },
-  { name: 'Open Education North Carolina', desc: 'Free and open digital textbooks for NC college courses.', cat: 'Education & Career', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/opennc' },
+  // Education & Career
+  { name: 'LearningExpress / PrepSTEP', desc: 'Practice tests (SAT, ACT, ASVAB, NCLEX), skill-building, career prep.', cat: 'Education', access: 'shared', section: 'nc', popular: true, url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/learningexpress' },
+  { name: 'Career Coach', desc: 'Local wages, employment data, job postings, training info.', cat: 'Education', access: 'wtech', section: 'nc', url: 'https://waketech.emsicc.com/' },
+  { name: "Ferguson's Career Guidance", desc: 'Career exploration, education planning, résumé builder.', cat: 'Education', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/fergusons' },
+  { name: 'Chronicle of Higher Education', desc: 'News, jobs, and analysis for higher ed professionals.', cat: 'Education', access: 'wtech', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/chronicle' },
 
-  // ── News & Current Events ──
-  { name: 'US Newsstream', desc: 'US newspapers — The New York Times, Wall Street Journal, Washington Post, and more.', cat: 'News & Current Events', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/usnewstream' },
-  { name: 'Global Breaking Newswires', desc: 'Real-time newswires from Associated Press, Reuters, and global agencies.', cat: 'News & Current Events', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/globalnews' },
-  { name: 'Canadian Newsstream', desc: 'Canadian newspapers — full text of major dailies and community papers.', cat: 'News & Current Events', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/canadiannews' },
-  { name: 'International Newsstream', desc: 'Newspapers from outside the US and Canada — global coverage.', cat: 'News & Current Events', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/internationalnews' },
-  { name: 'New York Times', desc: 'Full digital access to NYT articles and archives.', cat: 'News & Current Events', access: 'wtech', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/nytimes' },
-  { name: 'Wall Street Journal', desc: 'Full WSJ articles — business, finance, and world news.', cat: 'News & Current Events', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/wallstreetjournal' },
+  // News
+  { name: 'US Newsstream', desc: 'US newspapers — NYT, WSJ, Washington Post, and more.', cat: 'News', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/usnewstream' },
+  { name: 'Global Breaking Newswires', desc: 'Real-time AP, Reuters, and global agency newswires.', cat: 'News', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/globalnews' },
+  { name: 'International Newsstream', desc: 'Newspapers from outside the US and Canada.', cat: 'News', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/internationalnews' },
+  { name: 'New York Times', desc: 'Full digital NYT articles and archives.', cat: 'News', access: 'wtech', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/nytimes' },
+  { name: 'Wall Street Journal', desc: 'Full WSJ — business, finance, world news.', cat: 'News', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/wallstreetjournal' },
 
-  // ── Literature & Language ──
-  { name: 'African-American Poetry', desc: 'Poetry by African-American authors from the 18th and 19th centuries.', cat: 'Literature & Language', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/aapoetry' },
-  { name: 'American Poetry', desc: 'American poetry from the colonial period through the 20th century.', cat: 'Literature & Language', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/americanpoetry' },
-  { name: 'English Poetry', desc: 'English poetry from the Anglo-Saxon period to the early 20th century.', cat: 'Literature & Language', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/englishpoetry' },
-  { name: 'Faber Poetry Library', desc: 'Works from the Faber & Faber poetry catalog — modern and contemporary poets.', cat: 'Literature & Language', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/faberpoetry' },
-  { name: 'Twentieth-Century African-American Poetry', desc: 'Poetry collections by major African-American poets of the 20th century.', cat: 'Literature & Language', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/africanamericanpoetry' },
-  { name: 'Twentieth-Century American Poetry', desc: 'Modern American poetry — 20th century canonical and emerging voices.', cat: 'Literature & Language', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/americanpoetry20th' },
-  { name: 'Twentieth-Century English Poetry', desc: '20th century English poetry — modernists and contemporary poets.', cat: 'Literature & Language', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/englishpoetry20th' },
-  { name: 'ProQuest Learning: Literature', desc: 'Full-text literature journals, criticism, and author studies.', cat: 'Literature & Language', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/learningliterature' },
-  { name: 'North American Women\'s Letters & Diaries', desc: 'Personal writings of North American women from colonial times to 1950.', cat: 'Literature & Language', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/womensletters' },
-  { name: 'Transparent Language Online', desc: 'Interactive language learning — 100+ languages with speech recognition.', cat: 'Literature & Language', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/language' },
+  // Literature & Language
+  { name: 'African-American Poetry', desc: '18th & 19th century African-American poetry.', cat: 'Literature', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/aapoetry' },
+  { name: 'American Poetry', desc: 'Colonial through 20th century American poetry.', cat: 'Literature', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/americanpoetry' },
+  { name: 'English Poetry', desc: 'Anglo-Saxon to early 20th century English poetry.', cat: 'Literature', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/englishpoetry' },
+  { name: 'ProQuest Learning: Literature', desc: 'Full-text literature journals, criticism, author studies.', cat: 'Literature', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/learningliterature' },
+  { name: 'Transparent Language Online', desc: '100+ languages with speech recognition.', cat: 'Literature', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/language' },
 
-  // ── History & Genealogy ──
-  { name: 'HeritageQuest', desc: 'Genealogy records — US census, family histories, city directories, and military records.', cat: 'History & Genealogy', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/heritagequest' },
-  { name: 'Digital NC', desc: 'Historic NC newspapers, yearbooks, photographs, and cultural heritage collections.', cat: 'History & Genealogy', access: 'shared', url: 'https://resources.nclive.org/digitalNC' },
-  { name: 'Digital Sanborn Maps (1867-1970) — NC', desc: 'Historical fire insurance maps of NC towns — urban planning and local history.', cat: 'History & Genealogy', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/sanborn' },
-  { name: 'Historic NC Digital Newspaper Collection', desc: 'Digitized historical newspapers from across North Carolina.', cat: 'History & Genealogy', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/historicnc' },
-  { name: 'History Study Center', desc: 'Historical documents, articles, and reference — ancient to modern world history.', cat: 'History & Genealogy', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/hsc' },
-  { name: 'State Data Center', desc: 'NC demographic, economic, and population data from state and federal sources.', cat: 'History & Genealogy', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/statedata' },
-  { name: 'Statistical Abstract of the US', desc: 'Comprehensive US statistics — population, economy, health, education, and more.', cat: 'History & Genealogy', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/statistical' },
+  // History
+  { name: 'HeritageQuest', desc: 'Genealogy — US census, family histories, military records.', cat: 'History', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/heritagequest' },
+  { name: 'Digital NC', desc: 'Historic NC newspapers, yearbooks, photographs.', cat: 'History', access: 'shared', section: 'nc', url: 'https://resources.nclive.org/digitalNC' },
+  { name: 'Digital Sanborn Maps — NC', desc: 'Historic fire insurance maps of NC towns (1867–1970).', cat: 'History', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/sanborn' },
+  { name: 'Historic NC Newspaper Collection', desc: 'Digitized historical newspapers from across NC.', cat: 'History', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/historicnc' },
+  { name: 'History Study Center', desc: 'Historical documents, articles — ancient to modern world history.', cat: 'History', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/hsc' },
+  { name: 'Statistical Abstract of the US', desc: 'US population, economy, health, education statistics.', cat: 'History', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/statistical' },
+  { name: 'NCPedia', desc: 'Free NC encyclopedia — history, people, geography, culture.', cat: 'History', access: 'shared', section: 'nc', url: 'https://resources.nclive.org/ncpedia' },
 
-  // ── Music & Film ──
-  { name: 'Films on Demand Video Collection', desc: '21,000+ streaming videos — PBS, Ken Burns, Masterpiece, documentaries across disciplines.', cat: 'Music & Film', access: 'shared', popular: true, url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/filmsondemand' },
-  { name: 'Feature Films for Education', desc: 'Hundreds of full-length feature films for educational use — classics, blockbusters, foreign.', cat: 'Music & Film', access: 'wtech', url: 'https://ffusa.infobase.com/PortalPlayLists.aspx?wid=114111' },
-  { name: 'Just for Kids Streaming Collection', desc: 'Kid-safe, ad-free videos — Sesame Street, Berenstain Bears, Dr. Seuss, and educational.', cat: 'Music & Film', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/justforkids' },
+  // Film & Music
+  { name: 'Films on Demand', desc: '21,000+ streaming videos — PBS, Ken Burns, documentaries.', cat: 'Film & Music', access: 'shared', section: 'nc', popular: true, url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/filmsondemand' },
+  { name: 'Feature Films for Education', desc: 'Full-length feature films for educational use.', cat: 'Film & Music', access: 'wtech', section: 'nc', url: 'https://ffusa.infobase.com/PortalPlayLists.aspx?wid=114111' },
+  { name: 'Just for Kids Streaming', desc: 'Kid-safe videos — Sesame Street, Berenstain Bears.', cat: 'Film & Music', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/justforkids' },
 
-  // ── Ebooks & Reference ──
-  { name: 'Hoopla', desc: 'Downloadable ebooks, audiobooks, comics, music, movies, and TV — borrow instantly.', cat: 'Ebooks & Reference', access: 'shared', popular: true, url: 'https://www.hoopladigital.com/' },
-  { name: 'ProQuest Ebook Central', desc: 'Scholarly ebooks — academic nonfiction, career development, and study aids.', cat: 'Ebooks & Reference', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/ebookcentral' },
-  { name: 'EBSCOhost eBook Collection', desc: '26,000+ fiction, reference, scholarly, and professional ebooks.', cat: 'Ebooks & Reference', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/EBSCOebooks' },
-  { name: 'HomeGrown Ebooks Collection', desc: 'Ebooks from NC publishers — always available, no waiting, no limits.', cat: 'Ebooks & Reference', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/homegrown' },
-  { name: 'Gale Ebooks', desc: 'Encyclopedias, almanacs, and specialized reference ebooks across all subjects.', cat: 'Ebooks & Reference', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/galevirtual' },
-  { name: 'E-Journal Portal', desc: 'Search for specific journals, magazines, or newspapers by title.', cat: 'Ebooks & Reference', access: 'shared', url: 'https://ag6uf9gx2e.search.serialssolutions.com/' },
-  { name: 'NoveList Plus', desc: 'Book recommendations — read-alikes, series guides, and genre-based suggestions.', cat: 'Ebooks & Reference', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/novelistplus' },
+  // Ebooks
+  { name: 'Hoopla', desc: 'Borrow ebooks, audiobooks, comics, music, movies instantly.', cat: 'Ebooks', access: 'shared', section: 'nc', popular: true, url: 'https://www.hoopladigital.com/' },
+  { name: 'ProQuest Ebook Central', desc: 'Scholarly ebooks — academic nonfiction, study aids.', cat: 'Ebooks', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/ebookcentral' },
+  { name: 'EBSCOhost eBook Collection', desc: '26,000+ fiction, reference, scholarly ebooks.', cat: 'Ebooks', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/EBSCOebooks' },
+  { name: 'HomeGrown Ebooks Collection', desc: 'NC publisher ebooks — always available, no waiting.', cat: 'Ebooks', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/homegrown' },
+  { name: 'Gale Ebooks', desc: 'Encyclopedias, almanacs, specialized reference ebooks.', cat: 'Ebooks', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/galevirtual' },
+  { name: 'NoveList Plus', desc: 'Book recommendations — read-alikes, series guides.', cat: 'Ebooks', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/novelistplus' },
 
-  // ── For Kids & Teens ──
-  { name: 'Just for Kids (Video)', desc: 'Kid-safe streaming — Sesame Street, Electric Company, Berenstain Bears, and educational shows.', cat: 'For Kids & Teens', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/justforkids' },
-  { name: 'NoveList Plus K-8', desc: 'Book recommendations for kids — read-alikes and age-appropriate suggestions.', cat: 'For Kids & Teens', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/novelistplus' },
-  { name: 'SIRS Discoverer', desc: 'Safe research for young learners — magazines, newspapers, and reference.', cat: 'For Kids & Teens', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/sirsdiscoverer' },
+  // Wake County only
+  { name: 'Wake County Library Catalog', desc: 'Search for books, audiobooks, DVDs, and physical materials.', cat: 'General', access: 'wake', section: 'nc', url: 'https://catalog.wake.gov/' },
+  { name: 'Libby / OverDrive', desc: 'Borrow ebooks & audiobooks from Wake County on your phone.', cat: 'Ebooks', access: 'wake', section: 'nc', url: 'https://wakecounty.overdrive.com/' },
 
-  // ── North Carolina ──
-  { name: 'NCPedia', desc: 'Free NC encyclopedia — state history, people, geography, and culture.', cat: 'North Carolina', access: 'shared', url: 'https://resources.nclive.org/ncpedia' },
-  { name: 'Digital NC', desc: 'Historic NC newspapers, yearbooks, photographs, and cultural heritage.', cat: 'North Carolina', access: 'shared', url: 'https://resources.nclive.org/digitalNC' },
-  { name: 'HomeGrown Ebooks Collection', desc: 'Ebooks from NC publishers — always available and free.', cat: 'North Carolina', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/homegrown' },
-  { name: 'State Data Center', desc: 'NC demographic, economic, and population statistics.', cat: 'North Carolina', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/statedata' },
-  { name: 'Historic NC Digital Newspaper Collection', desc: 'Digitized historical newspapers from across North Carolina.', cat: 'North Carolina', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/historicnc' },
-  { name: 'Digital Sanborn Maps (1867-1970) — NC', desc: 'Historic fire insurance maps of NC towns.', cat: 'North Carolina', access: 'shared', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/sanborn' },
+  // ═══════════════════════════════════════════════════════════════
+  // INTERNATIONAL & OPEN ACCESS
+  // ═══════════════════════════════════════════════════════════════
+  { name: 'Sci-Hub', desc: 'Free access to 85M+ scholarly articles. Bypass paywalls. Use domain if one is blocked.', cat: 'General', access: 'scihub', section: 'intl', popular: true, url: 'https://sci-hub.se/' },
+  { name: 'PubMed Central (PMC)', desc: 'Free full-text archive of biomedical and life sciences journals from NIH.', cat: 'Health', access: 'open', section: 'intl', popular: true, url: 'https://www.ncbi.nlm.nih.gov/pmc/' },
+  { name: 'arXiv', desc: 'Open-access preprint repository for physics, math, CS, biology, finance, and stats.', cat: 'Science', access: 'open', section: 'intl', popular: true, url: 'https://arxiv.org/' },
+  { name: 'Google Scholar', desc: 'Search scholarly literature across disciplines. Links to free PDFs when available.', cat: 'General', access: 'open', section: 'intl', popular: true, url: 'https://scholar.google.com/' },
+  { name: 'Directory of Open Access Journals (DOAJ)', desc: '20,000+ peer-reviewed open-access journals covering all subjects.', cat: 'General', access: 'open', section: 'intl', popular: true, url: 'https://doaj.org/' },
+  { name: 'Semantic Scholar', desc: 'AI-powered academic search — 200M+ papers in CS, biomedicine, and more.', cat: 'General', access: 'open', section: 'intl', popular: true, url: 'https://www.semanticscholar.org/' },
+  { name: 'ResearchGate', desc: 'Social network for researchers. Many authors post full-text PDFs of their papers.', cat: 'General', access: 'open', section: 'intl', popular: true, url: 'https://www.researchgate.net/' },
+  { name: 'Unpaywall', desc: 'Browser extension that finds legal free full-text PDFs for paywalled papers.', cat: 'General', access: 'open', section: 'intl', popular: true, url: 'https://unpaywall.org/' },
 
-  // ── Wake County-Only ──
-  { name: 'Wake County Library Catalog', desc: 'Search the public library catalog — books, audiobooks, DVDs, and physical materials.', cat: 'General / Multidisciplinary', access: 'wake', url: 'https://catalog.wake.gov/' },
-  { name: 'Libby / OverDrive', desc: 'Borrow ebooks and audiobooks from Wake County Public Libraries — on your phone or tablet.', cat: 'Ebooks & Reference', access: 'wake', url: 'https://wakecounty.overdrive.com/' },
-  { name: 'Wake County Libraries Mobile App', desc: 'Manage your account, search the catalog, track due dates.', cat: 'General / Multidisciplinary', access: 'wake', url: 'https://www.wake.gov/departments-government/libraries' }
+  // Chinese / Asian databases (from paper-xueshu repo)
+  { name: 'CNKI (知网) — China National Knowledge Infrastructure', desc: 'Largest Chinese academic database — journals, theses, conference papers.', cat: 'General', access: 'open', section: 'intl', url: 'https://www.cnki.net/' },
+  { name: '万方数据 (Wanfang Data)', desc: 'Chinese academic journals, dissertations, conference papers, and patents.', cat: 'General', access: 'open', section: 'intl', url: 'https://www.wanfangdata.com.cn/' },
+  { name: '维普 (CQVIP)', desc: 'Chinese scientific and technical journal database — 16,000+ journals.', cat: 'Science', access: 'open', section: 'intl', url: 'https://www.cqvip.com/' },
+  { name: '读秀 (Duxiu)', desc: 'Chinese academic search — books, articles, and dissertations.', cat: 'General', access: 'open', section: 'intl', url: 'https://www.duxiu.com/' },
+
+  // Major international publishers (free access mirrors / open articles)
+  { name: 'Web of Science', desc: 'Leading citation index — search across 21,000+ journals. Access via institution.', cat: 'General', access: 'open', section: 'intl', url: 'https://www.webofscience.com/' },
+  { name: 'IEEE Xplore', desc: 'Engineering, electronics, and CS — journals, conference papers, standards.', cat: 'Technology', access: 'open', section: 'intl', url: 'https://ieeexplore.ieee.org/' },
+  { name: 'SpringerLink', desc: 'Journals and books across science, technology, medicine, and humanities.', cat: 'General', access: 'open', section: 'intl', url: 'https://link.springer.com/' },
+  { name: 'ScienceDirect', desc: 'Elsevier journals and books — science, technology, medicine, social sciences.', cat: 'General', access: 'open', section: 'intl', url: 'https://www.sciencedirect.com/' },
+  { name: 'Taylor & Francis Online', desc: 'Journals across humanities, social sciences, science, and technology.', cat: 'General', access: 'open', section: 'intl', url: 'https://www.tandfonline.com/' },
+  { name: 'SAGE Journals', desc: 'Journals in social sciences, humanities, medicine, engineering, and more.', cat: 'General', access: 'open', section: 'intl', url: 'https://journals.sagepub.com/' },
+  { name: 'Nature', desc: 'Nature Portfolio journals — leading scientific research publications.', cat: 'Science', access: 'open', section: 'intl', url: 'https://www.nature.com/' },
+  { name: 'Emerald Insight', desc: 'Business, management, economics, engineering, and social sciences journals.', cat: 'Business', access: 'open', section: 'intl', url: 'https://www.emerald.com/insight/' },
+  { name: 'Cambridge Core', desc: 'Cambridge University Press journals and books across all disciplines.', cat: 'General', access: 'open', section: 'intl', url: 'https://www.cambridge.org/core' },
+
+  // Open repositories & aggregators
+  { name: 'CORE', desc: 'Aggregator of 250M+ open-access research papers from repositories worldwide.', cat: 'General', access: 'open', section: 'intl', url: 'https://core.ac.uk/' },
+  { name: 'BASE (Bielefeld Academic Search Engine)', desc: '300M+ documents from 10,000+ content providers — 60% free full-text.', cat: 'General', access: 'open', section: 'intl', url: 'https://www.base-search.net/' },
+  { name: 'Internet Archive Scholar', desc: 'Full-text search of 25M+ scholarly articles preserved in the Wayback Machine.', cat: 'General', access: 'open', section: 'intl', url: 'https://scholar.archive.org/' },
+  { name: 'Zenodo', desc: 'EU-funded open research repository — datasets, papers, presentations, software.', cat: 'General', access: 'open', section: 'intl', url: 'https://zenodo.org/' },
+  { name: 'HAL Archive', desc: 'French open-access archive for scholarly documents across all disciplines.', cat: 'General', access: 'open', section: 'intl', url: 'https://hal.science/' },
+
+  // Medical databases
+  { name: 'PubMed', desc: '36M+ biomedical citations and abstracts from MEDLINE and life science journals.', cat: 'Health', access: 'open', section: 'intl', url: 'https://pubmed.ncbi.nlm.nih.gov/' },
+  { name: 'Cochrane Library', desc: 'Systematic reviews and meta-analyses for evidence-based healthcare.', cat: 'Health', access: 'open', section: 'intl', url: 'https://www.cochranelibrary.com/' },
+  { name: 'NEJM (New England Journal of Medicine)', desc: 'Leading medical journal — some open-access articles and archives.', cat: 'Health', access: 'open', section: 'intl', url: 'https://www.nejm.org/' },
+  { name: 'BMJ Journals', desc: 'British Medical Journal publishing group — 70+ medical journals.', cat: 'Health', access: 'open', section: 'intl', url: 'https://journals.bmj.com/' },
+  { name: 'JAMA Network', desc: 'Journal of the American Medical Association and specialty journals.', cat: 'Health', access: 'open', section: 'intl', url: 'https://jamanetwork.com/' },
+  { name: 'MedlinePlus', desc: 'NIH consumer health information — drugs, conditions, wellness.', cat: 'Health', access: 'open', section: 'intl', url: 'https://medlineplus.gov/' },
+  { name: 'Embase', desc: 'Biomedical literature — 32M+ records, strong on drug research. Inst. access.', cat: 'Health', access: 'open', section: 'intl', url: 'https://www.embase.com/' },
+  { name: 'ClinicalKey', desc: 'Elsevier clinical search — journals, books, guidelines, drug info.', cat: 'Health', access: 'open', section: 'intl', url: 'https://www.clinicalkey.com/' },
+
+  // Legal databases
+  { name: '北大法意 (PKU Law)', desc: 'Chinese legal database — laws, regulations, cases, legal journals.', cat: 'Law', access: 'open', section: 'intl', url: 'https://www.lawyee.net/' },
+  { name: '北大法宝 (PKU Law法宝)', desc: 'Comprehensive Chinese legal information — statutes, cases, treaties.', cat: 'Law', access: 'open', section: 'intl', url: 'https://www.pkulaw.com/' },
+
+  // Finance
+  { name: '锐思金融 (RESSET)', desc: 'Chinese financial market data — stocks, bonds, funds, derivatives.', cat: 'Business', access: 'open', section: 'intl', url: 'https://www.resset.cn/' },
+  { name: 'EPS Data Platform', desc: 'Chinese economic and social data — macro, industry, regional statistics.', cat: 'Business', access: 'open', section: 'intl', url: 'https://www.epsnet.com.cn/' },
+
+  // Engineering / Patents
+  { name: 'Engineering Village', desc: 'Engineering research — Compendex, Inspec, and patent databases.', cat: 'Technology', access: 'open', section: 'intl', url: 'https://www.engineeringvillage.com/' },
+  { name: 'Google Patents', desc: 'Search 120M+ patents worldwide — full text with PDF downloads.', cat: 'Technology', access: 'open', section: 'intl', url: 'https://patents.google.com/' },
+  { name: 'Espacenet (European Patent Office)', desc: 'Free patent search — 150M+ patents from 100+ countries.', cat: 'Technology', access: 'open', section: 'intl', url: 'https://worldwide.espacenet.com/' },
+  { name: 'China Patent Database (CNIPA)', desc: 'Chinese patent search and download — invention, utility, design patents.', cat: 'Technology', access: 'open', section: 'intl', url: 'https://www.cnipa.gov.cn/' }
 ];
 
-// ── App ──
+// ═══════════════════════════════════════════════════════════════
+// APP
+// ═══════════════════════════════════════════════════════════════
 const featuredEl = document.getElementById('featuredGrid');
+const scihubEl = document.getElementById('scihubGrid');
+const intlEl = document.getElementById('intlGrid');
 const container = document.getElementById('dbContainer');
 const searchInput = document.getElementById('search');
 const statsEl = document.getElementById('stats');
 const subjectPillsEl = document.getElementById('subjectPills');
 
 let activeAccessFilter = 'all';
+let activeSection = 'all';
 let activeSubject = 'all';
 let searchQuery = '';
 
 // Build subject pills
-const subjects = [...new Set(databases.map(d => d.cat))].sort((a, b) => {
-  const ai = CATEGORY_ORDER.indexOf(a);
-  const bi = CATEGORY_ORDER.indexOf(b);
-  return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
-});
+const subjects = [...new Set(databases.map(d => d.cat))].sort();
 subjectPillsEl.innerHTML = `<button class="subject-pill active" data-subject="all">All Subjects</button>` +
   subjects.map(s => `<button class="subject-pill" data-subject="${s}">${s}</button>`).join('');
 
@@ -401,13 +431,23 @@ subjectPillsEl.addEventListener('click', e => {
   render();
 });
 
-// Access filter buttons
+// Access filters
 document.getElementById('accessFilters').addEventListener('click', e => {
   const btn = e.target.closest('.filter-btn');
   if (!btn) return;
   document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   activeAccessFilter = btn.dataset.filter;
+  render();
+});
+
+// Section toggle
+document.getElementById('sectionToggle').addEventListener('click', e => {
+  const btn = e.target.closest('.section-btn');
+  if (!btn) return;
+  document.querySelectorAll('.section-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  activeSection = btn.dataset.section;
   render();
 });
 
@@ -420,41 +460,43 @@ function getAccessInfo(access) {
   if (access === 'shared') return { badge: 'badge-shared', label: 'NC LIVE Shared' };
   if (access === 'wtech') return { badge: 'badge-wtech', label: 'Wake Tech' };
   if (access === 'wake') return { badge: 'badge-wake', label: 'Wake County' };
+  if (access === 'open') return { badge: 'badge-open', label: 'Open Access' };
+  if (access === 'scihub') return { badge: 'badge-scihub', label: '⚡ Sci-Hub' };
   return { badge: '', label: '' };
 }
 
+function filterDB(db) {
+  if (activeSection !== 'all' && db.section !== activeSection) return false;
+  if (activeAccessFilter === 'shared' && db.access !== 'shared') return false;
+  if (activeAccessFilter === 'wtech' && db.access !== 'wtech') return false;
+  if (activeAccessFilter === 'wake' && db.access !== 'wake') return false;
+  if (activeAccessFilter === 'open' && db.access !== 'open' && db.access !== 'scihub') return false;
+  if (activeSubject !== 'all' && db.cat !== activeSubject) return false;
+  if (searchQuery) {
+    const n = db.name.toLowerCase();
+    const d = (db.desc || '').toLowerCase();
+    const c = (db.cat || '').toLowerCase();
+    if (!n.includes(searchQuery) && !d.includes(searchQuery) && !c.includes(searchQuery)) return false;
+  }
+  return true;
+}
+
 function render() {
-  const q = searchQuery;
-  const filtered = databases.filter(d => {
-    // Access filter
-    if (activeAccessFilter === 'shared' && d.access !== 'shared') return false;
-    if (activeAccessFilter === 'wtech' && d.access !== 'wtech') return false;
-    if (activeAccessFilter === 'wake' && d.access !== 'wake') return false;
-    // Subject filter
-    if (activeSubject !== 'all' && d.cat !== activeSubject) return false;
-    // Search
-    if (q) {
-      const name = d.name.toLowerCase();
-      const desc = (d.desc || '').toLowerCase();
-      const cat = (d.cat || '').toLowerCase();
-      if (!name.includes(q) && !desc.includes(q) && !cat.includes(q)) return false;
-    }
-    return true;
-  });
+  const filtered = databases.filter(filterDB);
+  const featured = filtered.filter(d => d.popular && d.section === 'nc');
+  const scihubItems = filtered.filter(d => d.access === 'scihub');
+  const intlFeatured = filtered.filter(d => d.popular && d.section === 'intl' && d.access !== 'scihub');
+  const rest = filtered.filter(d => !d.popular || d.section !== 'nc');
 
-  const featured = filtered.filter(d => d.popular);
-  const rest = filtered.filter(d => !d.popular);
-
-  // Stats
   statsEl.textContent = `Showing ${filtered.length} of ${databases.length} databases`;
 
-  // Featured
+  // Render featured (NC popular)
   if (featured.length > 0) {
     document.getElementById('featuredSection').style.display = 'block';
     featuredEl.innerHTML = featured.map(d => {
-      const badge = getAccessInfo(d.access);
-      return `<a href="${d.url}" target="_blank" class="featured-card" style="text-decoration: none; display: block;">
-        <div class="top"><div class="name">${d.name}</div> <span class="badge ${badge.badge}">${badge.label}</span></div>
+      const b = getAccessInfo(d.access);
+      return `<a href="${d.url}" target="_blank" class="card featured" style="text-decoration:none;">
+        <div class="top"><div class="name">${d.name}</div><span class="badge ${b.badge}">${b.label}</span></div>
         <div class="desc">${d.desc}</div>
       </a>`;
     }).join('');
@@ -462,58 +504,88 @@ function render() {
     document.getElementById('featuredSection').style.display = 'none';
   }
 
-  // Group rest by category
+  // Sci-Hub spotlight
+  if (scihubItems.length > 0) {
+    document.getElementById('scihubSection').style.display = 'block';
+    scihubEl.innerHTML = scihubItems.map(d => {
+      return `<a href="${d.url}" target="_blank" class="card scihub-card" style="text-decoration:none;">
+        <div class="top">
+          <div class="name-wrapper">
+            <span class="name" style="font-size:1.1rem;">${d.name}</span>
+            <span class="popular-badge">★ Popular</span>
+          </div>
+          <span class="badge badge-scihub">⚡ Free</span>
+        </div>
+        <div class="desc">${d.desc}</div>
+      </a>`;
+    }).join('');
+  } else {
+    document.getElementById('scihubSection').style.display = 'none';
+  }
+
+  // International spotlight
+  if (intlFeatured.length > 0) {
+    document.getElementById('intlSection').style.display = 'block';
+    intlEl.innerHTML = intlFeatured.map(d => {
+      const b = getAccessInfo(d.access);
+      return `<a href="${d.url}" target="_blank" class="card featured" style="text-decoration:none;">
+        <div class="top"><div class="name">${d.name}</div><span class="badge ${b.badge}">${b.label}</span></div>
+        <div class="desc">${d.desc}</div>
+      </a>`;
+    }).join('');
+  } else {
+    document.getElementById('intlSection').style.display = 'none';
+  }
+
+  // Rest grouped by category
   const grouped = {};
   rest.forEach(d => {
     if (!grouped[d.cat]) grouped[d.cat] = [];
     grouped[d.cat].push(d);
   });
 
-  if (Object.keys(grouped).length === 0 && featured.length === 0) {
-    container.innerHTML = `<div class="empty">
-      <svg fill="none" viewBox="0 0 48 48" stroke="currentColor" stroke-width="2"><path d="M24 8v32M8 24h32"/></svg>
-      <p>No databases match your filters. Try a different search term or clear filters.</p>
-    </div>`;
+  if (Object.keys(grouped).length === 0 && featured.length === 0 && scihubItems.length === 0 && intlFeatured.length === 0) {
+    container.innerHTML = `<div class="empty"><p>No databases match your filters. Try a different search or clear filters.</p></div>`;
     return;
   }
 
+  const catOrder = ['General','Health','Science','Technology','Business','Education','Arts & Humanities','Social Sciences','Literature','History','Film & Music','Ebooks','News','Law','For Kids'];
+  const orderedCats = catOrder.filter(c => grouped[c]);
+  const otherCats = Object.keys(grouped).filter(c => !catOrder.includes(c)).sort();
   let html = '';
-  const orderedCats = CATEGORY_ORDER.filter(c => grouped[c]);
-  const otherCats = Object.keys(grouped).filter(c => !CATEGORY_ORDER.includes(c)).sort();
   [...orderedCats, ...otherCats].forEach(cat => {
     const items = grouped[cat];
     html += `<div class="category-section"><h3>${cat} <span class="count">(${items.length})</span></h3>
       <div class="db-grid">`;
     items.forEach(d => {
-      const badge = getAccessInfo(d.access);
-      html += `<div class="db-card">
+      const b = getAccessInfo(d.access);
+      const isSciHub = d.access === 'scihub';
+      html += `<div class="card ${isSciHub ? 'scihub-card' : ''}">
         <div class="top">
           <div class="name-wrapper">
             <span class="name">${d.name}</span>
             ${d.popular ? '<span class="popular-badge">★ Popular</span>' : ''}
           </div>
-          <span class="badge ${badge.badge}">${badge.label}</span>
+          <span class="badge ${b.badge}">${b.label}</span>
         </div>
         <div class="desc">${d.desc}</div>
       </div>`;
     });
     html += `</div></div>`;
   });
-
-  // Make the whole card clickable
   container.innerHTML = html;
-  container.addEventListener('click', e => {
-    const card = e.target.closest('.db-card');
-    if (!card) return;
-    // Find the db by name
-    const nameEl = card.querySelector('.name');
-    if (!nameEl) return;
-    const db = databases.find(d => d.name === nameEl.textContent);
-    if (db) window.open(db.url, '_blank');
+
+  // Click handler for all cards
+  container.querySelectorAll('.card').forEach(card => {
+    card.addEventListener('click', () => {
+      const nameEl = card.querySelector('.name');
+      if (!nameEl) return;
+      const db = databases.find(d => d.name === nameEl.textContent);
+      if (db) window.open(db.url, '_blank');
+    });
   });
 }
 
-// Init
 render();
 </script>
 </body>
