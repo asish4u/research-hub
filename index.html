@@ -242,6 +242,7 @@
         <button class="news-tab" data-news="tech" role="tab">💻 Tech <span class="count"></span></button>
         <button class="news-tab" data-news="business" role="tab">📈 Business <span class="count"></span></button>
         <button class="news-tab" data-news="ai" role="tab">🤖 AI <span class="count"></span></button>
+        <button class="news-tab" data-news="us" role="tab">🇺🇸 US <span class="count"></span></button>
         <button class="news-tab" data-news="india" role="tab">🇮🇳 India <span class="count"></span></button>
         <button class="news-refresh" id="newsRefresh" title="Refresh news">⟳ Refresh</button>
       </div>
@@ -431,16 +432,18 @@ function biasBadge(bias) {
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// NEWS — RSS feeds via rss2json.com (free, CORS enabled)
+// NEWS — Cloudflare Pages Function proxy (server-side RSS fetch, no CORS)
 // ═══════════════════════════════════════════════════════════════════
-const RSS2JSON = 'https://api.rss2json.com/v1/api.json?rss_url=';
+// Proxy endpoint — served by Cloudflare Pages Function (no CORS)
+const NEWS_PROXY = '/api/news?category=';
 
 const NEWS_FEEDS = {
-  world:   { url: 'https://feeds.bbci.co.uk/news/rss.xml',             label: 'World News (BBC)' },
-  tech:    { url: 'https://hnrss.org/frontpage',                       label: 'Tech (Hacker News)' },
-  business:{ url: 'https://feeds.bloomberg.com/markets/news.rss',      label: 'Business (Bloomberg)' },
-  ai:      { url: 'https://www.technologyreview.com/feed/',            label: 'AI & Tech (MIT Review)' },
-  india:   { url: 'https://www.thehindu.com/feeder/default.rss',       label: 'India (The Hindu)' }
+  world:   { id: 'world',   label: 'World News' },
+  tech:    { id: 'tech',    label: 'Tech' },
+  business:{ id: 'business',label: 'Business' },
+  ai:      { id: 'ai',      label: 'AI' },
+  india:   { id: 'india',   label: 'India' },
+  us:      { id: 'us',      label: 'US News' }
 };
 
 let activeNewsTab = 'world';
@@ -456,9 +459,7 @@ function fetchNews(category) {
 
   grid.innerHTML = '<div class="news-loader"><div class="spinner"></div><p>Loading news…</p></div>';
 
-  const apiUrl = RSS2JSON + encodeURIComponent(feed.url);
-
-  fetch(apiUrl)
+  fetch(NEWS_PROXY + category)
     .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
     .then(data => {
       if (data.status !== 'ok' || !data.items || data.items.length === 0) {
@@ -491,7 +492,22 @@ function renderNews(category, items) {
     }
   });
 
-  grid.innerHTML = items.map((item, i) => {
+  // Sort: today's stories first (breaking), then by feed order (= editorial impact)
+  const now = Date.now();
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const todayTs = today.getTime();
+
+  const sorted = [...items].sort((a, b) => {
+    const aPub = a.pubDate ? new Date(a.pubDate).getTime() : 0;
+    const bPub = b.pubDate ? new Date(b.pubDate).getTime() : 0;
+    const aToday = aPub >= todayTs ? 1 : 0;
+    const bToday = bPub >= todayTs ? 1 : 0;
+    if (aToday !== bToday) return bToday - aToday; // today's first
+    return bPub - aPub; // newest first within same recency
+  });
+
+  grid.innerHTML = sorted.map((item, i) => {
     const domain = extractDomain(item.link);
     const bias = getBias(domain);
     const rank = i + 1;
@@ -501,15 +517,23 @@ function renderNews(category, items) {
     else if (rank === 3) rankClass = 'top3';
 
     const ago = timeAgo(item.pubDate);
+    const pubTs = item.pubDate ? new Date(item.pubDate).getTime() : 0;
+    const isBreaking = (now - pubTs) < 7200000; // within 2 hours
+    const isToday = pubTs >= todayTs;
+
+    let impactBadge = '';
+    if (isBreaking) impactBadge = '<span class="popular-badge" style="background:var(--red);color:#fff;">🔴 Breaking</span>';
+    else if (isToday && rank <= 3) impactBadge = '<span class="popular-badge" style="background:var(--orange);">🔥 Top</span>';
 
     return `<a href="${item.link}" target="_blank" rel="noopener" class="news-item">
       <div class="news-rank ${rankClass}">#${rank}</div>
       <div class="news-body">
-        <div class="news-title">${escapeHtml(item.title)}</div>
+        <div class="news-title">${impactBadge} ${escapeHtml(item.title)}</div>
         <div class="news-meta">
           <span class="news-source">${domain || (item.author || 'source')}</span>
           <span class="badge ${biasBadge(bias.bias)}" style="font-size:0.65rem;">${bias.label}</span>
           <span>${ago}</span>
+          ${isToday ? '<span style="color:var(--green);">📅 Today</span>' : ''}
         </div>
       </div>
     </a>`;
