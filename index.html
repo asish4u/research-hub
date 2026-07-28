@@ -155,13 +155,6 @@
     text-decoration: none; color: inherit;
   }
   .news-item:hover { border-color: var(--accent); }
-  .news-rank {
-    font-size: 0.75rem; font-weight: 700; color: var(--text2);
-    min-width: 1.5rem; text-align: center; padding-top: 0.1rem; flex-shrink: 0;
-  }
-  .news-rank.top1 { color: #fbbf24; }
-  .news-rank.top2 { color: #9ca3af; }
-  .news-rank.top3 { color: #d97706; }
   .news-body { flex: 1; min-width: 0; }
   .news-title { font-size: 0.9rem; font-weight: 600; line-height: 1.4; color: var(--text); }
   .news-item:hover .news-title { color: var(--accent); }
@@ -170,8 +163,6 @@
     font-size: 0.75rem; color: var(--text2); margin-top: 0.35rem;
   }
   .news-source { font-weight: 600; }
-  .news-score { color: var(--text2); }
-  .news-score strong { color: var(--green); }
   .news-loader {
     text-align: center; padding: 2rem; color: var(--text2);
   }
@@ -198,7 +189,6 @@
     .card .top { flex-direction: column; align-items: flex-start; }
     .badge { align-self: flex-start; }
     .news-item { flex-direction: column; gap: 0.3rem; }
-    .news-rank { text-align: left; }
   }
 </style>
 </head>
@@ -310,7 +300,7 @@
 </div>
 
 <div class="footer">
-  <p>Bias ratings from <a href="https://www.allsides.com/media-bias" target="_blank">AllSides</a> · News via <a href="https://www.reddit.com" target="_blank">Reddit</a> · <a href="https://researchguides.waketech.edu/az/databases" target="_blank">Wake Tech A-Z</a> · <a href="https://www.nclive.org" target="_blank">NC LIVE</a></p>
+  <p>Bias ratings from <a href="https://www.allsides.com/media-bias" target="_blank">AllSides</a> · News via RSS feeds (BBC, NPR, AP, Bloomberg, CNBC, HN, MIT, The Hindu, Indian Express, Reuters & more) · <a href="https://researchguides.waketech.edu/az/databases" target="_blank">Wake Tech A-Z</a> · <a href="https://www.nclive.org" target="_blank">NC LIVE</a></p>
 </div>
 
 <script>
@@ -408,6 +398,16 @@ const BIAS = {
   'mit.edu':              { bias: 'center', label: 'Academic' },
   'stanford.edu':         { bias: 'center', label: 'Academic' },
   'harvard.edu':          { bias: 'center', label: 'Academic' },
+  'venturebeat.com':      { bias: 'center', label: 'Tech / Center' },
+  'techmeme.com':         { bias: 'center', label: 'Tech / Aggregator' },
+  'cnbc.com':             { bias: 'leanleft', label: 'Lean Left' },
+  'marketwatch.com':      { bias: 'center', label: 'Center' },
+  'ft.com':               { bias: 'center', label: 'Center' },
+  'indianexpress.com':    { bias: 'center', label: 'Center' },
+  'hindustantimes.com':   { bias: 'center', label: 'Center' },
+  'politico.com':         { bias: 'leanleft', label: 'Lean Left' },
+  'feeds.ap.org':         { bias: 'center', label: 'Factual' },
+  'technologyreview.com': { bias: 'center', label: 'Academic' },
   'medium.com':           { bias: 'center', label: 'User Blog' },
   'substack.com':         { bias: 'center', label: 'User Blog' },
   'ycombinator.com':      { bias: 'center', label: 'Tech / Center' },
@@ -492,41 +492,26 @@ function renderNews(category, items) {
     }
   });
 
-  // Sort: today's stories first (breaking), then by feed order (= editorial impact)
+  // Server already sorts by pubDate (newest first = highest impact)
+  // Just add Breaking/Today badges
   const now = Date.now();
   const today = new Date();
   today.setHours(0,0,0,0);
   const todayTs = today.getTime();
 
-  const sorted = [...items].sort((a, b) => {
-    const aPub = a.pubDate ? new Date(a.pubDate).getTime() : 0;
-    const bPub = b.pubDate ? new Date(b.pubDate).getTime() : 0;
-    const aToday = aPub >= todayTs ? 1 : 0;
-    const bToday = bPub >= todayTs ? 1 : 0;
-    if (aToday !== bToday) return bToday - aToday; // today's first
-    return bPub - aPub; // newest first within same recency
-  });
-
-  grid.innerHTML = sorted.map((item, i) => {
+  grid.innerHTML = items.map((item) => {
     const domain = extractDomain(item.link);
     const bias = getBias(domain);
-    const rank = i + 1;
-    let rankClass = '';
-    if (rank === 1) rankClass = 'top1';
-    else if (rank === 2) rankClass = 'top2';
-    else if (rank === 3) rankClass = 'top3';
-
     const ago = timeAgo(item.pubDate);
-    const pubTs = item.pubDate ? new Date(item.pubDate).getTime() : 0;
+    const pubTs = item.pubDateMs || (item.pubDate ? new Date(item.pubDate).getTime() : 0);
     const isBreaking = (now - pubTs) < 7200000; // within 2 hours
     const isToday = pubTs >= todayTs;
 
     let impactBadge = '';
     if (isBreaking) impactBadge = '<span class="popular-badge" style="background:var(--red);color:#fff;">🔴 Breaking</span>';
-    else if (isToday && rank <= 3) impactBadge = '<span class="popular-badge" style="background:var(--orange);">🔥 Top</span>';
+    else if (isToday) impactBadge = '<span class="popular-badge" style="background:var(--orange);">🔥 Today</span>';
 
     return `<a href="${item.link}" target="_blank" rel="noopener" class="news-item">
-      <div class="news-rank ${rankClass}">#${rank}</div>
       <div class="news-body">
         <div class="news-title">${impactBadge} ${escapeHtml(item.title)}</div>
         <div class="news-meta">
