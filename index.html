@@ -522,28 +522,19 @@ function renderNews(category, items) {
     else if (newsCache[t.dataset.news]) c.textContent = newsCache[t.dataset.news].length;
   });
 
-  const now = Date.now();
-  const today = new Date(); today.setHours(0,0,0,0);
-  const todayTs = today.getTime();
-
   grid.innerHTML = items.map((item) => {
     const domain = extractDomain(item.link);
     const bias = getBias(domain || 'bbc.co.uk');
     const ago = timeAgo(item.pubDate);
     const pubTs = item.pubDateMs || (item.pubDate ? new Date(item.pubDate).getTime() : 0);
-    const isToday = pubTs >= todayTs;
-
-    let impactBadge = '';
-    if (isToday) impactBadge = '<span class="popular-badge" style="background:var(--orange);">🔥 Today</span>';
 
     return `<a href="${item.link}" target="_blank" rel="noopener" class="news-item">
       <div class="news-body">
-        <div class="news-title">${impactBadge} ${escapeHtml(item.title)}</div>
+        <div class="news-title">${escapeHtml(item.title)}</div>
         <div class="news-meta">
           <span class="news-source">${domain || (item.author || 'source')}</span>
           <span class="badge ${biasBadge(bias.bias)}" style="font-size:0.65rem;">${bias.label}</span>
           <span>${ago}</span>
-          ${isToday ? '<span style="color:var(--green);">📅 Today</span>' : ''}
         </div>
       </div>
     </a>`;
