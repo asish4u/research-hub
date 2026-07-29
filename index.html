@@ -218,7 +218,8 @@
     <button class="section-btn" data-section="archives">📚 Archives</button>
     <button class="section-btn" data-section="ai">🤖 AI Spaces</button>
     <button class="section-btn" data-section="deals">💰 Deals</button>
-    <button class="section-btn" data-section="nc">📍 NC Libraries</button>
+    <button class="section-btn" data-section="nearby">🏠 Local Libraries</button>
+    <button class="section-btn" data-section="nc">🏫 NC Wake Resources</button>
     <button class="section-btn" data-section="intl">🌐 International</button>
     <button class="section-btn" data-section="india">🇮🇳 India</button>
   </div>
@@ -900,65 +901,24 @@ function render() {
     const isIH = items.some(d => d.section === 'india');
     html += `<div class="category-section"><h3>${isIH ? '🇮🇳 ' : ''}${cat} <span class="count">(${items.length})</span></h3><div class="db-grid">`;
     items.forEach(d => {
-      const b = getAccessInfo(d.access);
-      <!-- ════════════════════════════════════════════════════════════ -->
-  <!-- ARCHIVES SECTION -->
-  <!-- ════════════════════════════════════════════════════════════ -->
-  <div id="archivesSection" style="display:none;">
-    <div class="featured-section">
-      <h2 class="news-h2">Data Archives <span style="font-size:0.75rem;color:var(--text2);font-weight:400;">— free research data & books</span></h2>
-      <div class="db-grid" id="archivesGrid">
-        <div class="card"><div class="top"><div class="name-wrapper"><span class="name">Anna's Archive</span></div><span class="badge badge-scihub">⚡ Free</span></div><div class="desc">200M+ books, papers, comics, magazines. Largest shadow library.</div></div>
-        <div class="card"><div class="top"><div class="name-wrapper"><span class="name">The Eye</span></div><span class="badge badge-open">Open</span></div><div class="desc">Public domain & open data archive. Books, software, datasets.</div></div>
-        <div class="card"><div class="top"><div class="name-wrapper"><span class="name">Sci-Hub</span></div><span class="badge badge-scihub">⚡ Free</span></div><div class="desc">85M+ research papers. Bypass paywalls for academic access.</div></div>
-        <div class="card"><div class="top"><div class="name-wrapper"><span class="name">Internet Archive</span></div><span class="badge badge-open">Open</span></div><div class="desc">Books, software, web pages, audio, video. Wayback Machine.</div></div>
-        <div class="card"><div class="top"><div class="name-wrapper"><span class="name">Library Genesis</span></div><span class="badge badge-scihub">⚡ Free</span></div><div class="desc">Books, comics, magazines. Multiple mirrors available.</div></div>
-        <div class="card"><div class="top"><div class="name-wrapper"><span class="name">Z-Library</span></div><span class="badge badge-scihub">⚡ Free</span></div><div class="desc">Books, articles. Selective access (check for open mirrors).</div></div>
-        <div class="card"><div class="top"><div class="name-wrapper"><span class="name">Harvard Dataverse</span></div><span class="badge badge-open">Open</span></div><div class="desc">Research datasets from Harvard and global institutions.</div></div>
-        <div class="card"><div class="top"><div class="name-wrapper"><span class="name">Figshare</span></div><span class="badge badge-open">Open</span></div><div class="desc">Research data, figures, datasets. Free upload & sharing.</div></div>
-      </div>
-    </div>
-  </div>
+  const iCard = d.section === 'india';
+  html += `<div class="card ${iCard ? 'india-card' : ''}"><div class="top"><div class="name-wrapper"><span class="name">${d.name}</span>${d.popular ? '<span class="popular-badge">★ Popular</span>' : ''}</div><span class="badge ${b.badge}">${b.label}</span></div><div class="desc">${d.desc}</div></div>`;
+});
+html += `</div></div>`;
+}
+container.innerHTML = html;
+container.querySelectorAll('.card').forEach(card => {
+  card.addEventListener('click', () => {
+    const n = card.querySelector('.name');
+    if (!n) return;
+    const db = databases.find(d => d.name === n.textContent);
+    if (db) window.open(db.url, '_blank');
+  });
+});
 
-  <!-- ════════════════════════════════════════════════════════════ -->
-  <!-- AI SPACES SECTION -->
-  <!-- ════════════════════════════════════════════════════════════ -->
-  <div id="aiSection" style="display:none;">
-    <div class="featured-section">
-      <h2 class="news-h2">AI Spaces <span style="font-size:0.75rem;color:var(--text2);font-weight:400;">— free AI demos & tools</span></h2>
-      <div class="db-grid" id="aiGrid">
-        <div class="card"><div class="top"><div class="name-wrapper"><span class="name">Hugging Face Spaces</span></div><span class="badge badge-open">Open</span></div><div class="desc">100K+ AI demos: text, image, video, audio, 3D, chatbots, LLMs, diffusion.</div></div>
-        <div class="card"><div class="top"><div class="name-wrapper"><span class="name">Replicate</span></div><span class="badge badge-open">Open</span></div><div class="desc">Run AI models in the cloud. GPU-powered demos.</div></div>
-        <div class="card"><div class="top"><div class="name-wrapper"><span class="name">Modal</span></div><span class="badge badge-open">Open</span></div><div class="desc">AI demos with GPU. Build & deploy AI apps.</div></div>
-        <div class="card"><div class="top"><div class="name-wrapper"><span class="name">Gradio</span></div><span class="badge badge-open">Open</span></div><div class="desc">Interactive AI demos. Build & share ML apps.</div></div>
-        <div class="card"><div class="top"><div class="name-wrapper"><span class="name">Streamlit</span></div><span class="badge badge-open">Open</span></div><div class="desc">AI/ML apps & demos. Python-based.</div></div>
-        <div class="card"><div class="top"><div class="name-wrapper"><span class="name">Replicate Spaces</span></div><span class="badge badge-open">Open</span></div><div class="desc">Community AI demos. Run models in the cloud.</div></div>
-        <div class="card"><div class="top"><div class="name-wrapper"><span class="name">AI Compass</span></div><span class="badge badge-open">Open</span></div><div class="desc">Curated AI demos. Find the best AI tools.</div></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ════════════════════════════════════════════════════════════ -->
-  <!-- DEALS SECTION -->
-  <!-- ════════════════════════════════════════════════════════════ -->
-  <div id="dealsSection" style="display:none;">
-    <div class="featured-section">
-      <h2 class="news-h2">Tech Deals <span style="font-size:0.75rem;color:var(--text2);font-weight:400;">— best tech & data bargains</span></h2>
-      <div class="db-grid" id="dealsGrid">
-        <div class="card"><div class="top"><div class="name-wrapper"><span class="name">Slickdeals</span></div><span class="badge badge-open">Open</span></div><div class="desc">Community-voted tech deals. Best bargains on gadgets, software, accessories.</div></div>
-        <div class="card"><div class="top"><div class="name-wrapper"><span class="name">TechBargains</span></div><span class="badge badge-open">Open</span></div><div class="desc">Curated tech deals. Expert reviews & buying guidance.</div></div>
-        <div class="card"><div class="top"><div class="name-wrapper"><span class="name">Deals of America</span></div><span class="badge badge-open">Open</span></div><div class="desc">US tech deals. Daily updated bargains on electronics, gadgets, accessories.</div></div>
-        <div class="card"><div class="top"><div class="name-wrapper"><span class="name">Offers.com</span></div><span class="badge badge-open">Open</span></div><div class="desc">Tech section with verified discounts & exclusive promotions.</div></div>
-        <div class="card"><div class="top"><div class="name-wrapper"><span class="name">Amazon Warehouse</span></div><span class="badge badge-open">Open</span></div><div class="desc">Open-box & refurbished tech. Discounts on Amazon returns & overstock.</div></div>
-        <div class="card"><div class="top"><div class="name-wrapper"><span class="name">eBay Deals</span></div><span class="badge badge-open">Open</span></div><div class="desc">Tech section. New & refurbished electronics, gadgets, accessories.</div></div>
-        <div class="card"><div class="top"><div class="name-wrapper"><span class="name">Newegg Daily Deals</span></div><span class="badge badge-open">Open</span></div><div class="desc">PC & tech deals. Daily updated bargains on components, peripherals, gadgets.</div></div>
-      </div>
-    </div>
-  </div>
-
-<script>
-  // Add click handlers for the new sections
-  document.querySelectorAll('#archivesGrid .card, #aiGrid .card, #dealsGrid .card').forEach(card => {
+// Add click handlers for the new sections
+function setupNewSectionHandlers() {
+  document.querySelectorAll('#archivesGrid .card, #aiGrid .card, #dealsGrid .card, #nearbyGrid .card').forEach(card => {
     card.addEventListener('click', () => {
       const name = card.querySelector('.name').textContent;
       const urls = {
@@ -983,14 +943,213 @@ function render() {
         "Offers.com": 'https://www.offers.com',
         "Amazon Warehouse": 'https://www.amazon.com/warehouse-deals',
         "eBay Deals": 'https://www.ebay.com/deals',
-        "Newegg Daily Deals": 'https://www.newegg.com/DailyDeal'
+        "Newegg Daily Deals": 'https://www.newegg.com/DailyDeal',
+        "WorldCat": 'https://www.worldcat.org'
       };
       if (urls[name]) window.open(urls[name], '_blank');
     });
   });
+}
+
+// Initialize
+render();
+setupNewSectionHandlers();
 </script>
 
-  <script>
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- LOCAL LIBRARIES SECTION -->
+<!-- ═════════📚════════════════════════════════════════ -->
+<div id="nearbySection" style="display:none;">
+  <div class="featured-section">
+    <h2 class="news-h2">Local Libraries <span style="font-size:0.75rem;color:var(--text2);font-weight:400;">— find physical books nearby</span></h2>
+    <div class="db-grid" id="nearbyGrid">
+      <div class="card">
+        <div class="top">
+          <div class="name-wrapper">
+            <span class="name">WorldCat</span>
+          </div>
+          <span class="badge badge-open">Open</span>
+        </div>
+        <div class="desc">Find books in 10,000+ libraries worldwide. Enter your location to see nearby copies.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* ── IMPROVED READABILITY ── */
+  :root {
+    --bg: #f8f9fa; /* Light background for readability */
+    --surface: #ffffff; /* White surface */
+    --surface2: #f1f3f4; /* Light gray for secondary surfaces */
+    --border: #e0e0e0; /* Light border */
+    --text: #202124; /* Dark text for readability */
+    --text2: #5f6368; /* Secondary text */
+    --accent: #1a73e8; /* Google blue */
+    --green: #188038;
+    --orange: #d58512;
+    --pink: #d01884;
+    --purple: #8e24aa;
+    --red: #d93025;
+    --india-saffron: #ff9933;
+    --india-green: #138808;
+  }
+  
+  body {
+    font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+  
+  .header {
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    border-bottom: 1px solid var(--border);
+  }
+  
+  .card, .news-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  }
+  
+  .card:hover, .news-item:hover {
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  }
+  
+  .name, .news-title {
+    color: var(--text);
+    font-weight: 500;
+  }
+  
+  .desc, .news-meta {
+    color: var(--text2);
+  }
+  
+  /* ── SECTION TOGGLE ── */
+  .section-toggle {
+    display: flex;
+    gap: 0.4rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    background: var(--surface);
+    padding: 0.5rem;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+  }
+  
+  .section-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    color: var(--text2);
+    font-size: 0.85rem;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-weight: 500;
+  }
+  
+  .section-btn:hover {
+    background: var(--surface);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  
+  .section-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+  }
+  
+  /* ── CARD LAYOUT ── */
+  .db-grid, .news-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1rem;
+  }
+  
+  .card, .news-item {
+    border-radius: 10px;
+    padding: 1rem;
+    transition: all 0.15s;
+    cursor: pointer;
+  }
+  
+  .card:hover, .news-item:hover {
+    border-color: var(--accent);
+  }
+  
+  .name-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .name {
+    font-size: 1rem;
+    font-weight: 500;
+  }
+  
+  .desc {
+    font-size: 0.85rem;
+    line-height: 1.5;
+  }
+  
+  /* ── BADGES ── */
+  .badge {
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.2rem 0.6rem;
+    border-radius: 20px;
+    letter-spacing: 0.02em;
+  }
+  
+  .badge-open { background: #e8f0fe; color: var(--accent); border: 1px solid #d2e3fc; }
+  .badge-scihub { background: #fce8e6; color: var(--red); border: 1px solid #f9c0bb; }
+  .badge-shared { background: #e6f4ea; color: var(--green); border: 1px solid #b7e1cd; }
+  .badge-wtech { background: #f3e5f5; color: var(--purple); border: 1px solid #e1bee7; }
+  .badge-wake { background: #fff3e0; color: var(--orange); border: 1px solid #ffe0b2; }
+  .badge-india { background: #fff8e1; color: var(--india-saffron); border: 1px solid #ffecb3; }
+  
+  .popular-badge {
+    font-size: 0.65rem;
+    background: var(--orange);
+    color: white;
+    padding: 0.1rem 0.4rem;
+    border-radius: 3px;
+    font-weight: 600;
+  }
+  
+  /* ── NEWS SECTION ── */
+  .news-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .news-title {
+    font-size: 0.9rem;
+    font-weight: 500;
+    line-height: 1.4;
+  }
+  
+  .news-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    font-size: 0.75rem;
+    align-items: center;
+  }
+  
+  .news-source {
+    font-weight: 500;
+  }
+</style>
+
+<script>
   // Update section toggle logic
   document.querySelectorAll('.section-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -1018,6 +1177,8 @@ function render() {
         document.getElementById('aiSection').style.display = 'block';
       } else if (section === 'deals') {
         document.getElementById('dealsSection').style.display = 'block';
+      } else if (section === 'nearby') {
+        document.getElementById('nearbySection').style.display = 'block';
       } else if (section === 'nc') {
         document.getElementById('searchSection').style.display = 'block';
         document.querySelectorAll('.card').forEach(card => {
@@ -1047,12 +1208,5 @@ function render() {
   document.querySelector('.section-btn[data-section="all"]').click();
 </script>
 
-<script>
-  function renderDatabases() {
-    // ... existing renderDatabases function ...
-  }
-
-  render();
-</script>
 </body>
 </html>
