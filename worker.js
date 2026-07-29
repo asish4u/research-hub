@@ -58,10 +58,11 @@ export default {
       return handleNews(category);
     }
 
-    // Serve static assets (index.html etc.) from the project directory
+    // Serve index.html for all other paths
     return env.ASSETS.fetch(request);
   }
 };
+
 
 async function handleNews(category) {
   const feedUrls = FEEDS[category];
