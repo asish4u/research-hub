@@ -2,5 +2,5 @@ name = "research-hub"
 main = "worker.js"
 compatibility_date = "2024-09-23"
 
-# Serve only index.html as static asset; exclude node_modules
-assets = { directory = "./", binding = "ASSETS", html_handling = "auto-trailing-slash", not_found_handling = "single-page-application", include = ["index.html"] }
+# Serve static assets from public/ directory (keeps node_modules out)
+assets = { directory = "./public", binding = "ASSETS", html_handling = "auto-trailing-slash", not_found_handling = "single-page-application" }

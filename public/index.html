@@ -1,0 +1,1212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Research Hub — Databases + News with Bias Scores</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --bg: #0d1117; --surface: #161b22; --surface2: #1c2333;
+    --border: #30363d; --text: #e6edf3; --text2: #8b949e;
+    --accent: #58a6ff; --green: #3fb950; --orange: #d29922;
+    --pink: #f778ba; --purple: #bc8cff; --red: #f85145;
+    --india-saffron: #ff9933; --india-green: #138808;
+    --radius: 8px; --radius-sm: 6px;
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+    background: var(--bg); color: var(--text); line-height: 1.6; min-height: 100vh;
+  }
+  /* ── Accessibility ── */
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); border: 0; }
+  a { color: var(--accent); }
+
+  .header {
+    background: linear-gradient(135deg, #0d1117 0%, #161b22 50%, #1c2333 100%);
+    border-bottom: 1px solid var(--border); padding: 2rem 1.5rem 1.5rem; text-align: center;
+  }
+  .header h1 { font-size: 1.8rem; font-weight: 700; }
+  .header h1 span { color: var(--accent); }
+  .header p { color: var(--text2); margin-top: 0.4rem; font-size: 0.95rem; max-width: 680px; margin: 0.4rem auto 0; }
+  .badge {
+    display: inline-block; font-size: 0.7rem; font-weight: 600;
+    padding: 0.15rem 0.55rem; border-radius: 999px; letter-spacing: 0.02em; white-space: nowrap;
+  }
+  .badge-shared { background: #0b2e1a; color: var(--green); border: 1px solid #1a4f2e; }
+  .badge-wtech { background: #1c1335; color: var(--purple); border: 1px solid #3b2870; }
+  .badge-wake { background: #1c1a10; color: var(--orange); border: 1px solid #4d3d1a; }
+  .badge-open { background: #1a1a2e; color: var(--pink); border: 1px solid #4a1a5e; }
+  .badge-scihub { background: #1a0e0e; color: var(--red); border: 1px solid #5a1a1a; }
+  .badge-india { background: #1a1508; color: var(--india-saffron); border: 1px solid #4a3510; }
+  .badge-left { background: #1a0a2e; color: #a78bfa; border: 1px solid #3b1a5e; }
+  .badge-leanleft { background: #1a1030; color: #a78bfa; border: 1px solid #302060; }
+  .badge-center { background: #1a1a1a; color: #9ca3af; border: 1px solid #333; }
+  .badge-leanright { background: #2e1a0a; color: #fbbf24; border: 1px solid #5e3b1a; }
+  .badge-right { background: #2e0a0a; color: #f87171; border: 1px solid #5e1a1a; }
+  .badge-factual { background: #0a1a2e; color: #93c5fd; border: 1px solid #1a3b5e; }
+
+  .container { max-width: 1100px; margin: 0 auto; padding: 1.5rem; }
+
+  /* ── LOGIN BAR ── */
+  .login-bar {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 0.75rem 1rem; margin-bottom: 1.25rem;
+    display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; font-size: 0.85rem;
+  }
+
+  /* ── SECTION TOGGLE ── */
+  .section-toggle { display: flex; gap: 0.5rem; margin-bottom: 1.25rem; flex-wrap: wrap; }
+  .section-btn {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
+    color: var(--text2); font-size: 0.85rem; padding: 0.55rem 1.1rem;
+    cursor: pointer; transition: all 0.15s; font-weight: 500;
+  }
+  .section-btn:hover { border-color: var(--text2); color: var(--text); }
+  .section-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  .controls { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center; margin-bottom: 1rem; }
+  .search-box {
+    flex: 1; min-width: 180px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 0.65rem 1rem; color: var(--text); font-size: 0.9rem; outline: none; transition: border-color 0.2s;
+  }
+  .search-box:focus { border-color: var(--accent); }
+  .filter-group { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+  .filter-btn {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
+    color: var(--text2); font-size: 0.8rem; padding: 0.45rem 0.85rem;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .filter-btn:hover { border-color: var(--text2); color: var(--text); }
+  .filter-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  .stats { color: var(--text2); font-size: 0.85rem; margin-bottom: 1rem; }
+  .subject-pills { display: flex; gap: 0.35rem; flex-wrap: wrap; margin-bottom: 1rem; }
+  .subject-pill {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 999px;
+    color: var(--text2); font-size: 0.75rem; padding: 0.3rem 0.7rem;
+    cursor: pointer; transition: all 0.15s; white-space: nowrap;
+  }
+  .subject-pill:hover { border-color: var(--text2); color: var(--text); }
+  .subject-pill.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  /* ── FEATURED SECTIONS ── */
+  .featured-section { margin-bottom: 2rem; }
+  .featured-section h2 {
+    font-size: 1.1rem; font-weight: 600; margin-bottom: 0.75rem;
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+  .featured-section h2.hub { color: var(--accent); }
+  .featured-section h2.hub::before { content: '★'; color: var(--orange); font-size: 1.2rem; }
+  .featured-section h2.scihub-section { color: var(--red); }
+  .featured-section h2.scihub-section::before { content: '⚡'; color: var(--red); font-size: 1.2rem; }
+  .featured-section h2.international { color: var(--pink); }
+  .featured-section h2.international::before { content: '🌐'; font-size: 1.2rem; }
+  .featured-section h2.india-h2 { color: var(--india-saffron); }
+  .featured-section h2.india-h2::before { content: '🇮🇳'; font-size: 1.2rem; }
+  .featured-section h2.news-h2 { color: #60a5fa; }
+  .featured-section h2.news-h2::before { content: '📰'; font-size: 1.2rem; }
+
+  .featured-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 0.75rem; }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 1rem 1.1rem; transition: all 0.2s; cursor: pointer; text-decoration: none; display: block;
+  }
+  .card.featured { background: linear-gradient(135deg, var(--surface), var(--surface2)); }
+  .card:hover { border-color: var(--accent); transform: translateY(-1px); }
+  .card.scihub-card { background: linear-gradient(135deg, #1a0e0e, #2a1010); border-color: #3a2020; }
+  .card.scihub-card:hover { border-color: var(--red); }
+  .card.india-card { background: linear-gradient(135deg, #1a1508, #1c1a0c); border-color: #3a3010; }
+  .card.india-card:hover { border-color: var(--india-saffron); }
+  .card .top { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; margin-bottom: 0.3rem; }
+  .card .name { font-weight: 600; font-size: 0.9rem; color: var(--accent); }
+  .card.scihub-card .name { color: var(--red); font-size: 1rem; }
+  .card.india-card .name { color: var(--india-saffron); }
+  .card .desc { font-size: 0.82rem; color: var(--text2); line-height: 1.5; }
+  .card .name-wrapper { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
+  .popular-badge { font-size: 0.65rem; background: var(--orange); color: #000; padding: 0.1rem 0.4rem; border-radius: 3px; font-weight: 700; }
+
+  /* ── NEWS SECTION ── */
+  .news-controls { display: flex; gap: 0.4rem; margin-bottom: 1rem; flex-wrap: wrap; }
+  .news-tab {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 20px;
+    color: var(--text2); font-size: 0.82rem; padding: 0.4rem 0.9rem;
+    cursor: pointer; transition: all 0.15s; font-weight: 500; white-space: nowrap;
+  }
+  .news-tab:hover { background: var(--surface2); border-color: var(--text2); color: var(--text); }
+  .news-tab.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .news-tab .count { opacity: 0.7; font-weight: 400; margin-left: 0.25rem; }
+
+  .news-refresh {
+    margin-left: auto; background: var(--surface); border: 1px solid var(--border); border-radius: 20px;
+    color: var(--text2); font-size: 0.78rem; padding: 0.4rem 0.9rem; cursor: pointer; transition: all 0.15s;
+  }
+  .news-refresh:hover { background: var(--surface2); border-color: var(--accent); color: var(--accent); }
+
+  .news-grid { display: flex; flex-direction: column; gap: 0.5rem; }
+  .news-item {
+    display: flex; gap: 0.6rem; align-items: flex-start;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    padding: 0.65rem 0.9rem; transition: all 0.15s; cursor: pointer;
+    text-decoration: none; color: inherit;
+  }
+  .news-item:hover { background: var(--surface2); border-color: var(--accent); }
+  .news-body { flex: 1; min-width: 0; }
+  .news-title { font-size: 0.85rem; font-weight: 500; line-height: 1.4; color: var(--text); }
+  .news-item:hover .news-title { color: var(--accent); }
+  .news-meta {
+    display: flex; flex-wrap: wrap; gap: 0.35rem; align-items: center;
+    font-size: 0.72rem; color: var(--text2); margin-top: 0.3rem;
+  }
+  .news-source { font-weight: 600; color: var(--text2); }
+  .news-loader {
+    text-align: center; padding: 2rem; color: var(--text2);
+  }
+  .news-loader .spinner {
+    display: inline-block; width: 1.4rem; height: 1.4rem;
+    border: 2px solid var(--border); border-top-color: var(--accent);
+    border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 0.5rem;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .news-error { text-align: center; padding: 2rem; color: var(--orange); }
+
+  .category-section { margin-bottom: 1.5rem; }
+  .category-section h3 {
+    font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem;
+    padding-bottom: 0.4rem; border-bottom: 1px solid var(--border); color: var(--text);
+  }
+  .category-section h3 .count { color: var(--text2); font-weight: 400; font-size: 0.85rem; }
+  .db-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 0.75rem; }
+  .empty { text-align: center; padding: 3rem 1rem; color: var(--text2); }
+  .footer { border-top: 1px solid var(--border); padding: 1.5rem; text-align: center; color: var(--text2); font-size: 0.8rem; }
+
+  @media (max-width: 640px) {
+    .header h1 { font-size: 1.3rem; }
+    .card .top { flex-direction: column; align-items: flex-start; }
+    .badge { align-self: flex-start; }
+    .news-item { flex-direction: column; gap: 0.3rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>📚 <span>Research Hub</span></h1>
+  <p>Databases + Live News with Bias Ratings. Wake Tech · Wake County · NC LIVE · Open Access · India · Sci-Hub</p>
+</div>
+
+<div class="container">
+
+  <!-- ── LOGIN BAR ── -->
+  <div class="login-bar">
+    <span><span class="badge badge-shared">NC LIVE</span> Wake County card <strong>or</strong> Wake Tech ID</span>
+    <span><span class="badge badge-wtech">Wake Tech</span> Student login</span>
+    <span><span class="badge badge-wake">Wake County</span> Library card</span>
+    <span><span class="badge badge-open">Open</span> Free to all</span>
+    <span><span class="badge badge-india">🇮🇳 India</span> Free / Open</span>
+    <a href="https://www.nclive.org/login/select-your-library" target="_blank" style="margin-left:auto;">🔑 NC LIVE Login →</a>
+  </div>
+
+  <!-- ── SECTION TOGGLE ── -->
+  <div class="section-toggle" id="mainToggle">
+    <button class="section-btn active" data-section="all">🗂️ All</button>
+    <button class="section-btn" data-section="news">📰 News</button>
+    <button class="section-btn" data-section="archives">📚 Archives</button>
+    <button class="section-btn" data-section="ai">🤖 AI Spaces</button>
+    <button class="section-btn" data-section="deals">💰 Deals</button>
+    <button class="section-btn" data-section="nearby">🏠 Local Libraries</button>
+    <button class="section-btn" data-section="nc">🏫 NC Wake Resources</button>
+    <button class="section-btn" data-section="intl">🌐 International</button>
+    <button class="section-btn" data-section="india">🇮🇳 India</button>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════ -->
+  <!-- NEWS SECTION -->
+  <!-- ════════════════════════════════════════════════════════════ -->
+  <div id="newsSection" style="display:none;">
+    <div class="featured-section">
+      <h2 class="news-h2">Live News <span style="font-size:0.75rem;color:var(--text2);font-weight:400;">— bias-rated, sorted by importance</span></h2>
+
+      <div class="news-controls" role="tablist" aria-label="News categories">
+        <button class="news-tab active" data-news="world" role="tab" aria-selected="true">🌍 World <span class="count"></span></button>
+        <button class="news-tab" data-news="tech" role="tab">💻 Tech <span class="count"></span></button>
+        <button class="news-tab" data-news="business" role="tab">📈 Business <span class="count"></span></button>
+        <button class="news-tab" data-news="ai" role="tab">🤖 AI <span class="count"></span></button>
+        <button class="news-tab" data-news="us" role="tab">🇺🇸 US <span class="count"></span></button>
+        <button class="news-tab" data-news="india" role="tab">🇮🇳 India <span class="count"></span></button>
+        <button class="news-refresh" id="newsRefresh" title="Refresh news">⟳ Refresh</button>
+      </div>
+
+      <div style="margin-bottom:0.75rem;display:flex;flex-wrap:wrap;gap:0.3rem;font-size:0.7rem;color:var(--text2);">
+        <span class="badge badge-left">Left</span>
+        <span class="badge badge-leanleft">Lean Left</span>
+        <span class="badge badge-center">Center</span>
+        <span class="badge badge-leanright">Lean Right</span>
+        <span class="badge badge-right">Right</span>
+        <span class="badge badge-factual">Factual</span>
+        <span style="margin-left:0.5rem;">News via <strong>BBC RSS</strong> (CORS-enabled) · ↑ Bias ratings by <a href="https://www.allsides.com/media-bias" target="_blank" style="color:var(--accent);">AllSides</a></span>
+      </div>
+
+      <div class="news-grid" id="newsGrid" role="feed" aria-label="News articles">
+        <div class="news-loader"><div class="spinner"></div>Loading news…</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════ -->
+  <!-- DATABASES SECTION -->
+  <!-- ════════════════════════════════════════════════════════════ -->
+  <div id="dbSection">
+
+    <div class="controls">
+      <input type="text" class="search-box" id="search" placeholder="Search databases by name or keyword…" autofocus>
+      <div class="filter-group" id="accessFilters">
+        <button class="filter-btn active" data-filter="all">All</button>
+        <button class="filter-btn" data-filter="shared">NC LIVE</button>
+        <button class="filter-btn" data-filter="wtech">Wake Tech</button>
+        <button class="filter-btn" data-filter="wake">Wake County</button>
+        <button class="filter-btn" data-filter="open">Open Access</button>
+        <button class="filter-btn" data-filter="india">🇮🇳 India</button>
+      </div>
+    </div>
+
+    <div class="subject-pills" id="subjectPills"></div>
+    <div class="stats" id="stats"></div>
+
+    <!-- Spotlight sections -->
+    <div class="featured-section" id="featuredSection">
+      <h2 class="hub">Popular Picks</h2>
+      <div class="featured-grid" id="featuredGrid"></div>
+    </div>
+
+    <div class="featured-section" id="scihubSection">
+      <h2 class="scihub-section">Sci-Hub — Free Research Papers</h2>
+      <div class="featured-grid" id="scihubGrid"></div>
+    </div>
+
+    <div class="featured-section" id="indiaSection">
+      <h2 class="india-h2">🇮🇳 India Research Resources</h2>
+      <div class="featured-grid" id="indiaGrid"></div>
+    </div>
+
+    <div class="featured-section" id="intlSection">
+      <h2 class="international">🌐 Global Open Access</h2>
+      <div class="featured-grid" id="intlGrid"></div>
+    </div>
+
+    <div id="dbContainer"></div>
+  </div>
+
+</div>
+
+<div class="footer">
+  <p>Bias ratings from <a href="https://www.allsides.com/media-bias" target="_blank">AllSides</a> · News via <a href="https://feeds.bbci.co.uk/news/world/rss.xml" target="_blank">BBC RSS</a> (CORS-enabled, no server) · <a href="https://researchguides.waketech.edu/az/databases" target="_blank">Wake Tech A-Z</a> · <a href="https://www.nclive.org" target="_blank">NC LIVE</a></p>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════
+// BIAS RATINGS (AllSides)
+// ═══════════════════════════════════════════════════════════════════
+const BIAS = {
+  // Left
+  'msnbc.com':            { bias: 'left', label: 'Left' },
+  'huffpost.com':         { bias: 'left', label: 'Left' },
+  'vox.com':              { bias: 'left', label: 'Left' },
+  'huffingtonpost.com':   { bias: 'left', label: 'Left' },
+  'newyorker.com':        { bias: 'left', label: 'Lean Left' },
+  'theatlantic.com':      { bias: 'lefleft', label: 'Lean Left' },
+  'slate.com':            { bias: 'left', label: 'Left' },
+  'motherjones.com':      { bias: 'left', label: 'Left' },
+  'democracynow.org':     { bias: 'left', label: 'Left' },
+  'truthout.org':         { bias: 'left', label: 'Left' },
+  'commondreams.org':     { bias: 'left', label: 'Left' },
+  // Lean Left
+  'nytimes.com':          { bias: 'leanleft', label: 'Lean Left' },
+  'washingtonpost.com':   { bias: 'leanleft', label: 'Lean Left' },
+  'cnn.com':              { bias: 'leanleft', label: 'Lean Left' },
+  'nbcnews.com':          { bias: 'leanleft', label: 'Lean Left' },
+  'abcnews.go.com':       { bias: 'leanleft', label: 'Lean Left' },
+  'cbsnews.com':          { bias: 'leanleft', label: 'Lean Left' },
+  'theguardian.com':      { bias: 'leanleft', label: 'Lean Left' },
+  'bbc.com':              { bias: 'leanleft', label: 'Lean Left' },
+  'bbc.co.uk':            { bias: 'leanleft', label: 'Lean Left' },
+  'npr.org':              { bias: 'leanleft', label: 'Lean Left' },
+  'bloomberg.com':        { bias: 'leanleft', label: 'Lean Left' },
+  'politico.com':         { bias: 'leanleft', label: 'Lean Left' },
+  'time.com':             { bias: 'leanleft', label: 'Lean Left' },
+  'usatoday.com':         { bias: 'leanleft', label: 'Lean Left' },
+  'apnews.com':           { bias: 'leanleft', label: 'Lean Left' },
+  'newsweek.com':         { bias: 'leanleft', label: 'Lean Left' },
+  'buzzfeednews.com':     { bias: 'leanleft', label: 'Lean Left' },
+  'insider.com':          { bias: 'leanleft', label: 'Lean Left' },
+  'businessinsider.com':  { bias: 'leanleft', label: 'Lean Left' },
+  'newstatesman.com':     { bias: 'leanleft', label: 'Lean Left' },
+  'rollingstone.com':     { bias: 'leanleft', label: 'Lean Left' },
+  // Center
+  'reuters.com':          { bias: 'center', label: 'Center / Factual' },
+  'thehill.com':          { bias: 'center', label: 'Center' },
+  'csmonitor.com':        { bias: 'center', label: 'Center' },
+  'ap.org':               { bias: 'center', label: 'Factual' },
+  'economist.com':        { bias: 'center', label: 'Center' },
+  'wsj.com':              { bias: 'center', label: 'Center' },
+  'theamericanconservative.com': { bias: 'center', label: 'Center' },
+  'aljazeera.com':        { bias: 'center', label: 'Center' },
+  'dw.com':               { bias: 'center', label: 'Center' },
+  'france24.com':         { bias: 'center', label: 'Center' },
+  'scmp.com':             { bias: 'center', label: 'Center' },
+  'ndtv.com':             { bias: 'center', label: 'Center' },
+  'timesofindia.com':     { bias: 'center', label: 'Center' },
+  'thehindu.com':         { bias: 'center', label: 'Center' },
+  'hindustantimes.com':   { bias: 'center', label: 'Center' },
+  'indianexpress.com':    { bias: 'center', label: 'Center' },
+  'theprint.in':          { bias: 'center', label: 'Center' },
+  // Lean Right
+  'foxnews.com':          { bias: 'leanright', label: 'Lean Right' },
+  'nypost.com':           { bias: 'leanright', label: 'Lean Right' },
+  'washingtontimes.com':  { bias: 'leanright', label: 'Lean Right' },
+  'dailymail.co.uk':      { bias: 'leanright', label: 'Lean Right' },
+  'theblaze.com':         { bias: 'leanright', label: 'Lean Right' },
+  'nationalreview.com':   { bias: 'leanright', label: 'Lean Right' },
+  'spectator.org':        { bias: 'leanright', label: 'Lean Right' },
+  'dailywire.com':        { bias: 'leanright', label: 'Lean Right' },
+  'washingtonexaminer.com': { bias: 'leanright', label: 'Lean Right' },
+  'thefederalist.com':    { bias: 'leanright', label: 'Lean Right' },
+  'reason.com':           { bias: 'leanright', label: 'Lean Right' },
+  'newsmax.com':          { bias: 'leanright', label: 'Lean Right' },
+  // Right
+  'breitbart.com':        { bias: 'right', label: 'Right' },
+  'dailycaller.com':      { bias: 'right', label: 'Right' },
+  'infowars.com':         { bias: 'right', label: 'Right' },
+  'oann.com':             { bias: 'right', label: 'Right' },
+  'wnd.com':              { bias: 'right', label: 'Right' },
+  // Tech/Special (factual in their domain)
+  'techcrunch.com':       { bias: 'center', label: 'Tech / Center' },
+  'theverge.com':         { bias: 'leanleft', label: 'Lean Left' },
+  'wired.com':            { bias: 'leanleft', label: 'Lean Left' },
+  'arstechnica.com':      { bias: 'center', label: 'Center' },
+  'theregister.com':      { bias: 'center', label: 'Center' },
+  'zdnet.com':            { bias: 'center', label: 'Center' },
+  'cnet.com':             { bias: 'center', label: 'Center' },
+  'engadget.com':         { bias: 'center', label: 'Center' },
+  '9to5mac.com':          { bias: 'center', label: 'Center' },
+  'androidpolice.com':    { bias: 'center', label: 'Center' },
+  'sciencedaily.com':     { bias: 'center', label: 'Factual' },
+  'nature.com':           { bias: 'center', label: 'Factual' },
+  'science.org':          { bias: 'center', label: 'Factual' },
+  'nih.gov':              { bias: 'center', label: 'Factual' },
+  'newscientist.com':     { bias: 'center', label: 'Center' },
+  'mit.edu':              { bias: 'center', label: 'Academic' },
+  'stanford.edu':         { bias: 'center', label: 'Academic' },
+  'harvard.edu':          { bias: 'center', label: 'Academic' },
+  'venturebeat.com':      { bias: 'center', label: 'Tech / Center' },
+  'techmeme.com':         { bias: 'center', label: 'Tech / Aggregator' },
+  'cnbc.com':             { bias: 'leanleft', label: 'Lean Left' },
+  'marketwatch.com':      { bias: 'center', label: 'Center' },
+  'ft.com':               { bias: 'center', label: 'Center' },
+  'indianexpress.com':    { bias: 'center', label: 'Center' },
+  'hindustantimes.com':   { bias: 'center', label: 'Center' },
+  'politico.com':         { bias: 'leanleft', label: 'Lean Left' },
+  'feeds.ap.org':         { bias: 'center', label: 'Factual' },
+  'technologyreview.com': { bias: 'center', label: 'Academic' },
+  'medium.com':           { bias: 'center', label: 'User Blog' },
+  'substack.com':         { bias: 'center', label: 'User Blog' },
+  'ycombinator.com':      { bias: 'center', label: 'Tech / Center' },
+  'github.com':           { bias: 'center', label: 'Tech' },
+  'reddit.com':           { bias: 'center', label: 'Aggregator' }
+};
+
+function getBias(domain) {
+  const d = domain.replace(/^www\./, '');
+  if (BIAS[d]) return BIAS[d];
+  // Try broader match
+  const parts = d.split('.');
+  if (parts.length > 2) {
+    const sub = parts.slice(-2).join('.');
+    if (BIAS[sub]) return BIAS[sub];
+  }
+  return { bias: 'center', label: 'Unknown' };
+}
+
+function biasBadge(bias) {
+  return `badge-${bias}`;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// NEWS — Worker route /api/news (multi-source, server-side).
+//         Falls back to direct BBC RSS if the route isn't deployed yet.
+// ═══════════════════════════════════════════════════════════════════
+const BBC_FALLBACK = {
+  world:    'https://feeds.bbci.co.uk/news/world/rss.xml',
+  tech:     'https://feeds.bbci.co.uk/news/technology/rss.xml',
+  business: 'https://feeds.bbci.co.uk/news/business/rss.xml',
+  ai:       'https://feeds.bbci.co.uk/news/technology/rss.xml',
+  india:    'https://feeds.bbci.co.uk/news/world/asia/india/rss.xml',
+  us:       'https://feeds.bbci.co.uk/news/world/us_and_canada/rss.xml'
+};
+
+let activeNewsTab = 'world';
+let newsCache = {};
+
+function extractDomain(url) {
+  try { return new URL(url).hostname.replace(/^www\./, ''); } catch(e) { return ''; }
+}
+
+function decodeEntities(s) {
+  const t = document.createElement('textarea');
+  t.innerHTML = s;
+  return t.value;
+}
+
+function parseRSS(xmlText) {
+  const items = [];
+  const itemRe = /<item>([\s\S]*?)<\/item>/gi;
+  let m;
+  while ((m = itemRe.exec(xmlText)) !== null && items.length < 30) {
+    const block = m[1];
+    const get = (tag) => {
+      const r = new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, 'i').exec(block);
+      if (!r) return '';
+      let v = r[1].trim();
+      if (v.startsWith('<![CDATA[')) v = v.slice(9, v.lastIndexOf(']]>')).trim();
+      return decodeEntities(v);
+    };
+    const title = get('title');
+    let link = get('link') || '';
+    const pubDate = get('pubDate') || get('dc:date') || '';
+    if (title) {
+      items.push({ title, link, pubDate, pubDateMs: pubDate ? new Date(pubDate).getTime() : 0 });
+    }
+  }
+  return items;
+}
+
+function fetchNews(category) {
+  const grid = document.getElementById('newsGrid');
+  grid.innerHTML = '<div class="news-loader"><div class="spinner"></div><p>Loading news…</p></div>';
+
+  // Try the Worker API first
+  fetch('/api/news?category=' + category)
+    .then(r => {
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      return r.json();
+    })
+    .then(data => {
+      const items = data.items || [];
+      if (!items.length) throw new Error('empty');
+      newsCache[category] = items;
+      renderNews(category, items);
+    })
+    .catch(() => {
+      // Fallback: direct BBC fetch (CORS-enabled)
+      fetch(BBC_FALLBACK[category], { mode: 'cors' })
+        .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.text(); })
+        .then(xml => {
+          const items = parseRSS(xml);
+          if (!items.length) throw new Error('no items');
+          newsCache[category] = items;
+          renderNews(category, items);
+        })
+        .catch(err => {
+          if (newsCache[category]) { renderNews(category, newsCache[category]); return; }
+          grid.innerHTML = `<div class="news-error">⚠️ Could not load news. ${err.message}</div>`;
+        });
+    });
+}
+
+function renderNews(category, items) {
+  const grid = document.getElementById('newsGrid');
+
+  document.querySelectorAll('.news-tab').forEach(t => {
+    const c = t.querySelector('.count');
+    if (t.dataset.news === category) c.textContent = items.length;
+    else if (newsCache[t.dataset.news]) c.textContent = newsCache[t.dataset.news].length;
+  });
+
+  grid.innerHTML = items.map((item) => {
+    const domain = extractDomain(item.link);
+    const bias = getBias(domain || 'bbc.co.uk');
+    const ago = timeAgo(item.pubDate);
+    const pubTs = item.pubDateMs || (item.pubDate ? new Date(item.pubDate).getTime() : 0);
+
+    return `<a href="${item.link}" target="_blank" rel="noopener" class="news-item">
+      <div class="news-body">
+        <div class="news-title">${escapeHtml(item.title)}</div>
+        <div class="news-meta">
+          <span class="news-source">${domain || (item.author || 'source')}</span>
+          <span class="badge ${biasBadge(bias.bias)}" style="font-size:0.65rem;">${bias.label}</span>
+          <span>${ago}</span>
+        </div>
+      </div>
+    </a>`;
+  }).join('');
+}
+
+function timeAgo(pubDate) {
+  if (!pubDate) return '';
+  const utc = new Date(pubDate).getTime();
+  const sec = Math.floor((Date.now() - utc) / 1000);
+  if (sec < 0) return 'just now';
+  if (sec < 60) return 'just now';
+  if (sec < 3600) return `${Math.floor(sec/60)}m ago`;
+  if (sec < 86400) return `${Math.floor(sec/3600)}h ago`;
+  return `${Math.floor(sec/86400)}d ago`;
+}
+
+function escapeHtml(text) {
+  const d = document.createElement('div');
+  d.textContent = text;
+  return d.innerHTML;
+}
+
+// News tab clicks
+document.querySelectorAll('.news-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.news-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    activeNewsTab = tab.dataset.news;
+    if (newsCache[activeNewsTab]) {
+      renderNews(activeNewsTab, newsCache[activeNewsTab]);
+    } else {
+      fetchNews(activeNewsTab);
+    }
+  });
+});
+
+document.getElementById('newsRefresh').addEventListener('click', () => {
+  newsCache = {};
+  fetchNews(activeNewsTab);
+});
+
+// ═══════════════════════════════════════════════════════════════════
+// SECTION TOGGLE
+// ═══════════════════════════════════════════════════════════════════
+document.getElementById('mainToggle').addEventListener('click', e => {
+  const btn = e.target.closest('.section-btn');
+  if (!btn) return;
+  document.querySelectorAll('#mainToggle .section-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const section = btn.dataset.section;
+
+  const newsEl = document.getElementById('newsSection');
+  const dbEl = document.getElementById('dbSection');
+
+  if (section === 'news') {
+    newsEl.style.display = 'block';
+    dbEl.style.display = 'none';
+    // Fetch first news if not loaded
+    if (!newsCache[activeNewsTab]) fetchNews(activeNewsTab);
+  } else {
+    newsEl.style.display = 'none';
+    dbEl.style.display = 'block';
+    // If main section filter changed, update db view
+    if (section === 'nc') { activeAccessFilter = 'all'; activeSection = 'nc'; }
+    else if (section === 'intl') { activeAccessFilter = 'open'; activeSection = 'intl'; }
+    else if (section === 'india') { activeAccessFilter = 'india'; activeSection = 'all'; }
+    else { activeAccessFilter = 'all'; activeSection = 'all'; }
+    render();
+    // Update filter UI
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector(`.filter-btn[data-filter="${activeAccessFilter}"]`)?.classList.add('active');
+    document.querySelector('.section-btn[data-section="all"]')?.classList.add('active');
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════
+// DATABASE CATALOG
+// ═══════════════════════════════════════════════════════════════════
+const databases = [
+  // NC — Shared
+  { name: 'NC LIVE', desc: 'Portal to hundreds of databases — articles, ebooks, video. Start here.', cat: 'General', access: 'shared', section: 'nc', popular: true, url: 'https://www.nclive.org/' },
+  { name: 'ProQuest Central', desc: 'General articles for 175+ subjects — magazines, journals, newspapers.', cat: 'General', access: 'shared', section: 'nc', popular: true, url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/PQcentral' },
+  { name: 'ProQuest Research Library', desc: 'Scholarly journals, trade pubs, magazines, and daily news.', cat: 'General', access: 'shared', section: 'nc', popular: true, url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/researchlibrary' },
+  { name: 'JSTOR', desc: 'Archived journals across literature, science, history, languages, education.', cat: 'General', access: 'shared', section: 'nc', popular: true, url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/jstor' },
+  { name: 'CQ Researcher', desc: 'In-depth reports on political & social issues.', cat: 'General', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/CQresearcher' },
+  { name: 'SIRS Issues Researcher', desc: 'Controversial issues from newspapers, magazines, journals.', cat: 'General', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/SIRSissues' },
+  { name: 'eLibrary', desc: 'Magazines, newspapers, books, transcripts, maps, images, audio.', cat: 'General', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/elibrary' },
+  { name: 'Wiley Online Library', desc: 'Journals and books across life, health, social, physical sciences.', cat: 'General', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://onlinelibrary.wiley.com' },
+  { name: 'MasterFILE Premier', desc: 'Full-text magazines, reference books, primary source documents.', cat: 'General', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/masterfile' },
+  { name: 'Credo Reference', desc: 'Full-text reference — encyclopedias, dictionaries, atlases, handbooks.', cat: 'General', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/credo' },
+  { name: 'SIRS Discoverer', desc: 'Content for beginning researchers.', cat: 'General', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/sirsdiscoverer' },
+  { name: 'ProQuest Research Companion', desc: 'Research skills and information literacy tutorials.', cat: 'General', access: 'wtech', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/researchcompanion' },
+  { name: 'Open Education North Carolina', desc: 'Free digital textbooks for NC college courses.', cat: 'Education', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/opennc' },
+  // Business
+  { name: 'ABI/INFORM Collection', desc: 'Business research — journals, trade pubs, market reports.', cat: 'Business', access: 'shared', section: 'nc', popular: true, url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/abi-inform' },
+  { name: 'ProQuest One Business', desc: 'Business — newspapers, dissertations, ebooks, video, cases.', cat: 'Business', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/business' },
+  { name: 'Consumer Reports', desc: 'Product reviews — cars, appliances, electronics, finance, health.', cat: 'Business', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/consumerreports' },
+  { name: 'Morningstar Investment Center', desc: 'Independent stock, mutual fund, ETF analysis.', cat: 'Business', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/morningstar' },
+  { name: 'Data-Axle Reference Solutions', desc: '48M+ businesses, 268M consumers — market research, jobs.', cat: 'Business', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/referenceusa' },
+  { name: 'Accounting, Tax & Banking', desc: 'Journals on accounting, taxation, and banking.', cat: 'Business', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/accountingtax' },
+  { name: 'Business Market Research', desc: 'Broker reports, market research, key business data.', cat: 'Business', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/businessresearch' },
+  { name: 'Entrepreneurship Database', desc: 'Journals on entrepreneurship and small business.', cat: 'Business', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/Entrepreneurship' },
+  { name: 'Triangle Business Journal', desc: 'Triangle business news — 18 industries.', cat: 'Business', access: 'wtech', section: 'nc', url: 'https://www.bizjournals.com/register/triangle' },
+  // Tech
+  { name: "O'Reilly for Higher Education", desc: 'Tech & business ebooks, videos, learning paths — CS/IT essential.', cat: 'Technology', access: 'wtech', section: 'nc', popular: true, url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/oreilly' },
+  { name: 'Computer Science Database', desc: 'AI, cybersecurity, programming, data science, IT.', cat: 'Technology', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/computing' },
+  { name: 'Engineering Database', desc: 'Civil, mechanical, electrical, chemical engineering.', cat: 'Technology', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/engineeringdatabase' },
+  { name: 'Advanced Technologies & Aerospace', desc: 'Aerospace, nanotechnology, robotics, advanced manufacturing.', cat: 'Technology', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/aerospace' },
+  { name: 'Telecommunications Database', desc: 'Telecom, wireless, fiber optics, broadband.', cat: 'Technology', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/telecommunications' },
+  { name: 'Career & Technical Education DB', desc: 'Vocational — health care, building trades, auto, accounting, design.', cat: 'Technology', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/careertecheducation' },
+  // Health
+  { name: 'CINAHL Complete', desc: 'Nursing & allied health — journals, care sheets, CEU materials.', cat: 'Health', access: 'shared', section: 'nc', popular: true, url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/cinahl' },
+  { name: 'Anatomy.TV', desc: '3D interactive anatomy — human body systems.', cat: 'Health', access: 'wtech', section: 'nc', popular: true, url: 'https://login.proxy189.nclive.org/login?url=https://online.statref.com/Entry.aspx?lt=Anatomy&grpalias=NCCS' },
+  { name: 'Nursing & Allied Health DB', desc: 'Full-text nursing journals, dissertations, evidence-based practice.', cat: 'Health', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/nursingallied' },
+  { name: 'Health & Medical Collection', desc: 'Comprehensive medical journals and consumer health.', cat: 'Health', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/healthmedical' },
+  { name: 'Healthcare Administration DB', desc: 'Health management, policy, administration journals.', cat: 'Health', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/healthmanagement' },
+  { name: 'Public Health Database', desc: 'Epidemiology, environmental health, community health.', cat: 'Health', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/publichealth' },
+  { name: 'Consumer Health Database', desc: 'Family health, wellness, medical info.', cat: 'Health', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/familyhealth' },
+  { name: 'APA PsycArticles', desc: 'Full-text APA journals — psychology and behavioral science.', cat: 'Health', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://research.ebsco.com/c/4djixm/search?db=pdh' },
+  { name: 'Psychology Database', desc: 'Psychology — clinical, social, developmental, cognitive.', cat: 'Health', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/psychologydatabase' },
+  { name: 'Psychotherapy.net', desc: 'Streaming therapy sessions with commentary.', cat: 'Health', access: 'wtech', section: 'nc', url: 'https://www.psychotherapy.net/stream/waketech' },
+  { name: 'R2 Digital Library', desc: 'Nursing and health sciences ebooks.', cat: 'Health', access: 'wtech', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/r2digital' },
+  { name: 'Stat!Ref', desc: 'Medical & nursing reference books, drug guides, clinical tools.', cat: 'Health', access: 'wtech', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/statref' },
+  { name: 'Visible Body', desc: 'Interactive 3D anatomy, physiology, biology visualizations.', cat: 'Health', access: 'wtech', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/vb' },
+  { name: 'Coronavirus Research DB', desc: 'Curated COVID-19 research.', cat: 'Health', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/crb' },
+  // Science
+  { name: 'Science Database', desc: 'Applied and general sciences — journals, magazines.', cat: 'Science', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/sciencedatabase' },
+  { name: 'Biological Science Database', desc: 'Biology, biochemistry, biotechnology, ecology, genomics.', cat: 'Science', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/biologydatabase' },
+  { name: 'Agricultural & Environmental Science', desc: 'Agriculture, ecology, climate change, sustainability.', cat: 'Science', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/environmentalscience' },
+  { name: 'Earth, Atmospheric & Aquatic Science', desc: 'Geology, oceanography, meteorology, hydrology.', cat: 'Science', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/aquatic' },
+  { name: 'Materials Science Database', desc: 'Metallurgy, polymers, ceramics, composites.', cat: 'Science', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/materials' },
+  // Arts & Humanities
+  { name: 'Arts & Humanities Database', desc: 'Art, architecture, design, history, philosophy, music, literature.', cat: 'Arts & Humanities', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/arts' },
+  { name: "Bloom's Literature", desc: 'Literary criticism, author bios, essays.', cat: 'Arts & Humanities', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/blooms' },
+  { name: 'Bloomsbury Collections', desc: 'Academic ebooks — history, literature, philosophy, cultural studies.', cat: 'Arts & Humanities', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/bloomsbury' },
+  { name: 'Gale Literature Resource Center', desc: 'Author bios, bibliographies, critical analysis.', cat: 'Arts & Humanities', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/galeliterary' },
+  { name: 'Religion Database', desc: 'Theology, religious studies, worldwide perspectives.', cat: 'Arts & Humanities', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/religion' },
+  // Social Sciences
+  { name: 'Criminal Justice Database', desc: 'Crime, causes, litigation, and crime trends.', cat: 'Social Sciences', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/criminaljustice' },
+  { name: 'Sociology Database', desc: 'Sociology, social work, gender studies, gerontology.', cat: 'Social Sciences', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/sociology' },
+  { name: 'Political Science Database', desc: 'Political science, international relations, public policy.', cat: 'Social Sciences', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/politicalsciencedb' },
+  { name: 'Social Science Database', desc: 'Anthropology, criminology, economics, education, sociology.', cat: 'Social Sciences', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/socialscience' },
+  { name: 'Education Database', desc: 'K-12 through higher ed — curriculum, policy, special education.', cat: 'Social Sciences', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/educationdatabase' },
+  { name: 'Military Database', desc: 'Military science, defense, national security.', cat: 'Social Sciences', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/military' },
+  // Education & Career
+  { name: 'LearningExpress / PrepSTEP', desc: 'Practice tests (SAT, ACT, NCLEX), skill-building, career prep.', cat: 'Education', access: 'shared', section: 'nc', popular: true, url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/learningexpress' },
+  { name: 'Career Coach', desc: 'Local wages, employment data, job postings.', cat: 'Education', access: 'wtech', section: 'nc', url: 'https://waketech.emsicc.com/' },
+  { name: "Ferguson's Career Guidance", desc: 'Career exploration, education planning, résumé builder.', cat: 'Education', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/fergusons' },
+  { name: 'Chronicle of Higher Education', desc: 'News, jobs, analysis for higher ed professionals.', cat: 'Education', access: 'wtech', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/chronicle' },
+  // News
+  { name: 'US Newsstream', desc: 'US newspapers — NYT, WSJ, Washington Post.', cat: 'News', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/usnewstream' },
+  { name: 'Global Breaking Newswires', desc: 'Real-time AP, Reuters, global newswires.', cat: 'News', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/globalnews' },
+  { name: 'International Newsstream', desc: 'Newspapers outside US and Canada.', cat: 'News', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/internationalnews' },
+  { name: 'New York Times', desc: 'Full digital NYT articles and archives (Wake Tech access).', cat: 'News', access: 'wtech', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/nytimes' },
+  { name: 'Wall Street Journal', desc: 'Full WSJ — business, finance, world news.', cat: 'News', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/wallstreetjournal' },
+  // Literature
+  { name: 'African-American Poetry', desc: '18th & 19th century African-American poetry.', cat: 'Literature', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/aapoetry' },
+  { name: 'American Poetry', desc: 'Colonial through 20th century American poetry.', cat: 'Literature', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/americanpoetry' },
+  { name: 'ProQuest Learning: Literature', desc: 'Full-text literature journals, criticism, author studies.', cat: 'Literature', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/learningliterature' },
+  { name: 'Transparent Language Online', desc: '100+ languages with speech recognition.', cat: 'Literature', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/language' },
+  // History
+  { name: 'HeritageQuest', desc: 'Genealogy — US census, family histories, military records.', cat: 'History', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/heritagequest' },
+  { name: 'Digital NC', desc: 'Historic NC newspapers, yearbooks, photographs.', cat: 'History', access: 'shared', section: 'nc', url: 'https://resources.nclive.org/digitalNC' },
+  { name: 'Historic NC Newspaper Collection', desc: 'Digitized historic NC newspapers.', cat: 'History', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/historicnc' },
+  { name: 'History Study Center', desc: 'Historical documents — ancient to modern world history.', cat: 'History', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/hsc' },
+  { name: 'Statistical Abstract of the US', desc: 'US population, economy, health, education statistics.', cat: 'History', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/statistical' },
+  { name: 'NCPedia', desc: 'Free NC encyclopedia — history, people, geography, culture.', cat: 'History', access: 'shared', section: 'nc', url: 'https://resources.nclive.org/ncpedia' },
+  // Film & Music
+  { name: 'Films on Demand', desc: '21,000+ streaming videos — PBS, Ken Burns, documentaries.', cat: 'Film & Music', access: 'shared', section: 'nc', popular: true, url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/filmsondemand' },
+  { name: 'Feature Films for Education', desc: 'Full-length feature films for educational use.', cat: 'Film & Music', access: 'wtech', section: 'nc', url: 'https://ffusa.infobase.com/PortalPlayLists.aspx?wid=114111' },
+  { name: 'Just for Kids Streaming', desc: 'Kid-safe videos — Sesame Street, Berenstain Bears.', cat: 'Film & Music', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/justforkids' },
+  // Ebooks
+  { name: 'Hoopla', desc: 'Borrow ebooks, audiobooks, comics, music, movies instantly.', cat: 'Ebooks', access: 'shared', section: 'nc', popular: true, url: 'https://www.hoopladigital.com/' },
+  { name: 'ProQuest Ebook Central', desc: 'Scholarly ebooks — academic nonfiction, study aids.', cat: 'Ebooks', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/ebookcentral' },
+  { name: 'EBSCOhost eBook Collection', desc: '26,000+ fiction, reference, scholarly ebooks.', cat: 'Ebooks', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/EBSCOebooks' },
+  { name: 'HomeGrown Ebooks Collection', desc: 'NC publisher ebooks — always available, no waiting.', cat: 'Ebooks', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/homegrown' },
+  { name: 'Gale Ebooks', desc: 'Encyclopedias, almanacs, specialized reference ebooks.', cat: 'Ebooks', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/galevirtual' },
+  { name: 'NoveList Plus', desc: 'Book recommendations — read-alikes, series guides.', cat: 'Ebooks', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/novelistplus' },
+  // Wake County
+  { name: 'Wake County Library Catalog', desc: 'Books, audiobooks, DVDs, and physical materials.', cat: 'General', access: 'wake', section: 'nc', url: 'https://catalog.wake.gov/' },
+  { name: 'Libby / OverDrive', desc: 'Borrow ebooks & audiobooks from Wake County.', cat: 'Ebooks', access: 'wake', section: 'nc', url: 'https://wakecounty.overdrive.com/' },
+
+  // ═══ INTERNATIONAL & OPEN ACCESS ═══
+  { name: 'Sci-Hub', desc: 'Free access to 85M+ scholarly articles. Bypass paywalls.', cat: 'General', access: 'scihub', section: 'intl', popular: true, url: 'https://sci-hub.se/' },
+  { name: 'PubMed Central (PMC)', desc: 'Free full-text biomedical and life sciences from NIH.', cat: 'Health', access: 'open', section: 'intl', popular: true, url: 'https://www.ncbi.nlm.nih.gov/pmc/' },
+  { name: 'arXiv', desc: 'Open-access preprints — physics, math, CS, biology, finance.', cat: 'Science', access: 'open', section: 'intl', popular: true, url: 'https://arxiv.org/' },
+  { name: 'Google Scholar', desc: 'Scholarly literature search — all disciplines.', cat: 'General', access: 'open', section: 'intl', popular: true, url: 'https://scholar.google.com/' },
+  { name: 'DOAJ', desc: '20,000+ peer-reviewed open-access journals — all subjects.', cat: 'General', access: 'open', section: 'intl', popular: true, url: 'https://doaj.org/' },
+  { name: 'Semantic Scholar', desc: 'AI-powered search — 200M+ papers.', cat: 'General', access: 'open', section: 'intl', popular: true, url: 'https://www.semanticscholar.org/' },
+  { name: 'ResearchGate', desc: 'Researcher social network with full-text PDFs.', cat: 'General', access: 'open', section: 'intl', popular: true, url: 'https://www.researchgate.net/' },
+  { name: 'Unpaywall', desc: 'Browser extension — finds free PDFs for paywalled papers.', cat: 'General', access: 'open', section: 'intl', popular: true, url: 'https://unpaywall.org/' },
+  { name: 'Web of Science', desc: 'Citation index — 21,000+ journals. Institutional access.', cat: 'General', access: 'open', section: 'intl', url: 'https://www.webofscience.com/' },
+  { name: 'IEEE Xplore', desc: 'Engineering, electronics, CS — journals, papers, standards.', cat: 'Technology', access: 'open', section: 'intl', url: 'https://ieeexplore.ieee.org/' },
+  { name: 'SpringerLink', desc: 'Journals and books — science, tech, medicine, humanities.', cat: 'General', access: 'open', section: 'intl', url: 'https://link.springer.com/' },
+  { name: 'ScienceDirect', desc: 'Elsevier journals — science, tech, medicine, social sciences.', cat: 'General', access: 'open', section: 'intl', url: 'https://www.sciencedirect.com/' },
+  { name: 'Nature', desc: 'Nature Portfolio — leading scientific publications.', cat: 'Science', access: 'open', section: 'intl', url: 'https://www.nature.com/' },
+  { name: 'Cambridge Core', desc: 'Cambridge University Press journals — all disciplines.', cat: 'General', access: 'open', section: 'intl', url: 'https://www.cambridge.org/core' },
+  { name: 'CORE', desc: 'Aggregator — 250M+ open-access papers worldwide.', cat: 'General', access: 'open', section: 'intl', url: 'https://core.ac.uk/' },
+  { name: 'BASE', desc: '300M+ documents from 10,000+ providers — 60% free full-text.', cat: 'General', access: 'open', section: 'intl', url: 'https://www.base-search.net/' },
+  { name: 'Internet Archive Scholar', desc: '25M+ preserved scholarly articles.', cat: 'General', access: 'open', section: 'intl', url: 'https://scholar.archive.org/' },
+  { name: 'PubMed', desc: '36M+ biomedical citations and abstracts.', cat: 'Health', access: 'open', section: 'intl', url: 'https://pubmed.ncbi.nlm.nih.gov/' },
+  { name: 'Cochrane Library', desc: 'Systematic reviews for evidence-based healthcare.', cat: 'Health', access: 'open', section: 'intl', url: 'https://www.cochranelibrary.com/' },
+  { name: 'Google Patents', desc: 'Search 120M+ patents worldwide — full text.', cat: 'Technology', access: 'open', section: 'intl', url: 'https://patents.google.com/' },
+  { name: 'Espacenet', desc: 'European Patent Office — 150M+ patents.', cat: 'Technology', access: 'open', section: 'intl', url: 'https://worldwide.espacenet.com/' },
+
+  // ═══ INDIA ═══
+  { name: 'Shodhganga', desc: '400,000+ PhD theses from 600+ Indian universities. Free full-text.', cat: 'General', access: 'india', section: 'india', popular: true, url: 'https://shodhganga.inflibnet.ac.in/' },
+  { name: 'ShodhSudha', desc: 'Research articles from Indian journals.', cat: 'General', access: 'india', section: 'india', url: 'https://shodhsudha.inflibnet.ac.in/' },
+  { name: 'National Digital Library of India', desc: 'Single-window search across 90+ sources — books, articles, theses, video.', cat: 'General', access: 'india', section: 'india', popular: true, url: 'https://ndl.iitkgp.ac.in/' },
+  { name: 'e-ShodhSindhu', desc: '15,000+ full-text journals across all disciplines for member colleges.', cat: 'General', access: 'india', section: 'india', url: 'https://ess.inflibnet.ac.in/' },
+  { name: 'Indian Citation Index', desc: 'Citation database — Indian journals, authors, institutions.', cat: 'General', access: 'india', section: 'india', url: 'https://www.indiancitationindex.com/' },
+  { name: 'Vidwan', desc: 'Indian researcher profiles — expertise, affiliations, publications.', cat: 'General', access: 'india', section: 'india', url: 'https://vidwan.inflibnet.ac.in/' },
+  { name: 'NPTEL', desc: 'Free engineering & science video courses from IITs and IISc.', cat: 'Technology', access: 'india', section: 'india', popular: true, url: 'https://nptel.ac.in/' },
+  { name: 'SWAYAM', desc: 'Free online courses from Indian universities — credit-eligible.', cat: 'Education', access: 'india', section: 'india', url: 'https://swayam.gov.in/' },
+  { name: 'e-PG Pathshala', desc: 'Postgraduate e-content — modules, e-text, video by Indian academics.', cat: 'Education', access: 'india', section: 'india', url: 'https://epgp.inflibnet.ac.in/' },
+  { name: 'Indian Academy of Sciences Journals', desc: '12 open-access scientific journals — physics to engineering.', cat: 'Science', access: 'india', section: 'india', url: 'https://www.ias.ac.in/' },
+  { name: 'CSIR-NISCAIR Journals', desc: 'Indian scientific journals — open-access research.', cat: 'Science', access: 'india', section: 'india', url: 'https://www.niscair.res.in/' },
+  { name: 'Krishikosh', desc: 'Indian agricultural research — theses, dissertations, papers.', cat: 'Science', access: 'india', section: 'india', url: 'https://krishikosh.egranth.ac.in/' },
+  { name: 'Indian Journal of Medical Research', desc: 'Open-access medical research by ICMR.', cat: 'Health', access: 'india', section: 'india', url: 'https://www.ijmr.org.in/' },
+  { name: 'SCC Online', desc: 'Indian legal database — Supreme Court, High Court cases.', cat: 'Law', access: 'india', section: 'india', popular: true, url: 'https://www.scconline.com/' },
+  { name: 'Manupatra', desc: 'Indian legal database — case law, statutes, bare acts.', cat: 'Law', access: 'india', section: 'india', url: 'https://www.manupatra.com/' },
+  { name: 'India Code', desc: 'Official codified Indian laws — central and state legislation.', cat: 'Law', access: 'india', section: 'india', url: 'https://www.indiacode.nic.in/' },
+  { name: 'Indiastat', desc: 'Indian statistical data — agriculture, economy, education, health.', cat: 'Business', access: 'india', section: 'india', url: 'https://www.indiastat.com/' },
+  { name: 'Economic Survey of India', desc: 'Annual economic report — full-text PDFs.', cat: 'Business', access: 'india', section: 'india', url: 'https://www.indiabudget.gov.in/economicsurvey/' },
+  { name: 'RBI Publications', desc: 'Reserve Bank of India — reports, statistics, databases.', cat: 'Business', access: 'india', section: 'india', url: 'https://www.rbi.org.in/' },
+  { name: 'EPW (Economic & Political Weekly)', desc: 'Leading Indian social science journal.', cat: 'Business', access: 'india', section: 'india', url: 'https://www.epw.in/' },
+  { name: 'Open Government Data India', desc: '200,000+ datasets across all ministries.', cat: 'General', access: 'india', section: 'india', url: 'https://data.gov.in/' },
+  { name: 'India Biodiversity Portal', desc: 'Open repository of Indian biodiversity data.', cat: 'Science', access: 'india', section: 'india', url: 'https://indiabiodiversity.org/' },
+  { name: 'ISRO Publications', desc: 'Indian Space Research Organisation — papers, reports.', cat: 'Science', access: 'india', section: 'india', url: 'https://www.isro.gov.in/' },
+  { name: 'DRDO Publications', desc: 'Defence Research & Development — technical reports.', cat: 'Technology', access: 'india', section: 'india', url: 'https://www.drdo.gov.in/' },
+  { name: 'National Innovation Portal', desc: 'Indian traditional knowledge, grassroots innovations, patents.', cat: 'Technology', access: 'india', section: 'india', url: 'https://nif.org.in/' }
+];
+
+// ═══════════════════════════════════════════════════════════════════
+// RENDER ENGINE
+// ═══════════════════════════════════════════════════════════════════
+const featuredEl = document.getElementById('featuredGrid');
+const scihubEl = document.getElementById('scihubGrid');
+const indiaEl = document.getElementById('indiaGrid');
+const intlEl = document.getElementById('intlGrid');
+const container = document.getElementById('dbContainer');
+const searchInput = document.getElementById('search');
+const statsEl = document.getElementById('stats');
+const subjectPillsEl = document.getElementById('subjectPills');
+
+let activeAccessFilter = 'all';
+let activeSection = 'all';
+let activeSubject = 'all';
+let searchQuery = '';
+
+const subjects = [...new Set(databases.map(d => d.cat))].sort();
+subjectPillsEl.innerHTML = `<button class="subject-pill active" data-subject="all">All Subjects</button>` +
+  subjects.map(s => `<button class="subject-pill" data-subject="${s}">${s}</button>`).join('');
+
+subjectPillsEl.addEventListener('click', e => {
+  const btn = e.target.closest('.subject-pill');
+  if (!btn) return;
+  subjectPillsEl.querySelectorAll('.subject-pill').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  activeSubject = btn.dataset.subject;
+  render();
+});
+
+document.getElementById('accessFilters').addEventListener('click', e => {
+  const btn = e.target.closest('.filter-btn');
+  if (!btn) return;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  activeAccessFilter = btn.dataset.filter;
+  render();
+});
+
+searchInput.addEventListener('input', () => {
+  searchQuery = searchInput.value.toLowerCase().trim();
+  render();
+});
+
+function getAccessInfo(access) {
+  if (access === 'shared') return { badge: 'badge-shared', label: 'NC LIVE' };
+  if (access === 'wtech') return { badge: 'badge-wtech', label: 'Wake Tech' };
+  if (access === 'wake') return { badge: 'badge-wake', label: 'Wake County' };
+  if (access === 'open') return { badge: 'badge-open', label: 'Open Access' };
+  if (access === 'scihub') return { badge: 'badge-scihub', label: '⚡ Sci-Hub' };
+  if (access === 'india') return { badge: 'badge-india', label: '🇮🇳 India' };
+  return { badge: '', label: '' };
+}
+
+function filterDB(db) {
+  if (activeSection !== 'all' && db.section !== activeSection) return false;
+  if (activeAccessFilter === 'shared' && db.access !== 'shared') return false;
+  if (activeAccessFilter === 'wtech' && db.access !== 'wtech') return false;
+  if (activeAccessFilter === 'wake' && db.access !== 'wake') return false;
+  if (activeAccessFilter === 'open' && db.access !== 'open' && db.access !== 'scihub') return false;
+  if (activeAccessFilter === 'india' && db.access !== 'india') return false;
+  if (activeSubject !== 'all' && db.cat !== activeSubject) return false;
+  if (searchQuery) {
+    const n = db.name.toLowerCase();
+    const d = (db.desc || '').toLowerCase();
+    const c = (db.cat || '').toLowerCase();
+    if (!n.includes(searchQuery) && !d.includes(searchQuery) && !c.includes(searchQuery)) return false;
+  }
+  return true;
+}
+
+function render() {
+  const filtered = databases.filter(filterDB);
+  const featured = filtered.filter(d => d.popular && d.section === 'nc');
+  const scihubItems = filtered.filter(d => d.access === 'scihub');
+  const indiaFeatured = filtered.filter(d => d.section === 'india' && d.popular);
+  const intlFeatured = filtered.filter(d => d.popular && d.section === 'intl' && d.access !== 'scihub');
+  const rest = filtered.filter(d => !(d.popular && (d.section === 'nc' || d.section === 'intl')) && d.access !== 'scihub' && !(d.section === 'india' && d.popular));
+
+  statsEl.textContent = `Showing ${filtered.length} of ${databases.length} databases`;
+
+  if (featured.length > 0) {
+    document.getElementById('featuredSection').style.display = 'block';
+    featuredEl.innerHTML = featured.map(d => {
+      const b = getAccessInfo(d.access);
+      return `<a href="${d.url}" target="_blank" class="card featured"><div class="top"><div class="name">${d.name}</div><span class="badge ${b.badge}">${b.label}</span></div><div class="desc">${d.desc}</div></a>`;
+    }).join('');
+  } else document.getElementById('featuredSection').style.display = 'none';
+
+  if (scihubItems.length > 0) {
+    document.getElementById('scihubSection').style.display = 'block';
+    scihubEl.innerHTML = scihubItems.map(d =>
+      `<a href="${d.url}" target="_blank" class="card scihub-card"><div class="top"><div class="name-wrapper"><span class="name" style="font-size:1.1rem;">${d.name}</span><span class="popular-badge">★ Popular</span></div><span class="badge badge-scihub">⚡ Free</span></div><div class="desc">${d.desc}</div></a>`
+    ).join('');
+  } else document.getElementById('scihubSection').style.display = 'none';
+
+  if (indiaFeatured.length > 0) {
+    document.getElementById('indiaSection').style.display = 'block';
+    indiaEl.innerHTML = indiaFeatured.map(d =>
+      `<a href="${d.url}" target="_blank" class="card india-card"><div class="top"><div class="name-wrapper"><span class="name">${d.name}</span><span class="popular-badge">★ Popular</span></div><span class="badge badge-india">🇮🇳 India</span></div><div class="desc">${d.desc}</div></a>`
+    ).join('');
+  } else document.getElementById('indiaSection').style.display = 'none';
+
+  if (intlFeatured.length > 0) {
+    document.getElementById('intlSection').style.display = 'block';
+    intlEl.innerHTML = intlFeatured.map(d => {
+      const b = getAccessInfo(d.access);
+      return `<a href="${d.url}" target="_blank" class="card featured"><div class="top"><div class="name">${d.name}</div><span class="badge ${b.badge}">${b.label}</span></div><div class="desc">${d.desc}</div></a>`;
+    }).join('');
+  } else document.getElementById('intlSection').style.display = 'none';
+
+  const grouped = {};
+  rest.forEach(d => { if (!grouped[d.cat]) grouped[d.cat] = []; grouped[d.cat].push(d); });
+
+  if (Object.keys(grouped).length === 0 && featured.length === 0 && scihubItems.length === 0 && indiaFeatured.length === 0 && intlFeatured.length === 0) {
+    container.innerHTML = '<div class="empty"><p>No databases match your filters.</p></div>';
+    return;
+  }
+
+  const catOrder = ['General','Health','Science','Technology','Business','Education','Arts & Humanities','Social Sciences','Literature','History','Film & Music','Ebooks','News','Law'];
+  const orderedCats = catOrder.filter(c => grouped[c]);
+  const otherCats = Object.keys(grouped).filter(c => !catOrder.includes(c)).sort();
+  let html = '';
+  [...orderedCats, ...otherCats].forEach(cat => {
+    const items = grouped[cat];
+    const isIH = items.some(d => d.section === 'india');
+    html += `<div class="category-section"><h3>${isIH ? '🇮🇳 ' : ''}${cat} <span class="count">(${items.length})</span></h3><div class="db-grid">`;
+    items.forEach(d => {
+  const iCard = d.section === 'india';
+  html += `<div class="card ${iCard ? 'india-card' : ''}"><div class="top"><div class="name-wrapper"><span class="name">${d.name}</span>${d.popular ? '<span class="popular-badge">★ Popular</span>' : ''}</div><span class="badge ${b.badge}">${b.label}</span></div><div class="desc">${d.desc}</div></div>`;
+});
+html += `</div></div>`;
+}
+container.innerHTML = html;
+container.querySelectorAll('.card').forEach(card => {
+  card.addEventListener('click', () => {
+    const n = card.querySelector('.name');
+    if (!n) return;
+    const db = databases.find(d => d.name === n.textContent);
+    if (db) window.open(db.url, '_blank');
+  });
+});
+
+// Add click handlers for the new sections
+function setupNewSectionHandlers() {
+  document.querySelectorAll('#archivesGrid .card, #aiGrid .card, #dealsGrid .card, #nearbyGrid .card').forEach(card => {
+    card.addEventListener('click', () => {
+      const name = card.querySelector('.name').textContent;
+      const urls = {
+        "Anna's Archive": 'https://annas-archive.org',
+        "The Eye": 'https://the-eye.eu',
+        "Sci-Hub": 'https://sci-hub.se',
+        "Internet Archive": 'https://archive.org',
+        "Library Genesis": 'https://libgen.is',
+        "Z-Library": 'https://z-lib.is',
+        "Harvard Dataverse": 'https://dataverse.harvard.edu',
+        "Figshare": 'https://figshare.com',
+        "Hugging Face Spaces": 'https://huggingface.co/spaces',
+        "Replicate": 'https://replicate.com/explore',
+        "Modal": 'https://modal.com/explore',
+        "Gradio": 'https://gradio.app',
+        "Streamlit": 'https://streamlit.io/gallery',
+        "Replicate Spaces": 'https://replicate.com/spaces',
+        "AI Compass": 'https://ai-compass.in',
+        "Slickdeals": 'https://slickdeals.net',
+        "TechBargains": 'https://www.techbargains.com',
+        "Deals of America": 'https://www.dealsofamerica.com',
+        "Offers.com": 'https://www.offers.com',
+        "Amazon Warehouse": 'https://www.amazon.com/warehouse-deals',
+        "eBay Deals": 'https://www.ebay.com/deals',
+        "Newegg Daily Deals": 'https://www.newegg.com/DailyDeal',
+        "WorldCat": 'https://www.worldcat.org'
+      };
+      if (urls[name]) window.open(urls[name], '_blank');
+    });
+  });
+}
+
+// Initialize
+render();
+setupNewSectionHandlers();
+</script>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- LOCAL LIBRARIES SECTION -->
+<!-- ═════════📚════════════════════════════════════════ -->
+<div id="nearbySection" style="display:none;">
+  <div class="featured-section">
+    <h2 class="news-h2">Local Libraries <span style="font-size:0.75rem;color:var(--text2);font-weight:400;">— find physical books nearby</span></h2>
+    <div class="db-grid" id="nearbyGrid">
+      <div class="card">
+        <div class="top">
+          <div class="name-wrapper">
+            <span class="name">WorldCat</span>
+          </div>
+          <span class="badge badge-open">Open</span>
+        </div>
+        <div class="desc">Find books in 10,000+ libraries worldwide. Enter your location to see nearby copies.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* ── IMPROVED READABILITY ── */
+  :root {
+    --bg: #f8f9fa; /* Light background for readability */
+    --surface: #ffffff; /* White surface */
+    --surface2: #f1f3f4; /* Light gray for secondary surfaces */
+    --border: #e0e0e0; /* Light border */
+    --text: #202124; /* Dark text for readability */
+    --text2: #5f6368; /* Secondary text */
+    --accent: #1a73e8; /* Google blue */
+    --green: #188038;
+    --orange: #d58512;
+    --pink: #d01884;
+    --purple: #8e24aa;
+    --red: #d93025;
+    --india-saffron: #ff9933;
+    --india-green: #138808;
+  }
+  
+  body {
+    font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+  
+  .header {
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    border-bottom: 1px solid var(--border);
+  }
+  
+  .card, .news-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  }
+  
+  .card:hover, .news-item:hover {
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  }
+  
+  .name, .news-title {
+    color: var(--text);
+    font-weight: 500;
+  }
+  
+  .desc, .news-meta {
+    color: var(--text2);
+  }
+  
+  /* ── SECTION TOGGLE ── */
+  .section-toggle {
+    display: flex;
+    gap: 0.4rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    background: var(--surface);
+    padding: 0.5rem;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+  }
+  
+  .section-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    color: var(--text2);
+    font-size: 0.85rem;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-weight: 500;
+  }
+  
+  .section-btn:hover {
+    background: var(--surface);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  
+  .section-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+  }
+  
+  /* ── CARD LAYOUT ── */
+  .db-grid, .news-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1rem;
+  }
+  
+  .card, .news-item {
+    border-radius: 10px;
+    padding: 1rem;
+    transition: all 0.15s;
+    cursor: pointer;
+  }
+  
+  .card:hover, .news-item:hover {
+    border-color: var(--accent);
+  }
+  
+  .name-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .name {
+    font-size: 1rem;
+    font-weight: 500;
+  }
+  
+  .desc {
+    font-size: 0.85rem;
+    line-height: 1.5;
+  }
+  
+  /* ── BADGES ── */
+  .badge {
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.2rem 0.6rem;
+    border-radius: 20px;
+    letter-spacing: 0.02em;
+  }
+  
+  .badge-open { background: #e8f0fe; color: var(--accent); border: 1px solid #d2e3fc; }
+  .badge-scihub { background: #fce8e6; color: var(--red); border: 1px solid #f9c0bb; }
+  .badge-shared { background: #e6f4ea; color: var(--green); border: 1px solid #b7e1cd; }
+  .badge-wtech { background: #f3e5f5; color: var(--purple); border: 1px solid #e1bee7; }
+  .badge-wake { background: #fff3e0; color: var(--orange); border: 1px solid #ffe0b2; }
+  .badge-india { background: #fff8e1; color: var(--india-saffron); border: 1px solid #ffecb3; }
+  
+  .popular-badge {
+    font-size: 0.65rem;
+    background: var(--orange);
+    color: white;
+    padding: 0.1rem 0.4rem;
+    border-radius: 3px;
+    font-weight: 600;
+  }
+  
+  /* ── NEWS SECTION ── */
+  .news-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .news-title {
+    font-size: 0.9rem;
+    font-weight: 500;
+    line-height: 1.4;
+  }
+  
+  .news-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    font-size: 0.75rem;
+    align-items: center;
+  }
+  
+  .news-source {
+    font-weight: 500;
+  }
+</style>
+
+<script>
+  // Update section toggle logic
+  document.querySelectorAll('.section-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.section-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const section = btn.dataset.section;
+      
+      // Hide all sections
+      document.querySelectorAll('main > div:not(.header):not(.login-bar):not(.section-toggle)').forEach(el => {
+        el.style.display = 'none';
+      });
+      
+      // Show selected section
+      if (section === 'all') {
+        document.getElementById('searchSection').style.display = 'block';
+        document.getElementById('featuredSection').style.display = 'block';
+        document.getElementById('scihubSection').style.display = 'block';
+        document.getElementById('indiaSection').style.display = 'block';
+        document.getElementById('intlSection').style.display = 'block';
+      } else if (section === 'news') {
+        document.getElementById('newsSection').style.display = 'block';
+      } else if (section === 'archives') {
+        document.getElementById('archivesSection').style.display = 'block';
+      } else if (section === 'ai') {
+        document.getElementById('aiSection').style.display = 'block';
+      } else if (section === 'deals') {
+        document.getElementById('dealsSection').style.display = 'block';
+      } else if (section === 'nearby') {
+        document.getElementById('nearbySection').style.display = 'block';
+      } else if (section === 'nc') {
+        document.getElementById('searchSection').style.display = 'block';
+        document.querySelectorAll('.card').forEach(card => {
+          const db = databases.find(d => d.name === card.querySelector('.name').textContent);
+          if (db && db.section === 'nc') card.style.display = 'block';
+          else card.style.display = 'none';
+        });
+      } else if (section === 'intl') {
+        document.getElementById('searchSection').style.display = 'block';
+        document.querySelectorAll('.card').forEach(card => {
+          const db = databases.find(d => d.name === card.querySelector('.name').textContent);
+          if (db && db.section === 'intl') card.style.display = 'block';
+          else card.style.display = 'none';
+        });
+      } else if (section === 'india') {
+        document.getElementById('searchSection').style.display = 'block';
+        document.querySelectorAll('.card').forEach(card => {
+          const db = databases.find(d => d.name === card.querySelector('.name').textContent);
+          if (db && db.section === 'india') card.style.display = 'block';
+          else card.style.display = 'none';
+        });
+      }
+    });
+  });
+
+  // Initialize: show 'all' section
+  document.querySelector('.section-btn[data-section="all"]').click();
+</script>
+
+</body>
+</html>
