@@ -901,22 +901,23 @@ function render() {
     const isIH = items.some(d => d.section === 'india');
     html += `<div class="category-section"><h3>${isIH ? '🇮🇳 ' : ''}${cat} <span class="count">(${items.length})</span></h3><div class="db-grid">`;
     items.forEach(d => {
-  const iCard = d.section === 'india';
-  html += `<div class="card ${iCard ? 'india-card' : ''}"><div class="top"><div class="name-wrapper"><span class="name">${d.name}</span>${d.popular ? '<span class="popular-badge">★ Popular</span>' : ''}</div><span class="badge ${b.badge}">${b.label}</span></div><div class="desc">${d.desc}</div></div>`;
-});
-html += `</div></div>`;
-}
-container.innerHTML = html;
-container.querySelectorAll('.card').forEach(card => {
-  card.addEventListener('click', () => {
-    const n = card.querySelector('.name');
-    if (!n) return;
-    const db = databases.find(d => d.name === n.textContent);
-    if (db) window.open(db.url, '_blank');
+      const b = getAccessInfo(d.access);
+      const iCard = d.section === 'india';
+      html += `<div class="card ${iCard ? 'india-card' : ''}"><div class="top"><div class="name-wrapper"><span class="name">${d.name}</span>${d.popular ? '<span class="popular-badge">★ Popular</span>' : ''}</div><span class="badge ${b.badge}">${b.label}</span></div><div class="desc">${d.desc}</div></div>`;
+    });
+    html += `</div></div>`;
   });
-});
+  container.innerHTML = html;
+  container.querySelectorAll('.card').forEach(card => {
+    card.addEventListener('click', () => {
+      const n = card.querySelector('.name');
+      if (!n) return;
+      const db = databases.find(d => d.name === n.textContent);
+      if (db) window.open(db.url, '_blank');
+    });
+  });
+}
 
-// Add click handlers for the new sections
 function setupNewSectionHandlers() {
   document.querySelectorAll('#archivesGrid .card, #aiGrid .card, #dealsGrid .card, #nearbyGrid .card').forEach(card => {
     card.addEventListener('click', () => {
