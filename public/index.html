@@ -1158,7 +1158,7 @@ setupNewSectionHandlers();
       btn.classList.add('active');
       const section = btn.dataset.section;
       
-      // Hide all sections
+      // Hide all sections except those with header/login-bar/section-toggle classes
       document.querySelectorAll('main > div').forEach(el => {
         if (!el.classList.contains('header') && !el.classList.contains('login-bar') && !el.classList.contains('section-toggle')) {
           el.style.display = 'none';
