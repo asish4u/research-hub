@@ -594,24 +594,39 @@ document.getElementById('mainToggle').addEventListener('click', e => {
   const newsEl = document.getElementById('newsSection');
   const dbEl = document.getElementById('dbSection');
 
+  // Hide all primary sections first
+  ['newsSection', 'dbSection', 'archivesSection', 'aiSection', 'dealsSection', 'nearbySection'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+
   if (section === 'news') {
     newsEl.style.display = 'block';
-    dbEl.style.display = 'none';
-    // Fetch first news if not loaded
     if (!newsCache[activeNewsTab]) fetchNews(activeNewsTab);
+  } else if (section === 'archives') {
+    document.getElementById('archivesSection').style.display = 'block';
+  } else if (section === 'ai') {
+    document.getElementById('aiSection').style.display = 'block';
+  } else if (section === 'deals') {
+    document.getElementById('dealsSection').style.display = 'block';
+  } else if (section === 'nearby') {
+    document.getElementById('nearbySection').style.display = 'block';
   } else {
-    newsEl.style.display = 'none';
+    // all, nc, intl, india → show database section
     dbEl.style.display = 'block';
-    // If main section filter changed, update db view
-    if (section === 'nc') { activeAccessFilter = 'all'; activeSection = 'nc'; }
-    else if (section === 'intl') { activeAccessFilter = 'open'; activeSection = 'intl'; }
-    else if (section === 'india') { activeAccessFilter = 'india'; activeSection = 'all'; }
-    else { activeAccessFilter = 'all'; activeSection = 'all'; }
+    if (section === 'nc') {
+      activeAccessFilter = 'all'; activeSection = 'nc';
+    } else if (section === 'intl') {
+      activeAccessFilter = 'open'; activeSection = 'intl';
+    } else if (section === 'india') {
+      activeAccessFilter = 'india'; activeSection = 'all';
+    } else {
+      activeAccessFilter = 'all'; activeSection = 'all';
+    }
     render();
     // Update filter UI
     document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
     document.querySelector(`.filter-btn[data-filter="${activeAccessFilter}"]`)?.classList.add('active');
-    document.querySelector('.section-btn[data-section="all"]')?.classList.add('active');
   }
 });
 
@@ -1206,69 +1221,6 @@ setupNewSectionHandlers();
 </style>
 
 <script>
-  // Update section toggle logic
-  document.querySelectorAll('.section-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.section-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      const section = btn.dataset.section;
-      
-      // Hide all sections
-      const allSections = ['newsSection', 'dbSection', 'archivesSection', 'aiSection', 'dealsSection', 'nearbySection'];
-      allSections.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.style.display = 'none';
-      });
-      
-      // Show selected section
-      if (section === 'all') {
-        document.getElementById('dbSection').style.display = 'block';
-        document.getElementById('featuredSection').style.display = 'block';
-        document.getElementById('scihubSection').style.display = 'block';
-        document.getElementById('indiaSection').style.display = 'block';
-        document.getElementById('intlSection').style.display = 'block';
-      } else if (section === 'news') {
-        document.getElementById('newsSection').style.display = 'block';
-      } else if (section === 'archives') {
-        document.getElementById('archivesSection').style.display = 'block';
-      } else if (section === 'ai') {
-        document.getElementById('aiSection').style.display = 'block';
-      } else if (section === 'deals') {
-        document.getElementById('dealsSection').style.display = 'block';
-      } else if (section === 'nearby') {
-        document.getElementById('nearbySection').style.display = 'block';
-      } else if (section === 'nc') {
-        document.getElementById('dbSection').style.display = 'block';
-        document.getElementById('searchSection').style.display = 'block';
-        document.getElementById('featuredSection').style.display = 'block';
-        document.getElementById('scihubSection').style.display = 'block';
-        document.querySelectorAll('#dbContainer .card').forEach(card => {
-          const db = databases.find(d => d.name === card.querySelector('.name')?.textContent);
-          if (db && db.section === 'nc') card.style.display = 'block';
-          else card.style.display = 'none';
-        });
-      } else if (section === 'intl') {
-        document.getElementById('dbSection').style.display = 'block';
-        document.getElementById('searchSection').style.display = 'block';
-        document.getElementById('intlSection').style.display = 'block';
-        document.querySelectorAll('#dbContainer .card').forEach(card => {
-          const db = databases.find(d => d.name === card.querySelector('.name')?.textContent);
-          if (db && db.section === 'intl') card.style.display = 'block';
-          else card.style.display = 'none';
-        });
-      } else if (section === 'india') {
-        document.getElementById('dbSection').style.display = 'block';
-        document.getElementById('searchSection').style.display = 'block';
-        document.getElementById('indiaSection').style.display = 'block';
-        document.querySelectorAll('#dbContainer .card').forEach(card => {
-          const db = databases.find(d => d.name === card.querySelector('.name')?.textContent);
-          if (db && db.section === 'india') card.style.display = 'block';
-          else card.style.display = 'none';
-        });
-      }
-    });
-  });
-
   // Initialize: show 'all' section
   document.querySelector('.section-btn[data-section="all"]').click();
 </script>
