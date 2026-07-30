@@ -29,7 +29,26 @@
   }
   .header h1 { font-size: 1.8rem; font-weight: 700; }
   .header h1 span { color: var(--accent); }
-  .header p { color: var(--text2); margin-top: 0.4rem; font-size: 0.95rem; max-width: 680px; margin: 0.4rem auto 0; }
+  .header p { color:var(--text2); margin-top: 0.4rem; font-size: 0.95rem; max-width: 680px; margin: 0.4rem auto 0; }
+  .theme-toggle-btn {
+    margin-top: 0.75rem;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    color: var(--text2);
+    cursor: pointer;
+    font-size: 0.8rem;
+    padding: 0.3rem 0.9rem;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .theme-toggle-btn:hover {
+    background: var(--surface);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
   .badge {
     display: inline-block; font-size: 0.7rem; font-weight: 600;
     padding: 0.15rem 0.55rem; border-radius: 999px; letter-spacing: 0.02em; white-space: nowrap;
@@ -196,7 +215,8 @@
 
 <div class="header">
   <h1>📚 <span>Research Hub</span></h1>
-  <p>Databases + Live News with Bias Ratings. Wake Tech · Wake County · NC LIVE · Open Access · India · Sci-Hub</p>
+  <p>Databases · Live News · Bias Ratings · Wake Tech · NC LIVE · Open Access · India · Sci-Hub</p>
+  <button id="themeToggle" class="theme-toggle-btn" title="Toggle dark/light theme">🌙 Dark</button>
 </div>
 
 <div class="container">
@@ -942,7 +962,8 @@ function setupNewSectionHandlers() {
     card.addEventListener('click', () => {
       const name = card.querySelector('.name').textContent;
       const urls = {
-        "Anna's Archive": 'https://annas-archive.org',
+        // Archives & Shadow Libraries
+        "Anna's Archive": 'https://annas-archive.gd',
         "The Eye": 'https://the-eye.eu',
         "Sci-Hub": 'https://sci-hub.ru',
         "Internet Archive": 'https://archive.org',
@@ -950,6 +971,20 @@ function setupNewSectionHandlers() {
         "Z-Library": 'https://z-lib.is',
         "Harvard Dataverse": 'https://dataverse.harvard.edu',
         "Figshare": 'https://figshare.com',
+        "Memory of the World": 'https://library.memoryoftheworld.org/',
+        "Sci-Bot": 'https://sci-bot.ru/',
+        "Sci-Net": 'https://sci-net.xyz/',
+        "WeLib": 'https://welib.org/',
+        // Sci-Hub Official Mirrors
+        "Sci-Hub.ru": 'https://sci-hub.ru',
+        "Sci-Hub.st": 'https://sci-hub.st',
+        "Sci-Hub.su": 'https://sci-hub.su',
+        "Sci-hub.box": 'https://sci-hub.box',
+        "Sci-Hub.red": 'https://sci-hub.red',
+        "Sci-Hub.al": 'https://sci-hub.al',
+        "Sci-Hub.mk": 'https://sci-hub.mk',
+        "Sci-Hub.ee": 'https://sci-hub.ee',
+        // AI Spaces
         "Hugging Face Spaces": 'https://huggingface.co/spaces',
         "Replicate": 'https://replicate.com/explore',
         "Modal": 'https://modal.com/explore',
@@ -957,6 +992,7 @@ function setupNewSectionHandlers() {
         "Streamlit": 'https://streamlit.io/gallery',
         "Replicate Spaces": 'https://replicate.com/spaces',
         "AI Compass": 'https://ai-compass.in',
+        // Deals
         "Slickdeals": 'https://slickdeals.net',
         "TechBargains": 'https://www.techbargains.com',
         "Deals of America": 'https://www.dealsofamerica.com',
@@ -964,6 +1000,7 @@ function setupNewSectionHandlers() {
         "Amazon Warehouse": 'https://www.amazon.com/warehouse-deals',
         "eBay Deals": 'https://www.ebay.com/deals',
         "Newegg Daily Deals": 'https://www.newegg.com/DailyDeal',
+        // Local Libraries
         "WorldCat": 'https://www.worldcat.org'
       };
       if (urls[name]) window.open(urls[name], '_blank');
@@ -985,17 +1022,28 @@ setupNewSectionHandlers();
     <div class="db-grid" id="archivesGrid">
       <div class="card"><div class="top"><div class="name-wrapper"><span class="name">Anna's Archive</span></div><span class="badge badge-open">Open</span></div><div class="desc">Largest shadow library — books, papers, magazines. Free access to 30M+ files.</div></div>
       <div class="card"><div class="top"><div class="name-wrapper"><span class="name">The Eye</span></div><span class="badge badge-open">Open</span></div><div class="desc">35TB+ of open data mirrors — software, books, magazines, datasets.</div></div>
-      <div class="card"><div class="top"><div class="name-wrapper"><span class="name">Sci-Hub</span></div><span class="badge badge-open">Free</span></div><div class="desc">85M+ scholarly articles, bypassing paywalls. Founded by Alexandra Elbakyan.</div></div>
+      <div class="card"><div class="top"><div class="name-wrapper"><span class="name">Sci-Hub</span></div><span class="badge badge-scihub">⚡ Free</span></div><div class="desc">85M+ scholarly articles, bypassing paywalls. Founded by Alexandra Elbakyan.</div></div>
       <div class="card"><div class="top"><div class="name-wrapper"><span class="name">Internet Archive</span></div><span class="badge badge-open">Open</span></div><div class="desc">41M+ books, 14M+ videos, 835B+ web pages. Wayback Machine, text archive.</div></div>
       <div class="card"><div class="top"><div class="name-wrapper"><span class="name">Library Genesis</span></div><span class="badge badge-open">Open</span></div><div class="desc">LibGen — 2.5M+ books and articles, primarily STEM.</div></div>
       <div class="card"><div class="top"><div class="name-wrapper"><span class="name">Z-Library</span></div><span class="badge badge-open">Open</span></div><div class="desc">13M+ books and articles across all disciplines.</div></div>
       <div class="card"><div class="top"><div class="name-wrapper"><span class="name">Harvard Dataverse</span></div><span class="badge badge-open">Open</span></div><div class="desc">Open data repository — 500K+ datasets across all research domains.</div></div>
       <div class="card"><div class="top"><div class="name-wrapper"><span class="name">Figshare</span></div><span class="badge badge-open">Open</span></div><div class="desc">Research data sharing and collaboration. 1M+ datasets and figures.</div></div>
+      <div class="card"><div class="top"><div class="name-wrapper"><span class="name">Sci-Hub.ru</span></div><span class="badge badge-scihub">⚡ Official</span></div><div class="desc">Sci-Hub official mirror - Free access to 85M+ scholarly articles.</div></div>
+      <div class="card"><div class="top"><div class="name-wrapper"><span class="name">Sci-Hub.st</span></div><span class="badge badge-scihub">⚡ Official</span></div><div class="desc">Sci-Hub official mirror - Bypass paywalls for research papers.</div></div>
+      <div class="card"><div class="top"><div class="name-wrapper"><span class="name">Sci-Hub.su</span></div><span class="badge badge-scihub">⚡ Official</span></div><div class="desc">Sci-Hub official mirror - Access to scholarly articles.</div></div>
+      <div class="card"><div class="top"><div class="name-wrapper"><span class="name">Sci-hub.box</span></div><span class="badge badge-scihub">⚡ Official</span></div><div class="desc">Sci-Hub official mirror - Research paper access.</div></div>
+      <div class="card"><div class="top"><div class="name-wrapper"><span class="name">Sci-Hub.red</span></div><span class="badge badge-scihub">⚡ Official</span></div><div class="desc">Sci-Hub official mirror - Academic papers access.</div></div>
+      <div class="card"><div class="top"><div class="name-wrapper"><span class="name">Sci-Hub.al</span></div><span class="badge badge-scihub">⚡ Official</span></div><div class="desc">Sci-Hub official mirror - Scholarly articles access.</div></div>
+      <div class="card"><div class="top"><div class="name-wrapper"><span class="name">Sci-Hub.mk</span></div><span class="badge badge-scihub">⚡ Official</span></div><div class="desc">Sci-Hub official mirror - Research papers.</div></div>
+      <div class="card"><div class="top"><div class="name-wrapper"><span class="name">Sci-Hub.ee</span></div><span class="badge badge-scihub">⚡ Official</span></div><div class="desc">Sci-Hub official mirror - Academic access.</div></div>
+      <div class="card"><div class="top"><div class="name-wrapper"><span class="name">Memory of the World</span></div><span class="badge badge-open">Open</span></div><div class="desc">Digital library of historical documents. UNESCO heritage collections.</div></div>
+      <div class="card"><div class="top"><div class="name-wrapper"><span class="name">Sci-Bot</span></div><span class="badge badge-open">AI</span></div><div class="desc">AI-powered research assistant for finding academic papers.</div></div>
+      <div class="card"><div class="top"><div class="name-wrapper"><span class="name">Sci-Net</span></div><span class="badge badge-open">Open</span></div><div class="desc">Scientific communication support network.</div></div>
+      <div class="card"><div class="top"><div class="name-wrapper"><span class="name">WeLib</span></div><span class="badge badge-open">Open</span></div><div class="desc">43M books, 98M papers. All free. All yours.</div></div>
     </div>
   </div>
 </div>
 
-<!-- ════════════════════════════════════════════════════════════ -->
 <!-- AI SPACES SECTION -->
 <!-- ═════════🤖══════════════════════════════════════ -->
 <div id="aiSection" style="display:none;">
@@ -1051,182 +1099,157 @@ setupNewSectionHandlers();
   </div>
 </div>
 
-<style>
-  /* ── IMPROVED READABILITY ── */
-  :root {
-    --bg: #f8f9fa; /* Light background for readability */
-    --surface: #ffffff; /* White surface */
-    --surface2: #f1f3f4; /* Light gray for secondary surfaces */
-    --border: #e0e0e0; /* Light border */
-    --text: #202124; /* Dark text for readability */
-    --text2: #5f6368; /* Secondary text */
-    --accent: #1a73e8; /* Google blue */
-    --green: #188038;
-    --orange: #d58512;
-    --pink: #d01884;
-    --purple: #8e24aa;
-    --red: #d93025;
-    --india-saffron: #ff9933;
-    --india-green: #138808;
-  }
-  
-  body {
-    font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    line-height: 1.6;
-    min-height: 100vh;
-  }
-  
-  .header {
-    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
-    border-bottom: 1px solid var(--border);
-  }
-  
-  .card, .news-item {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-  }
-  
-  .card:hover, .news-item:hover {
-    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-  }
-  
-  .name, .news-title {
-    color: var(--text);
-    font-weight: 500;
-  }
-  
-  .desc, .news-meta {
-    color: var(--text2);
-  }
-  
-  /* ── SECTION TOGGLE ── */
-  .section-toggle {
-    display: flex;
-    gap: 0.4rem;
-    margin-bottom: 1.5rem;
-    flex-wrap: wrap;
-    background: var(--surface);
-    padding: 0.5rem;
-    border-radius: 12px;
-    border: 1px solid var(--border);
-  }
-  
-  .section-btn {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    color: var(--text2);
-    font-size: 0.85rem;
-    padding: 0.5rem 1rem;
-    cursor: pointer;
-    transition: all 0.15s;
-    font-weight: 500;
-  }
-  
-  .section-btn:hover {
-    background: var(--surface);
-    border-color: var(--accent);
-    color: var(--accent);
-  }
-  
-  .section-btn.active {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: white;
-  }
-  
-  /* ── CARD LAYOUT ── */
-  .db-grid, .news-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: 1rem;
-  }
-  
-  .card, .news-item {
-    border-radius: 10px;
-    padding: 1rem;
-    transition: all 0.15s;
-    cursor: pointer;
-  }
-  
-  .card:hover, .news-item:hover {
-    border-color: var(--accent);
-  }
-  
-  .name-wrapper {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin-bottom: 0.5rem;
-  }
-  
-  .name {
-    font-size: 1rem;
-    font-weight: 500;
-  }
-  
-  .desc {
-    font-size: 0.85rem;
-    line-height: 1.5;
-  }
-  
-  /* ── BADGES ── */
-  .badge {
-    font-size: 0.7rem;
-    font-weight: 600;
-    padding: 0.2rem 0.6rem;
-    border-radius: 20px;
-    letter-spacing: 0.02em;
-  }
-  
-  .badge-open { background: #e8f0fe; color: var(--accent); border: 1px solid #d2e3fc; }
-  .badge-scihub { background: #fce8e6; color: var(--red); border: 1px solid #f9c0bb; }
-  .badge-shared { background: #e6f4ea; color: var(--green); border: 1px solid #b7e1cd; }
-  .badge-wtech { background: #f3e5f5; color: var(--purple); border: 1px solid #e1bee7; }
-  .badge-wake { background: #fff3e0; color: var(--orange); border: 1px solid #ffe0b2; }
-  .badge-india { background: #fff8e1; color: var(--india-saffron); border: 1px solid #ffecb3; }
-  
-  .popular-badge {
-    font-size: 0.65rem;
-    background: var(--orange);
-    color: white;
-    padding: 0.1rem 0.4rem;
-    border-radius: 3px;
-    font-weight: 600;
-  }
-  
-  /* ── NEWS SECTION ── */
-  .news-item {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-  
-  .news-title {
-    font-size: 0.9rem;
-    font-weight: 500;
-    line-height: 1.4;
-  }
-  
-  .news-meta {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    font-size: 0.75rem;
-    align-items: center;
-  }
-  
-  .news-source {
-    font-weight: 500;
-  }
+<style id="theme-style">
+/* ── LIGHT THEME OVERRIDE ── */
+.light-theme {
+  --bg: #f8f9fa;
+  --surface: #ffffff;
+  --surface2: #f1f3f4;
+  --border: #e0e0e0;
+  --text: #202124;
+  --text2: #5f6368;
+  --accent: #1a73e8;
+  --green: #188038;
+  --orange: #d58512;
+  --pink: #d01884;
+  --purple: #8e24aa;
+  --red: #d93025;
+  --india-saffron: #ff9933;
+  --india-green: #138808;
+}
+.light-theme body {
+  font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+.light-theme .header {
+  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+  border-bottom: 1px solid var(--border);
+}
+.light-theme .card,
+.light-theme .news-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+.light-theme .card:hover,
+.light-theme .news-item:hover {
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+.light-theme .name,
+.light-theme .news-title {
+  color: var(--text);
+  font-weight: 500;
+}
+.light-theme .desc,
+.light-theme .news-meta {
+  color: var(--text2);
+}
+.light-theme .section-toggle {
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+.light-theme .section-btn {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text2);
+}
+.light-theme .section-btn:hover {
+  background: var(--surface);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.light-theme .section-btn.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+  box-shadow: 0 1px 3px rgba(26,115,232,0.2);
+}
+.light-theme .filter-bar {
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+.light-theme .filter-btn {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text2);
+}
+.light-theme .filter-btn:hover {
+  background: var(--surface);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.light-theme .filter-btn.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+.light-theme .search-bar {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+.light-theme .search-bar:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(26,115,232,0.12);
+}
+
+.theme-toggle-btn:hover { opacity: 0.8; }.light-theme .badge-open,
+.light-theme .badge-scihub {
+  color: var(--green);
+}
+.light-theme .news-tab {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text2);
+}
+.light-theme .news-tab:hover {
+  background: var(--surface);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.light-theme .news-tab.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+.light-theme .news-error {
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+.light-theme a {
+  color: var(--accent);
+}
 </style>
 
 <script>
   // Initialize: show 'all' section
   document.querySelector('.section-btn[data-section="all"]').click();
+
+// ═════════════════════════════════════════════════════
+// THEME TOGGLE
+// ═════════════════════════════════════════════════════
+(function() {
+  const btn = document.getElementById('themeToggle');
+  const html = document.documentElement;
+  const saved = localStorage.getItem('research-hub-theme');
+
+  // Apply saved theme
+  if (saved === 'light') {
+    html.classList.add('light-theme');
+    if (btn) btn.innerHTML = '☀️ Light';
+  }
+
+  if (btn) {
+    btn.addEventListener('click', function() {
+      html.classList.toggle('light-theme');
+      const isLight = html.classList.contains('light-theme');
+      this.innerHTML = isLight ? '☀️ Light' : '🌙 Dark';
+      localStorage.setItem('research-hub-theme', isLight ? 'light' : 'dark');
+    });
+  }
+})();
+
 </script>
 
 </body>
