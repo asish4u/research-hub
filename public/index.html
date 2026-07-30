@@ -238,7 +238,7 @@
     <button class="section-btn" data-section="archives">📚 Archives</button>
     <button class="section-btn" data-section="ai">🤖 AI Spaces</button>
     <button class="section-btn" data-section="deals">💰 Deals</button>
-    <button class="section-btn" data-section="nearby">🏠 Local Libraries</button>
+
     <button class="section-btn" data-section="nc">🏫 NC Wake Resources</button>
     <button class="section-btn" data-section="intl">🌐 International</button>
     <button class="section-btn" data-section="india">🇮🇳 India</button>
@@ -632,9 +632,7 @@ document.getElementById('mainToggle').addEventListener('click', e => {
   } else if (section === 'deals') {
     document.getElementById('dealsSection').style.display = 'block';
     setupNewSectionHandlers();
-  } else if (section === 'nearby') {
-    document.getElementById('nearbySection').style.display = 'block';
-    setupNewSectionHandlers();
+
   } else {
     // all, nc, intl, india → show database section
     dbEl.style.display = 'block';
@@ -762,27 +760,69 @@ const databases = [
   { name: 'Libby / OverDrive', desc: 'Borrow ebooks & audiobooks from Wake County.', cat: 'Ebooks', access: 'wake', section: 'nc', url: 'https://wakecounty.overdrive.com/' },
 
   // ═══ INTERNATIONAL & OPEN ACCESS ═══
-  { name: 'Sci-Hub', desc: 'Free access to 85M+ scholarly articles. Bypass paywalls.', cat: 'General', access: 'scihub', section: 'intl', popular: true, url: 'https://sci-hub.ru/' },
-  { name: 'PubMed Central (PMC)', desc: 'Free full-text biomedical and life sciences from NIH.', cat: 'Health', access: 'open', section: 'intl', popular: true, url: 'https://www.ncbi.nlm.nih.gov/pmc/' },
-  { name: 'arXiv', desc: 'Open-access preprints — physics, math, CS, biology, finance.', cat: 'Science', access: 'open', section: 'intl', popular: true, url: 'https://arxiv.org/' },
-  { name: 'Google Scholar', desc: 'Scholarly literature search — all disciplines.', cat: 'General', access: 'open', section: 'intl', popular: true, url: 'https://scholar.google.com/' },
-  { name: 'DOAJ', desc: '20,000+ peer-reviewed open-access journals — all subjects.', cat: 'General', access: 'open', section: 'intl', popular: true, url: 'https://doaj.org/' },
-  { name: 'Semantic Scholar', desc: 'AI-powered search — 200M+ papers.', cat: 'General', access: 'open', section: 'intl', popular: true, url: 'https://www.semanticscholar.org/' },
-  { name: 'ResearchGate', desc: 'Researcher social network with full-text PDFs.', cat: 'General', access: 'open', section: 'intl', popular: true, url: 'https://www.researchgate.net/' },
-  { name: 'Unpaywall', desc: 'Browser extension — finds free PDFs for paywalled papers.', cat: 'General', access: 'open', section: 'intl', popular: true, url: 'https://unpaywall.org/' },
-  { name: 'Web of Science', desc: 'Citation index — 21,000+ journals. Institutional access.', cat: 'General', access: 'open', section: 'intl', url: 'https://www.webofscience.com/' },
-  { name: 'IEEE Xplore', desc: 'Engineering, electronics, CS — journals, papers, standards.', cat: 'Technology', access: 'open', section: 'intl', url: 'https://ieeexplore.ieee.org/' },
-  { name: 'SpringerLink', desc: 'Journals and books — science, tech, medicine, humanities.', cat: 'General', access: 'open', section: 'intl', url: 'https://link.springer.com/' },
-  { name: 'ScienceDirect', desc: 'Elsevier journals — science, tech, medicine, social sciences.', cat: 'General', access: 'open', section: 'intl', url: 'https://www.sciencedirect.com/' },
-  { name: 'Nature', desc: 'Nature Portfolio — leading scientific publications.', cat: 'Science', access: 'open', section: 'intl', url: 'https://www.nature.com/' },
-  { name: 'Cambridge Core', desc: 'Cambridge University Press journals — all disciplines.', cat: 'General', access: 'open', section: 'intl', url: 'https://www.cambridge.org/core' },
-  { name: 'CORE', desc: 'Aggregator — 250M+ open-access papers worldwide.', cat: 'General', access: 'open', section: 'intl', url: 'https://core.ac.uk/' },
-  { name: 'BASE', desc: '300M+ documents from 10,000+ providers — 60% free full-text.', cat: 'General', access: 'open', section: 'intl', url: 'https://www.base-search.net/' },
-  { name: 'Internet Archive Scholar', desc: '25M+ preserved scholarly articles.', cat: 'General', access: 'open', section: 'intl', url: 'https://scholar.archive.org/' },
-  { name: 'PubMed', desc: '36M+ biomedical citations and abstracts.', cat: 'Health', access: 'open', section: 'intl', url: 'https://pubmed.ncbi.nlm.nih.gov/' },
-  { name: 'Cochrane Library', desc: 'Systematic reviews for evidence-based healthcare.', cat: 'Health', access: 'open', section: 'intl', url: 'https://www.cochranelibrary.com/' },
-  { name: 'Google Patents', desc: 'Search 120M+ patents worldwide — full text.', cat: 'Technology', access: 'open', section: 'intl', url: 'https://patents.google.com/' },
-  { name: 'Espacenet', desc: 'European Patent Office — 150M+ patents.', cat: 'Technology', access: 'open', section: 'intl', url: 'https://worldwide.espacenet.com/' },
+  { name: 'Sci-Hub', desc: 'Free access to 85M+ scholarly articles. Bypass paywalls.', cat: 'General', access: 'scihub',   { name: 'WorldCat', desc: 'Find books in 10,000+ libraries worldwide. Enter your location to see nearby copies.', cat: 'General', access: 'open', section: 'nc', popular: true, url: 'https://www.worldcat.org/'},
+  { name: 'Sci-Hub', desc: 'Free access to 85M+ scholarly articles. Bypass paywalls.', cat: 'General', access: 'scihub', section: 'intl', popular: true, url: 'https://sci-hub.ru/'},
+  { name: 'PubMed Central (PMC)', desc: 'Free full-text biomedical and life sciences from NIH.', cat: 'Health', access: 'open', section: 'intl', popular: true, url: 'https://www.ncbi.nlm.nih.gov/pmc/', popular: true, url: 'https://sci-hub.ru/' },
+  { name: 'PubMed Central (PMC)', desc: 'Free full-text biomedical and life sciences from NIH.', cat: 'Health', access: 'open',   { name: 'WorldCat', desc: 'Find books in 10,000+ libraries worldwide. Enter your location to see nearby copies.', cat: 'General', access: 'open', section: 'nc', popular: true, url: 'https://www.worldcat.org/'},
+  { name: 'Sci-Hub', desc: 'Free access to 85M+ scholarly articles. Bypass paywalls.', cat: 'General', access: 'scihub', section: 'intl', popular: true, url: 'https://sci-hub.ru/'},
+  { name: 'PubMed Central (PMC)', desc: 'Free full-text biomedical and life sciences from NIH.', cat: 'Health', access: 'open', section: 'intl', popular: true, url: 'https://www.ncbi.nlm.nih.gov/pmc/', popular: true, url: 'https://www.ncbi.nlm.nih.gov/pmc/' },
+  { name: 'arXiv', desc: 'Open-access preprints — physics, math, CS, biology, finance.', cat: 'Science', access: 'open',   { name: 'WorldCat', desc: 'Find books in 10,000+ libraries worldwide. Enter your location to see nearby copies.', cat: 'General', access: 'open', section: 'nc', popular: true, url: 'https://www.worldcat.org/'},
+  { name: 'Sci-Hub', desc: 'Free access to 85M+ scholarly articles. Bypass paywalls.', cat: 'General', access: 'scihub', section: 'intl', popular: true, url: 'https://sci-hub.ru/'},
+  { name: 'PubMed Central (PMC)', desc: 'Free full-text biomedical and life sciences from NIH.', cat: 'Health', access: 'open', section: 'intl', popular: true, url: 'https://www.ncbi.nlm.nih.gov/pmc/', popular: true, url: 'https://arxiv.org/' },
+  { name: 'Google Scholar', desc: 'Scholarly literature search — all disciplines.', cat: 'General', access: 'open',   { name: 'WorldCat', desc: 'Find books in 10,000+ libraries worldwide. Enter your location to see nearby copies.', cat: 'General', access: 'open', section: 'nc', popular: true, url: 'https://www.worldcat.org/'},
+  { name: 'Sci-Hub', desc: 'Free access to 85M+ scholarly articles. Bypass paywalls.', cat: 'General', access: 'scihub', section: 'intl', popular: true, url: 'https://sci-hub.ru/'},
+  { name: 'PubMed Central (PMC)', desc: 'Free full-text biomedical and life sciences from NIH.', cat: 'Health', access: 'open', section: 'intl', popular: true, url: 'https://www.ncbi.nlm.nih.gov/pmc/', popular: true, url: 'https://scholar.google.com/' },
+  { name: 'DOAJ', desc: '20,000+ peer-reviewed open-access journals — all subjects.', cat: 'General', access: 'open',   { name: 'WorldCat', desc: 'Find books in 10,000+ libraries worldwide. Enter your location to see nearby copies.', cat: 'General', access: 'open', section: 'nc', popular: true, url: 'https://www.worldcat.org/'},
+  { name: 'Sci-Hub', desc: 'Free access to 85M+ scholarly articles. Bypass paywalls.', cat: 'General', access: 'scihub', section: 'intl', popular: true, url: 'https://sci-hub.ru/'},
+  { name: 'PubMed Central (PMC)', desc: 'Free full-text biomedical and life sciences from NIH.', cat: 'Health', access: 'open', section: 'intl', popular: true, url: 'https://www.ncbi.nlm.nih.gov/pmc/', popular: true, url: 'https://doaj.org/' },
+  { name: 'Semantic Scholar', desc: 'AI-powered search — 200M+ papers.', cat: 'General', access: 'open',   { name: 'WorldCat', desc: 'Find books in 10,000+ libraries worldwide. Enter your location to see nearby copies.', cat: 'General', access: 'open', section: 'nc', popular: true, url: 'https://www.worldcat.org/'},
+  { name: 'Sci-Hub', desc: 'Free access to 85M+ scholarly articles. Bypass paywalls.', cat: 'General', access: 'scihub', section: 'intl', popular: true, url: 'https://sci-hub.ru/'},
+  { name: 'PubMed Central (PMC)', desc: 'Free full-text biomedical and life sciences from NIH.', cat: 'Health', access: 'open', section: 'intl', popular: true, url: 'https://www.ncbi.nlm.nih.gov/pmc/', popular: true, url: 'https://www.semanticscholar.org/' },
+  { name: 'ResearchGate', desc: 'Researcher social network with full-text PDFs.', cat: 'General', access: 'open',   { name: 'WorldCat', desc: 'Find books in 10,000+ libraries worldwide. Enter your location to see nearby copies.', cat: 'General', access: 'open', section: 'nc', popular: true, url: 'https://www.worldcat.org/'},
+  { name: 'Sci-Hub', desc: 'Free access to 85M+ scholarly articles. Bypass paywalls.', cat: 'General', access: 'scihub', section: 'intl', popular: true, url: 'https://sci-hub.ru/'},
+  { name: 'PubMed Central (PMC)', desc: 'Free full-text biomedical and life sciences from NIH.', cat: 'Health', access: 'open', section: 'intl', popular: true, url: 'https://www.ncbi.nlm.nih.gov/pmc/', popular: true, url: 'https://www.researchgate.net/' },
+  { name: 'Unpaywall', desc: 'Browser extension — finds free PDFs for paywalled papers.', cat: 'General', access: 'open',   { name: 'WorldCat', desc: 'Find books in 10,000+ libraries worldwide. Enter your location to see nearby copies.', cat: 'General', access: 'open', section: 'nc', popular: true, url: 'https://www.worldcat.org/'},
+  { name: 'Sci-Hub', desc: 'Free access to 85M+ scholarly articles. Bypass paywalls.', cat: 'General', access: 'scihub', section: 'intl', popular: true, url: 'https://sci-hub.ru/'},
+  { name: 'PubMed Central (PMC)', desc: 'Free full-text biomedical and life sciences from NIH.', cat: 'Health', access: 'open', section: 'intl', popular: true, url: 'https://www.ncbi.nlm.nih.gov/pmc/', popular: true, url: 'https://unpaywall.org/' },
+  { name: 'Web of Science', desc: 'Citation index — 21,000+ journals. Institutional access.', cat: 'General', access: 'open',   { name: 'WorldCat', desc: 'Find books in 10,000+ libraries worldwide. Enter your location to see nearby copies.', cat: 'General', access: 'open', section: 'nc', popular: true, url: 'https://www.worldcat.org/'},
+  { name: 'Sci-Hub', desc: 'Free access to 85M+ scholarly articles. Bypass paywalls.', cat: 'General', access: 'scihub', section: 'intl', popular: true, url: 'https://sci-hub.ru/'},
+  { name: 'PubMed Central (PMC)', desc: 'Free full-text biomedical and life sciences from NIH.', cat: 'Health', access: 'open', section: 'intl', popular: true, url: 'https://www.ncbi.nlm.nih.gov/pmc/', url: 'https://www.webofscience.com/' },
+  { name: 'IEEE Xplore', desc: 'Engineering, electronics, CS — journals, papers, standards.', cat: 'Technology', access: 'open',   { name: 'WorldCat', desc: 'Find books in 10,000+ libraries worldwide. Enter your location to see nearby copies.', cat: 'General', access: 'open', section: 'nc', popular: true, url: 'https://www.worldcat.org/'},
+  { name: 'Sci-Hub', desc: 'Free access to 85M+ scholarly articles. Bypass paywalls.', cat: 'General', access: 'scihub', section: 'intl', popular: true, url: 'https://sci-hub.ru/'},
+  { name: 'PubMed Central (PMC)', desc: 'Free full-text biomedical and life sciences from NIH.', cat: 'Health', access: 'open', section: 'intl', popular: true, url: 'https://www.ncbi.nlm.nih.gov/pmc/', url: 'https://ieeexplore.ieee.org/' },
+  { name: 'SpringerLink', desc: 'Journals and books — science, tech, medicine, humanities.', cat: 'General', access: 'open',   { name: 'WorldCat', desc: 'Find books in 10,000+ libraries worldwide. Enter your location to see nearby copies.', cat: 'General', access: 'open', section: 'nc', popular: true, url: 'https://www.worldcat.org/'},
+  { name: 'Sci-Hub', desc: 'Free access to 85M+ scholarly articles. Bypass paywalls.', cat: 'General', access: 'scihub', section: 'intl', popular: true, url: 'https://sci-hub.ru/'},
+  { name: 'PubMed Central (PMC)', desc: 'Free full-text biomedical and life sciences from NIH.', cat: 'Health', access: 'open', section: 'intl', popular: true, url: 'https://www.ncbi.nlm.nih.gov/pmc/', url: 'https://link.springer.com/' },
+  { name: 'ScienceDirect', desc: 'Elsevier journals — science, tech, medicine, social sciences.', cat: 'General', access: 'open',   { name: 'WorldCat', desc: 'Find books in 10,000+ libraries worldwide. Enter your location to see nearby copies.', cat: 'General', access: 'open', section: 'nc', popular: true, url: 'https://www.worldcat.org/'},
+  { name: 'Sci-Hub', desc: 'Free access to 85M+ scholarly articles. Bypass paywalls.', cat: 'General', access: 'scihub', section: 'intl', popular: true, url: 'https://sci-hub.ru/'},
+  { name: 'PubMed Central (PMC)', desc: 'Free full-text biomedical and life sciences from NIH.', cat: 'Health', access: 'open', section: 'intl', popular: true, url: 'https://www.ncbi.nlm.nih.gov/pmc/', url: 'https://www.sciencedirect.com/' },
+  { name: 'Nature', desc: 'Nature Portfolio — leading scientific publications.', cat: 'Science', access: 'open',   { name: 'WorldCat', desc: 'Find books in 10,000+ libraries worldwide. Enter your location to see nearby copies.', cat: 'General', access: 'open', section: 'nc', popular: true, url: 'https://www.worldcat.org/'},
+  { name: 'Sci-Hub', desc: 'Free access to 85M+ scholarly articles. Bypass paywalls.', cat: 'General', access: 'scihub', section: 'intl', popular: true, url: 'https://sci-hub.ru/'},
+  { name: 'PubMed Central (PMC)', desc: 'Free full-text biomedical and life sciences from NIH.', cat: 'Health', access: 'open', section: 'intl', popular: true, url: 'https://www.ncbi.nlm.nih.gov/pmc/', url: 'https://www.nature.com/' },
+  { name: 'Cambridge Core', desc: 'Cambridge University Press journals — all disciplines.', cat: 'General', access: 'open',   { name: 'WorldCat', desc: 'Find books in 10,000+ libraries worldwide. Enter your location to see nearby copies.', cat: 'General', access: 'open', section: 'nc', popular: true, url: 'https://www.worldcat.org/'},
+  { name: 'Sci-Hub', desc: 'Free access to 85M+ scholarly articles. Bypass paywalls.', cat: 'General', access: 'scihub', section: 'intl', popular: true, url: 'https://sci-hub.ru/'},
+  { name: 'PubMed Central (PMC)', desc: 'Free full-text biomedical and life sciences from NIH.', cat: 'Health', access: 'open', section: 'intl', popular: true, url: 'https://www.ncbi.nlm.nih.gov/pmc/', url: 'https://www.cambridge.org/core' },
+  { name: 'CORE', desc: 'Aggregator — 250M+ open-access papers worldwide.', cat: 'General', access: 'open',   { name: 'WorldCat', desc: 'Find books in 10,000+ libraries worldwide. Enter your location to see nearby copies.', cat: 'General', access: 'open', section: 'nc', popular: true, url: 'https://www.worldcat.org/'},
+  { name: 'Sci-Hub', desc: 'Free access to 85M+ scholarly articles. Bypass paywalls.', cat: 'General', access: 'scihub', section: 'intl', popular: true, url: 'https://sci-hub.ru/'},
+  { name: 'PubMed Central (PMC)', desc: 'Free full-text biomedical and life sciences from NIH.', cat: 'Health', access: 'open', section: 'intl', popular: true, url: 'https://www.ncbi.nlm.nih.gov/pmc/', url: 'https://core.ac.uk/' },
+  { name: 'BASE', desc: '300M+ documents from 10,000+ providers — 60% free full-text.', cat: 'General', access: 'open',   { name: 'WorldCat', desc: 'Find books in 10,000+ libraries worldwide. Enter your location to see nearby copies.', cat: 'General', access: 'open', section: 'nc', popular: true, url: 'https://www.worldcat.org/'},
+  { name: 'Sci-Hub', desc: 'Free access to 85M+ scholarly articles. Bypass paywalls.', cat: 'General', access: 'scihub', section: 'intl', popular: true, url: 'https://sci-hub.ru/'},
+  { name: 'PubMed Central (PMC)', desc: 'Free full-text biomedical and life sciences from NIH.', cat: 'Health', access: 'open', section: 'intl', popular: true, url: 'https://www.ncbi.nlm.nih.gov/pmc/', url: 'https://www.base-search.net/' },
+  { name: 'Internet Archive Scholar', desc: '25M+ preserved scholarly articles.', cat: 'General', access: 'open',   { name: 'WorldCat', desc: 'Find books in 10,000+ libraries worldwide. Enter your location to see nearby copies.', cat: 'General', access: 'open', section: 'nc', popular: true, url: 'https://www.worldcat.org/'},
+  { name: 'Sci-Hub', desc: 'Free access to 85M+ scholarly articles. Bypass paywalls.', cat: 'General', access: 'scihub', section: 'intl', popular: true, url: 'https://sci-hub.ru/'},
+  { name: 'PubMed Central (PMC)', desc: 'Free full-text biomedical and life sciences from NIH.', cat: 'Health', access: 'open', section: 'intl', popular: true, url: 'https://www.ncbi.nlm.nih.gov/pmc/', url: 'https://scholar.archive.org/' },
+  { name: 'PubMed', desc: '36M+ biomedical citations and abstracts.', cat: 'Health', access: 'open',   { name: 'WorldCat', desc: 'Find books in 10,000+ libraries worldwide. Enter your location to see nearby copies.', cat: 'General', access: 'open', section: 'nc', popular: true, url: 'https://www.worldcat.org/'},
+  { name: 'Sci-Hub', desc: 'Free access to 85M+ scholarly articles. Bypass paywalls.', cat: 'General', access: 'scihub', section: 'intl', popular: true, url: 'https://sci-hub.ru/'},
+  { name: 'PubMed Central (PMC)', desc: 'Free full-text biomedical and life sciences from NIH.', cat: 'Health', access: 'open', section: 'intl', popular: true, url: 'https://www.ncbi.nlm.nih.gov/pmc/', url: 'https://pubmed.ncbi.nlm.nih.gov/' },
+  { name: 'Cochrane Library', desc: 'Systematic reviews for evidence-based healthcare.', cat: 'Health', access: 'open',   { name: 'WorldCat', desc: 'Find books in 10,000+ libraries worldwide. Enter your location to see nearby copies.', cat: 'General', access: 'open', section: 'nc', popular: true, url: 'https://www.worldcat.org/'},
+  { name: 'Sci-Hub', desc: 'Free access to 85M+ scholarly articles. Bypass paywalls.', cat: 'General', access: 'scihub', section: 'intl', popular: true, url: 'https://sci-hub.ru/'},
+  { name: 'PubMed Central (PMC)', desc: 'Free full-text biomedical and life sciences from NIH.', cat: 'Health', access: 'open', section: 'intl', popular: true, url: 'https://www.ncbi.nlm.nih.gov/pmc/', url: 'https://www.cochranelibrary.com/' },
+  { name: 'Google Patents', desc: 'Search 120M+ patents worldwide — full text.', cat: 'Technology', access: 'open',   { name: 'WorldCat', desc: 'Find books in 10,000+ libraries worldwide. Enter your location to see nearby copies.', cat: 'General', access: 'open', section: 'nc', popular: true, url: 'https://www.worldcat.org/'},
+  { name: 'Sci-Hub', desc: 'Free access to 85M+ scholarly articles. Bypass paywalls.', cat: 'General', access: 'scihub', section: 'intl', popular: true, url: 'https://sci-hub.ru/'},
+  { name: 'PubMed Central (PMC)', desc: 'Free full-text biomedical and life sciences from NIH.', cat: 'Health', access: 'open', section: 'intl', popular: true, url: 'https://www.ncbi.nlm.nih.gov/pmc/', url: 'https://patents.google.com/' },
+  { name: 'Espacenet', desc: 'European Patent Office — 150M+ patents.', cat: 'Technology', access: 'open',   { name: 'WorldCat', desc: 'Find books in 10,000+ libraries worldwide. Enter your location to see nearby copies.', cat: 'General', access: 'open', section: 'nc', popular: true, url: 'https://www.worldcat.org/'},
+  { name: 'Sci-Hub', desc: 'Free access to 85M+ scholarly articles. Bypass paywalls.', cat: 'General', access: 'scihub', section: 'intl', popular: true, url: 'https://sci-hub.ru/'},
+  { name: 'PubMed Central (PMC)', desc: 'Free full-text biomedical and life sciences from NIH.', cat: 'Health', access: 'open', section: 'intl', popular: true, url: 'https://www.ncbi.nlm.nih.gov/pmc/', url: 'https://worldwide.espacenet.com/' },
 
   // ═══ INDIA ═══
   { name: 'Shodhganga', desc: '400,000+ PhD theses from 600+ Indian universities. Free full-text.', cat: 'General', access: 'india', section: 'india', popular: true, url: 'https://shodhganga.inflibnet.ac.in/' },
