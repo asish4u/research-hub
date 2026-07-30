@@ -605,12 +605,16 @@ document.getElementById('mainToggle').addEventListener('click', e => {
     if (!newsCache[activeNewsTab]) fetchNews(activeNewsTab);
   } else if (section === 'archives') {
     document.getElementById('archivesSection').style.display = 'block';
+    setupNewSectionHandlers();
   } else if (section === 'ai') {
     document.getElementById('aiSection').style.display = 'block';
+    setupNewSectionHandlers();
   } else if (section === 'deals') {
     document.getElementById('dealsSection').style.display = 'block';
+    setupNewSectionHandlers();
   } else if (section === 'nearby') {
     document.getElementById('nearbySection').style.display = 'block';
+    setupNewSectionHandlers();
   } else {
     // all, nc, intl, india → show database section
     dbEl.style.display = 'block';
