@@ -943,12 +943,19 @@ render();
   <div class="featured-section">
     <h2 class="news-h2">📚 Data Archives <span style="font-size:0.75rem;color:var(--text2);font-weight:400;">— open data repositories & mirrors</span></h2>
         <div class="featured-grid" id="archivesGrid">
+      <a href="https://open-slum.pages.dev" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">Open SLUM</span></div><span class="badge badge-open">Mirror</span></div><div class="desc">Live status board & working mirrors for Anna's Archive, LibGen, Z-Library, Sci-Hub.</div></a>
       <a href="https://annas-archive.org" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">Anna's Archive</span></div><span class="badge badge-open">Open</span></div><div class="desc">Largest shadow library — books, papers, magazines. Free access to 30M+ files.</div></a>
+      <a href="https://annas-archive.li" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">Anna's Archive LI</span></div><span class="badge badge-open">Open</span></div><div class="desc">Official Anna's Archive mirror (95%+ uptime).</div></a>
+      <a href="https://annas-archive.gl" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">Anna's Archive GL</span></div><span class="badge badge-open">Open</span></div><div class="desc">Official Anna's Archive mirror (98%+ uptime).</div></a>
       <a href="https://the-eye.eu" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">The Eye</span></div><span class="badge badge-open">Open</span></div><div class="desc">35TB+ of open data mirrors — software, books, magazines, datasets.</div></a>
       <a href="https://sci-hub.ru" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">Sci-Hub</span></div><span class="badge badge-open">Free</span></div><div class="desc">85M+ scholarly articles, bypassing paywalls. Founded by Alexandra Elbakyan.</div></a>
+      <a href="https://sci-hub.red" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">Sci-Hub RED</span></div><span class="badge badge-open">Free</span></div><div class="desc">Sci-Hub mirror (85%+ uptime).</div></a>
+      <a href="https://sci-hub.box" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">Sci-Hub BOX</span></div><span class="badge badge-open">Free</span></div><div class="desc">Sci-Hub mirror (88%+ uptime).</div></a>
       <a href="https://archive.org" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">Internet Archive</span></div><span class="badge badge-open">Open</span></div><div class="desc">41M+ books, 14M+ videos, 835B+ web pages. Wayback Machine, text archive.</div></a>
       <a href="https://libgen.lc" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">Library Genesis (libgen.lc)</span></div><span class="badge badge-open">Open</span></div><div class="desc">LibGen — 2.5M+ books and articles, primarily STEM.</div></a>
+      <a href="https://libgen.la" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">LibGen LA</span></div><span class="badge badge-open">Open</span></div><div class="desc">LibGen mirror (96%+ uptime).</div></a>
       <a href="https://z-library.se" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">Z-Library (z-library.se)</span></div><span class="badge badge-open">Open</span></div><div class="desc">13M+ books and articles across all disciplines.</div></a>
+      <a href="https://library.memoryoftheworld.org" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">Memory of the World</span></div><span class="badge badge-open">Open</span></div><div class="desc">Digital library of historical documents. UNESCO heritage collections.</div></a>
       <a href="https://dataverse.harvard.edu" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">Harvard Dataverse</span></div><span class="badge badge-open">Open</span></div><div class="desc">Open data repository — 500K+ datasets across all research domains.</div></a>
       <a href="https://figshare.com" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">Figshare</span></div><span class="badge badge-open">Open</span></div><div class="desc">Research data sharing and collaboration. 1M+ datasets and figures.</div></a>
     </div>
@@ -961,23 +968,98 @@ render();
 <div id="aiSection" style="display:none;">
   <div class="featured-section">
     <h2 class="news-h2">🤖 AI Resources <span style="font-size:0.75rem;color:var(--text2);font-weight:400;">— popular AI apps & websites to demo</span></h2>
-        <div class="featured-grid" id="aiGrid">
-      <a href="https://chat.openai.com" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">ChatGPT</span></div><span class="badge badge-open">Free</span></div><div class="desc">OpenAI's conversational AI. Chat, write, code, analyze.</div></a>
-      <a href="https://claude.ai" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">Claude</span></div><span class="badge badge-open">Free</span></div><div class="desc">Anthropic's AI assistant. Long-context chat, writing, coding.</div></a>
-      <a href="https://gemini.google.com" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">Gemini</span></div><span class="badge badge-open">Free</span></div><div class="desc">Google's multimodal AI for text, image, and code.</div></a>
-      <a href="https://www.perplexity.ai" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">Perplexity</span></div><span class="badge badge-open">Free</span></div><div class="desc">AI search engine with cited, sourced answers.</div></a>
-      <a href="https://poe.com" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">Poe</span></div><span class="badge badge-open">Free</span></div><div class="desc">One app for many bots: ChatGPT, Claude, Gemini, Llama.</div></a>
-      <a href="https://huggingface.co" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">Hugging Face</span></div><span class="badge badge-open">Free</span></div><div class="desc">Hub for open models, datasets, and demos.</div></a>
-      <a href="https://huggingface.co/spaces" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">Hugging Face Spaces</span></div><span class="badge badge-open">Free</span></div><div class="desc">400K+ interactive ML demos runnable in-browser.</div></a>
-      <a href="https://replicate.com/explore" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">Replicate</span></div><span class="badge badge-open">Freemium</span></div><div class="desc">Run open-source models via API. Image, audio, text.</div></a>
-      <a href="https://www.midjourney.com" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">Midjourney</span></div><span class="badge badge-open">Freemium</span></div><div class="desc">Leading AI image generator (web + Discord).</div></a>
-      <a href="https://runwayml.com" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">Runway</span></div><span class="badge badge-open">Freemium</span></div><div class="desc">AI video generation and editing tools.</div></a>
-      <a href="https://elevenlabs.io" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">ElevenLabs</span></div><span class="badge badge-open">Freemium</span></div><div class="desc">Realistic AI voice synthesis and dubbing.</div></a>
-      <a href="https://suno.com" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">Suno</span></div><span class="badge badge-open">Free</span></div><div class="desc">Generate full songs from text prompts.</div></a>
-      <a href="https://cursor.com" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">Cursor</span></div><span class="badge badge-open">Freemium</span></div><div class="desc">AI-first code editor powered by LLMs.</div></a>
-      <a href="https://ollama.com" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">Ollama</span></div><span class="badge badge-open">Free</span></div><div class="desc">Run open-source LLMs locally on your machine.</div></a>
-      <a href="https://www.krea.ai" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">Krea</span></div><span class="badge badge-open">Freemium</span></div><div class="desc">Real-time AI image generation and upscaling.</div></a>
+
+    <div class="category-section">
+      <h3>💬 Free Chat <span class="count">(10)</span></h3>
+      <div class="featured-grid">
+        <a href="https://chat.openai.com" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">ChatGPT</span></div><span class="badge badge-open">Free</span></div><div class="desc">OpenAI's conversational AI. Chat, write, code, analyze.</div></a>
+        <a href="https://claude.ai" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">Claude</span></div><span class="badge badge-open">Free</span></div><div class="desc">Anthropic's AI assistant. Long-context chat, writing, coding.</div></a>
+        <a href="https://gemini.google.com" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">Gemini</span></div><span class="badge badge-open">Free</span></div><div class="desc">Google's multimodal AI for text, image, and code.</div></a>
+        <a href="https://www.perplexity.ai" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">Perplexity</span></div><span class="badge badge-open">Free</span></div><div class="desc">AI search engine with cited, sourced answers.</div></a>
+        <a href="https://poe.com" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">Poe</span></div><span class="badge badge-open">Free</span></div><div class="desc">One app for many bots: ChatGPT, Claude, Gemini, Llama.</div></a>
+        <a href="https://chat.deepseek.com" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">DeepSeek</span></div><span class="badge badge-open">Free</span></div><div class="desc">Open reasoning model — strong coding & math.</div></a>
+        <a href="https://grok.com" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">Grok</span></div><span class="badge badge-open">Free</span></div><div class="desc">xAI chatbot integrated with X (Twitter).</div></a>
+        <a href="https://copilot.microsoft.com" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">Microsoft Copilot</span></div><span class="badge badge-open">Free</span></div><div class="desc">Microsoft's AI across Bing and Office.</div></a>
+        <a href="https://www.meta.ai" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">Meta AI</span></div><span class="badge badge-open">Free</span></div><div class="desc">Meta's assistant across WhatsApp, IG, and web.</div></a>
+        <a href="https://chat.mistral.ai" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">Mistral Le Chat</span></div><span class="badge badge-open">Free</span></div><div class="desc">Mistral's European LLM chat.</div></a>
+      </div>
     </div>
+
+    <div class="category-section">
+      <h3>🎨 Image Generation <span class="count">(8)</span></h3>
+      <div class="featured-grid">
+        <a href="https://www.midjourney.com" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">Midjourney</span></div><span class="badge badge-open">Paid</span></div><div class="desc">Leading AI image generator (web + Discord).</div></a>
+        <a href="https://openai.com/dall-e" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">DALL-E 3</span></div><span class="badge badge-open">Freemium</span></div><div class="desc">OpenAI text-to-image, built into ChatGPT.</div></a>
+        <a href="https://leonardo.ai" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">Leonardo.Ai</span></div><span class="badge badge-open">Freemium</span></div><div class="desc">Game & asset art generation with fine-tuned models.</div></a>
+        <a href="https://www.adobe.com/products/firefly.html" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">Adobe Firefly</span></div><span class="badge badge-open">Freemium</span></div><div class="desc">Commercial-safe image & video generation.</div></a>
+        <a href="https://ideogram.ai" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">Ideogram</span></div><span class="badge badge-open">Free</span></div><div class="desc">Text-in-image generation with accurate typography.</div></a>
+        <a href="https://playground.com" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">Playground</span></div><span class="badge badge-open">Free</span></div><div class="desc">Design-oriented image generation & editing.</div></a>
+        <a href="https://www.krea.ai" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">Krea</span></div><span class="badge badge-open">Freemium</span></div><div class="desc">Real-time AI image generation and upscaling.</div></a>
+        <a href="https://blackforestlabs.ai" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">FLUX (Black Forest)</span></div><span class="badge badge-open">Free</span></div><div class="desc">Open image model family (FLUX.1).</div></a>
+      </div>
+    </div>
+
+    <div class="category-section">
+      <h3>🎙️ Voice & Speech <span class="count">(6)</span></h3>
+      <div class="featured-grid">
+        <a href="https://elevenlabs.io" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">ElevenLabs</span></div><span class="badge badge-open">Freemium</span></div><div class="desc">Realistic AI voice synthesis and dubbing.</div></a>
+        <a href="https://play.ht" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">PlayHT</span></div><span class="badge badge-open">Freemium</span></div><div class="desc">AI voice generation and cloning.</div></a>
+        <a href="https://murf.ai" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">Murf</span></div><span class="badge badge-open">Freemium</span></div><div class="desc">Studio-quality voiceovers for videos.</div></a>
+        <a href="https://www.resemble.ai" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">Resemble AI</span></div><span class="badge badge-open">Paid</span></div><div class="desc">Custom voice cloning & synthesis.</div></a>
+        <a href="https://www.descript.com" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">Descript</span></div><span class="badge badge-open">Freemium</span></div><div class="desc">Audio/video editor with AI voice (Overdub).</div></a>
+        <a href="https://speechify.com" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">Speechify</span></div><span class="badge badge-open">Freemium</span></div><div class="desc">Text-to-speech reader for docs & web.</div></a>
+      </div>
+    </div>
+
+    <div class="category-section">
+      <h3>🎵 Music & Songs <span class="count">(5)</span></h3>
+      <div class="featured-grid">
+        <a href="https://suno.com" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">Suno</span></div><span class="badge badge-open">Free</span></div><div class="desc">Generate full songs from text prompts.</div></a>
+        <a href="https://udio.com" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">Udio</span></div><span class="badge badge-open">Free</span></div><div class="desc">High-quality AI music generation.</div></a>
+        <a href="https://www.riffusion.com" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">Riffusion</span></div><span class="badge badge-open">Free</span></div><div class="desc">Real-time music from text prompts.</div></a>
+        <a href="https://boomy.com" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">Boomy</span></div><span class="badge badge-open">Free</span></div><div class="desc">Instant AI tracks, Spotify-ready.</div></a>
+        <a href="https://soundraw.io" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">Soundraw</span></div><span class="badge badge-open">Freemium</span></div><div class="desc">Royalty-free AI music for creators.</div></a>
+      </div>
+    </div>
+
+    <div class="category-section">
+      <h3>🎬 Video <span class="count">(6)</span></h3>
+      <div class="featured-grid">
+        <a href="https://runwayml.com" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">Runway</span></div><span class="badge badge-open">Freemium</span></div><div class="desc">AI video generation and editing (Gen-3).</div></a>
+        <a href="https://pika.art" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">Pika</span></div><span class="badge badge-open">Free</span></div><div class="desc">Text/image-to-video generation.</div></a>
+        <a href="https://lumalabs.ai/dream-machine" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">Luma Dream Machine</span></div><span class="badge badge-open">Free</span></div><div class="desc">Realistic AI video from prompts.</div></a>
+        <a href="https://klingai.com" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">Kling AI</span></div><span class="badge badge-open">Freemium</span></div><div class="desc">High-fidelity text-to-video.</div></a>
+        <a href="https://www.synthesia.io" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">Synthesia</span></div><span class="badge badge-open">Paid</span></div><div class="desc">AI avatar video presenters.</div></a>
+        <a href="https://www.heygen.com" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">HeyGen</span></div><span class="badge badge-open">Freemium</span></div><div class="desc">AI spokesperson & avatar videos.</div></a>
+      </div>
+    </div>
+
+    <div class="category-section">
+      <h3>💻 Coding <span class="count">(7)</span></h3>
+      <div class="featured-grid">
+        <a href="https://cursor.com" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">Cursor</span></div><span class="badge badge-open">Freemium</span></div><div class="desc">AI-first code editor powered by LLMs.</div></a>
+        <a href="https://github.com/features/copilot" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">GitHub Copilot</span></div><span class="badge badge-open">Paid</span></div><div class="desc">In-editor AI pair programmer.</div></a>
+        <a href="https://replit.com" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">Replit Agent</span></div><span class="badge badge-open">Freemium</span></div><div class="desc">Build apps from prompts in the browser.</div></a>
+        <a href="https://codeium.com" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">Codeium</span></div><span class="badge badge-open">Free</span></div><div class="desc">AI code completion across editors.</div></a>
+        <a href="https://windsurf.com" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">Windsurf</span></div><span class="badge badge-open">Freemium</span></div><div class="desc">Agentic AI IDE (by Codeium).</div></a>
+        <a href="https://v0.dev" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">v0.dev</span></div><span class="badge badge-open">Free</span></div><div class="desc">Generate React UI from prompts (Vercel).</div></a>
+        <a href="https://bolt.new" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">Bolt.new</span></div><span class="badge badge-open">Freemium</span></div><div class="desc">Prompt-to-fullstack-app builder.</div></a>
+      </div>
+    </div>
+
+    <div class="category-section">
+      <h3>🛠️ Models & Dev Platforms <span class="count">(7)</span></h3>
+      <div class="featured-grid">
+        <a href="https://huggingface.co" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">Hugging Face</span></div><span class="badge badge-open">Free</span></div><div class="desc">Hub for open models, datasets, and demos.</div></a>
+        <a href="https://huggingface.co/spaces" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">Hugging Face Spaces</span></div><span class="badge badge-open">Free</span></div><div class="desc">400K+ interactive ML demos runnable in-browser.</div></a>
+        <a href="https://replicate.com/explore" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">Replicate</span></div><span class="badge badge-open">Freemium</span></div><div class="desc">Run open-source models via API. Image, audio, text.</div></a>
+        <a href="https://ollama.com" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">Ollama</span></div><span class="badge badge-open">Free</span></div><div class="desc">Run open-source LLMs locally on your machine.</div></a>
+        <a href="https://www.together.ai" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">Together AI</span></div><span class="badge badge-open">Freemium</span></div><div class="desc">Cloud inference for open models.</div></a>
+        <a href="https://groq.com" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">Groq</span></div><span class="badge badge-open">Free</span></div><div class="desc">Ultra-fast LLM inference (LPU).</div></a>
+        <a href="https://stability.ai" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">Stability AI</span></div><span class="badge badge-open">Freemium</span></div><div class="desc">Open image/audio/video models.</div></a>
+      </div>
+    </div>
+
   </div>
 </div>
 
