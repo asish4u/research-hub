@@ -231,8 +231,8 @@
       <h2 class="news-h2">Live News <span style="font-size:0.75rem;color:var(--text2);font-weight:400;">— bias-rated, sorted by importance</span></h2>
 
       <div class="news-controls" role="tablist" aria-label="News categories">
-        <button class="news-tab active" data-news="world" role="tab" aria-selected="true">🌍 World <span class="count"></span></button>
-        <button class="news-tab" data-news="tech" role="tab">💻 Tech <span class="count"></span></button>
+        <button class="news-tab" data-news="world" role="tab">🌍 World <span class="count"></span></button>
+        <button class="news-tab active" data-news="tech" role="tab" aria-selected="true">💻 Tech <span class="count"></span></button>
         <button class="news-tab" data-news="business" role="tab">📈 Business <span class="count"></span></button>
         <button class="news-tab" data-news="ai" role="tab">🤖 AI <span class="count"></span></button>
         <button class="news-tab" data-news="us" role="tab">🇺🇸 US <span class="count"></span></button>
@@ -447,7 +447,7 @@ const BBC_FALLBACK = {
   us:       'https://feeds.bbci.co.uk/news/world/us_and_canada/rss.xml'
 };
 
-let activeNewsTab = 'world';
+let activeNewsTab = 'tech';
 let newsCache = {};
 
 function extractDomain(url) {

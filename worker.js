@@ -59,7 +59,21 @@ export default {
     }
 
     // Serve index.html for all other paths
-    return env.ASSETS.fetch(request);
+    // Cloudflare returns 'text/html' without charset by default (assets 
+    // binding). Without charset=utf-8, em-dash, curly quotes, arrows, and 
+    // emoji (multi-byte UTF-8) render as mojibake “codes” in many 
+    // readers. Re-wrap HTML responses to advertise charset=utf-8.
+    const response = await env.ASSETS.fetch(request);
+    const headers = new Headers(response.headers);
+    const ct = headers.get('content-type') || '';
+    if (ct.startsWith('text/html')) {
+      headers.set('Content-Type', 'text/html; charset=utf-8');
+    }
+    return new Response(response.body, {
+      headers,
+      status: response.status,
+      statusText: response.statusText,
+    });
   }
 };
 
