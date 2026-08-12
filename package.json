@@ -6,7 +6,9 @@
   "description": "Research Hub — unified library databases + bias-rated news. Deploys as a Cloudflare Worker (worker.js) serving static index.html + /api/news.",
   "scripts": {
     "dev": "wrangler dev",
-    "deploy": "wrangler deploy"
+    "deploy": "wrangler deploy",
+    "check": "node scripts/check.mjs",
+    "pages:local": "npx http-server public -p 8080"
   },
   "devDependencies": {
     "wrangler": "^4.0.0"

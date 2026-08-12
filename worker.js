@@ -44,6 +44,24 @@ const FEEDS = {
   ]
 };
 
+// GovTrack API — free, no key required. Returns individual bills.
+// Relevant-topic searches so the user (H1B immigrant, homeowner,
+// investor, new parent) actually sees laws that can affect them.
+const GOVTRACK_BASE = 'https://www.govtrack.us/api/v2/bill';
+const LAWS_QUERIES = [
+  // Recently acted-upon bills (includes recent enactments)
+  `${GOVTRACK_BASE}?congress=119&order_by=-current_status_date&limit=60`,
+  // Brand-new introductions
+  `${GOVTRACK_BASE}?congress=119&order_by=-introduced_date&limit=60`,
+  // Topic-focused searches
+  `${GOVTRACK_BASE}?congress=119&q=immigration%20OR%20visa%20OR%20h-1b%20OR%20green%20card&order_by=-current_status_date&limit=25`,
+  `${GOVTRACK_BASE}?congress=119&q=mortgage%20OR%20housing%20OR%20homeowner%20OR%20real%20estate&order_by=-current_status_date&limit=25`,
+  `${GOVTRACK_BASE}?congress=119&q=child%20tax%20credit%20OR%20family%20leave%20OR%20parental%20OR%20childcare&order_by=-current_status_date&limit=25`,
+  `${GOVTRACK_BASE}?congress=119&q=capital%20gains%20OR%20retirement%20OR%20stock%20OR%20etf%20OR%20dividend&order_by=-current_status_date&limit=25`
+];
+
+const LAWS_CACHE_TTL_MS = 10 * 60 * 1000;
+
 const PER_FEED_LIMIT = 8;
 const TOTAL_LIMIT = 40;
 const CACHE_TTL_MS = 5 * 60 * 1000;
@@ -56,6 +74,11 @@ export default {
     if (url.pathname === '/api/news') {
       const category = url.searchParams.get('category') || 'world';
       return handleNews(category);
+    }
+
+    if (url.pathname === '/api/laws') {
+      const category = url.searchParams.get('category') || 'all';
+      return handleLaws(category);
     }
 
     // Serve index.html for all other paths
@@ -113,6 +136,60 @@ async function handleNews(category) {
 
   cache.set(category, { ts: Date.now(), items });
   return json({ status: 'ok', items, cached: false });
+}
+
+async function handleLaws(category) {
+  // Cache hit?
+  const cacheKey = 'laws_' + category;
+  const cached = cache.get(cacheKey);
+  if (cached && Date.now() - cached.ts < LAWS_CACHE_TTL_MS) {
+    return json({ status: 'ok', items: cached.items, cached: true });
+  }
+
+  const results = await Promise.allSettled(
+    LAWS_QUERIES.map(async (url) => {
+      const resp = await fetch(url, {
+        headers: { 'User-Agent': 'ResearchHub/1.0' },
+        redirect: 'follow'
+      });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const data = await resp.json();
+      return (data.objects || []).map(billToItem);
+    })
+  );
+
+  const byNumber = new Map();
+  for (const r of results) {
+    if (r.status !== 'fulfilled' || !r.value) continue;
+    for (const item of r.value) {
+      if (!byNumber.has(item.number)) byNumber.set(item.number, item);
+    }
+  }
+
+  let items = [...byNumber.values()];
+  // Most recently acted-upon first
+  items.sort((a, b) => (b.statusDateMs || 0) - (a.statusDateMs || 0));
+  items = items.slice(0, 80);
+
+  cache.set(cacheKey, { ts: Date.now(), items });
+  return json({ status: 'ok', items, cached: false });
+}
+
+function billToItem(b) {
+  // Strip the "H.R. 12345: " / "H.J.Res. 213: " / "S. 998: " prefix for display
+  const title = (b.title || '').replace(/^[A-Za-z.]+\s*\d+\s*:\s*/, '').trim() || b.title;
+  return {
+    number: b.display_number || '',
+    title,
+    link: b.link || '',
+    status: b.current_status_label || b.current_status || '',
+    statusKey: b.current_status || '',
+    statusDate: b.current_status_date || '',
+    statusDateMs: b.current_status_date ? Date.parse(b.current_status_date) || 0 : 0,
+    introducedDate: b.introduced_date || '',
+    sponsor: (b.sponsor && b.sponsor.name) ? b.sponsor.name.replace(/^Rep\. |^Sen\. /, '') : '',
+    chamber: b.bill_type_label || ''
+  };
 }
 
 function json(data, status = 200) {

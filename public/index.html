@@ -108,8 +108,78 @@
   .featured-section h2.india-h2::before { content: '🇮🇳'; font-size: 1.2rem; }
   .featured-section h2.news-h2 { color: #60a5fa; }
   .featured-section h2.news-h2::before { content: '📰'; font-size: 1.2rem; }
+  .featured-section h2.laws-h2 { color: #fbbf24; }
+  .featured-section h2.laws-h2::before { content: '⚖️'; font-size: 1.2rem; }
 
   .featured-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 0.75rem; }
+
+  /* ── LAWS SECTION ── */
+  .laws-controls { display: flex; gap: 0.4rem; margin-bottom: 1rem; flex-wrap: wrap; }
+  .laws-filter {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 20px;
+    color: var(--text2); font-size: 0.82rem; padding: 0.4rem 0.9rem;
+    cursor: pointer; transition: all 0.15s; font-weight: 500; white-space: nowrap;
+  }
+  .laws-filter:hover { background: var(--surface2); border-color: var(--text2); color: var(--text); }
+  .laws-filter.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .laws-filter .count { opacity: 0.7; font-weight: 400; margin-left: 0.25rem; }
+  .laws-refresh {
+    margin-left: auto; background: var(--surface); border: 1px solid var(--border); border-radius: 20px;
+    color: var(--text2); font-size: 0.78rem; padding: 0.4rem 0.9rem; cursor: pointer; transition: all 0.15s;
+  }
+  .laws-refresh:hover { background: var(--surface2); border-color: var(--accent); color: var(--accent); }
+  .laws-grid { display: flex; flex-direction: column; gap: 0.5rem; }
+  .laws-item {
+    display: flex; gap: 0.6rem; align-items: flex-start;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    padding: 0.65rem 0.9rem; transition: all 0.15s; cursor: pointer;
+    text-decoration: none; color: inherit;
+  }
+  .laws-item:hover { background: var(--surface2); border-color: var(--accent); }
+  .laws-body { flex: 1; min-width: 0; }
+  .laws-title { font-size: 0.85rem; font-weight: 500; line-height: 1.4; color: var(--text); }
+  .laws-item:hover .laws-title { color: var(--accent); }
+  .laws-meta {
+    display: flex; flex-wrap: wrap; gap: 0.35rem; align-items: center;
+    font-size: 0.72rem; color: var(--text2); margin-top: 0.3rem;
+  }
+  .laws-status { font-weight: 600; }
+  .laws-status.enacted { color: var(--green); }
+  .laws-status.passed { color: var(--accent); }
+  .laws-status.pending { color: var(--orange); }
+  .laws-status.introduced { color: var(--text2); }
+  /* Law category badges */
+  .badge-law { background: #1a1508; color: #fbbf24; border: 1px solid #4a3510; }
+  .badge-health { background: #0a2e1a; color: #3fb950; border: 1px solid #1a4f2e; }
+  .badge-education { background: #1c1335; color: #bc8cff; border: 1px solid #3b2870; }
+  .badge-technology { background: #0a1a2e; color: #58a6ff; border: 1px solid #1a3b5e; }
+  .badge-business { background: #2e1a0a; color: #fbbf24; border: 1px solid #5e3b1a; }
+  .badge-environment { background: #0a2e1a; color: #3fb950; border: 1px solid #1a4f2e; }
+  .badge-social { background: #2e0a2e; color: #f778ba; border: 1px solid #5e1a5e; }
+  .badge-defense { background: #2e0a0a; color: #f85145; border: 1px solid #5e1a1a; }
+  .badge-infrastructure { background: #1a1a2e; color: #93c5fd; border: 1px solid #1a3b5e; }
+  .badge-finance { background: #1c1a10; color: #d29922; border: 1px solid #4d3d1a; }
+  .badge-immigration { background: #0a1a2e; color: #58a6ff; border: 1px solid #1a3b5e; }
+  .badge-family { background: #2e0a2e; color: #f778ba; border: 1px solid #5e1a5e; }
+  .badge-housing { background: #1a1508; color: #d29922; border: 1px solid #4d3d1a; }
+  .badge-investing { background: #0a2e1a; color: #3fb950; border: 1px solid #1a4f2e; }
+  .badge-sponsor { background: #1a1a2e; color: #9ca3af; border: 1px solid #333; }
+  /* News category filter pills */
+  .news-category-pills { display: flex; gap: 0.35rem; flex-wrap: wrap; margin-bottom: 0.75rem; }
+  .news-category-pill {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 999px;
+    color: var(--text2); font-size: 0.75rem; padding: 0.3rem 0.7rem;
+    cursor: pointer; transition: all 0.15s; white-space: nowrap;
+  }
+  .news-category-pill:hover { border-color: var(--text2); color: var(--text); }
+  .news-category-pill.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  /* News category badges */
+  .badge-world { background: #1a1a2e; color: #58a6ff; border: 1px solid #3b2870; }
+  .badge-tech { background: #0a1a2e; color: #58a6ff; border: 1px solid #1a3b5e; }
+  .badge-business { background: #2e1a0a; color: #fbbf24; border: 1px solid #5e3b1a; }
+  .badge-ai { background: #1c1335; color: #bc8cff; border: 1px solid #3b2870; }
+  .badge-us { background: #0a2e1a; color: #3fb950; border: 1px solid #1a4f2e; }
+  .badge-india { background: #1a1508; color: #ff9933; border: 1px solid #4a3510; }
 
   /* ── CARDS ── */
   .card {
@@ -221,6 +291,7 @@
     <button class="section-btn" data-section="nc">🏫 NC Wake Resources</button>
     <button class="section-btn" data-section="intl">🌐 International</button>
     <button class="section-btn" data-section="india">🇮🇳 India</button>
+    <button class="section-btn" data-section="laws">⚖️ Laws</button>
   </div>
 
   <!-- ════════════════════════════════════════════════════════════ -->
@@ -228,15 +299,9 @@
   <!-- ════════════════════════════════════════════════════════════ -->
   <div id="newsSection" style="display:none;">
     <div class="featured-section">
-      <h2 class="news-h2">Live News <span style="font-size:0.75rem;color:var(--text2);font-weight:400;">— bias-rated, sorted by importance</span></h2>
+      <h2 class="news-h2">Live News <span style="font-size:0.75rem;color:var(--text2);font-weight:400;">— all categories together, bias-rated, newest first. Use the pills below to filter.</span></h2>
 
       <div class="news-controls" role="tablist" aria-label="News categories">
-        <button class="news-tab" data-news="world" role="tab">🌍 World <span class="count"></span></button>
-        <button class="news-tab active" data-news="tech" role="tab" aria-selected="true">💻 Tech <span class="count"></span></button>
-        <button class="news-tab" data-news="business" role="tab">📈 Business <span class="count"></span></button>
-        <button class="news-tab" data-news="ai" role="tab">🤖 AI <span class="count"></span></button>
-        <button class="news-tab" data-news="us" role="tab">🇺🇸 US <span class="count"></span></button>
-        <button class="news-tab" data-news="india" role="tab">🇮🇳 India <span class="count"></span></button>
         <button class="news-refresh" id="newsRefresh" title="Refresh news">⟳ Refresh</button>
       </div>
 
@@ -252,6 +317,39 @@
 
       <div class="news-grid" id="newsGrid" role="feed" aria-label="News articles">
         <div class="news-loader"><div class="spinner"></div>Loading news…</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════ -->
+  <!-- LAWS SECTION -->
+  <!-- ════════════════════════════════════════════════════════════ -->
+  <div id="lawsSection" style="display:none;">
+    <div class="featured-section">
+      <h2 class="laws-h2">⚖️ USA Laws & Legislation <span style="font-size:0.75rem;color:var(--text2);font-weight:400;">— realtime from Congress.gov</span></h2>
+
+      <div class="laws-controls" role="tablist" aria-label="Law categories">
+        <button class="laws-filter" data-laws="all" role="tab">📋 All <span class="count"></span></button>
+        <button class="laws-filter active" data-laws="for-you" role="tab" aria-selected="true">⭐ For You <span class="count"></span></button>
+        <button class="laws-filter" data-laws="immigration" role="tab">🛂 Immigration <span class="count"></span></button>
+        <button class="laws-filter" data-laws="family" role="tab">👨‍👩‍👧 Family <span class="count"></span></button>
+        <button class="laws-filter" data-laws="housing" role="tab">🏠 Housing <span class="count"></span></button>
+        <button class="laws-filter" data-laws="investing" role="tab">📈 Investing <span class="count"></span></button>
+        <button class="laws-filter" data-laws="other" role="tab">🗂️ Other <span class="count"></span></button>
+        <button class="laws-refresh" id="lawsRefresh" title="Refresh laws">⟳ Refresh</button>
+      </div>
+
+      <div style="margin-bottom:0.75rem;display:flex;flex-wrap:wrap;gap:0.3rem;font-size:0.7rem;color:var(--text2);">
+        <span class="badge badge-immigration">🛂 Immigration</span>
+        <span class="badge badge-family">👨‍👩‍👧 Family</span>
+        <span class="badge badge-housing">🏠 Housing</span>
+        <span class="badge badge-investing">📈 Investing</span>
+        <span class="badge badge-law">Other</span>
+        <span style="margin-left:0.5rem;">Personalized to your profile: <strong>H-1B immigrant · family · homeowner · investor</strong> — via <a href="https://www.govtrack.us/" target="_blank" style="color:var(--accent);">GovTrack</a> (individual bills)</span>
+      </div>
+
+      <div class="laws-grid" id="lawsGrid" role="feed" aria-label="USA Laws">
+        <div class="news-loader"><div class="spinner"></div>Loading laws…</div>
       </div>
     </div>
   </div>
@@ -483,67 +581,6 @@ function parseRSS(xmlText) {
   return items;
 }
 
-function fetchNews(category) {
-  const grid = document.getElementById('newsGrid');
-  grid.innerHTML = '<div class="news-loader"><div class="spinner"></div><p>Loading news…</p></div>';
-
-  // Try the Worker API first
-  fetch('/api/news?category=' + category)
-    .then(r => {
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      return r.json();
-    })
-    .then(data => {
-      const items = data.items || [];
-      if (!items.length) throw new Error('empty');
-      newsCache[category] = items;
-      renderNews(category, items);
-    })
-    .catch(() => {
-      // Fallback: direct BBC fetch (CORS-enabled)
-      fetch(BBC_FALLBACK[category], { mode: 'cors' })
-        .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.text(); })
-        .then(xml => {
-          const items = parseRSS(xml);
-          if (!items.length) throw new Error('no items');
-          newsCache[category] = items;
-          renderNews(category, items);
-        })
-        .catch(err => {
-          if (newsCache[category]) { renderNews(category, newsCache[category]); return; }
-          grid.innerHTML = `<div class="news-error">⚠️ Could not load news. ${err.message}</div>`;
-        });
-    });
-}
-
-function renderNews(category, items) {
-  const grid = document.getElementById('newsGrid');
-
-  document.querySelectorAll('.news-tab').forEach(t => {
-    const c = t.querySelector('.count');
-    if (t.dataset.news === category) c.textContent = items.length;
-    else if (newsCache[t.dataset.news]) c.textContent = newsCache[t.dataset.news].length;
-  });
-
-  grid.innerHTML = items.map((item) => {
-    const domain = extractDomain(item.link);
-    const bias = getBias(domain || 'bbc.co.uk');
-    const ago = timeAgo(item.pubDate);
-    const pubTs = item.pubDateMs || (item.pubDate ? new Date(item.pubDate).getTime() : 0);
-
-    return `<a href="${item.link}" target="_blank" rel="noopener" class="news-item">
-      <div class="news-body">
-        <div class="news-title">${escapeHtml(item.title)}</div>
-        <div class="news-meta">
-          <span class="news-source">${domain || (item.author || 'source')}</span>
-          <span class="badge ${biasBadge(bias.bias)}" style="font-size:0.65rem;">${bias.label}</span>
-          <span>${ago}</span>
-        </div>
-      </div>
-    </a>`;
-  }).join('');
-}
-
 function timeAgo(pubDate) {
   if (!pubDate) return '';
   const utc = new Date(pubDate).getTime();
@@ -561,23 +598,244 @@ function escapeHtml(text) {
   return d.innerHTML;
 }
 
-// News tab clicks
-document.querySelectorAll('.news-tab').forEach(tab => {
+// ═══════════════════════════════════════════════════════════════════
+// API FETCH — same-origin first (Cloudflare Worker), then fall back to
+// the deployed Worker's absolute URL (CORS enabled) so the site also
+// works on GitHub Pages / any static host.
+// ═══════════════════════════════════════════════════════════════════
+const API_FALLBACK_BASE = 'https://research-hub.pintun8.workers.dev';
+
+function apiFetch(path) {
+  return fetch(path)
+    .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
+    .catch(() => fetch(API_FALLBACK_BASE + path)
+      .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); }));
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// NEWS — show ALL categories together with flair, simple client-side filter
+// ═══════════════════════════════════════════════════════════════════
+const NEWS_CATEGORIES = [
+  { id: 'world', label: 'World', icon: '🌍' },
+  { id: 'tech', label: 'Tech', icon: '💻' },
+  { id: 'business', label: 'Business', icon: '📈' },
+  { id: 'ai', label: 'AI', icon: '🤖' },
+  { id: 'us', label: 'US', icon: '🇺🇸' },
+  { id: 'india', label: 'India', icon: '🇮🇳' }
+];
+
+let allNewsItems = [];
+let newsLoaded = false;
+let activeNewsFilter = 'all';
+let newsFilterInitialized = false;
+
+function initializeNewsFilter() {
+  if (newsFilterInitialized) return;
+  newsFilterInitialized = true;
+
+  // Simple single-select filter pills: All + each category
+  const pills = document.createElement('div');
+  pills.className = 'news-category-pills';
+  pills.innerHTML = `<button class="news-category-pill active" data-filter="all">📰 All</button>` +
+    NEWS_CATEGORIES.map(c =>
+      `<button class="news-category-pill" data-filter="${c.id}">${c.icon} ${c.label}</button>`
+    ).join('');
+
+  const grid = document.getElementById('newsGrid');
+  grid.parentNode.insertBefore(pills, grid);
+
+  pills.addEventListener('click', e => {
+    const pill = e.target.closest('.news-category-pill');
+    if (!pill) return;
+    pills.querySelectorAll('.news-category-pill').forEach(p => p.classList.remove('active'));
+    pill.classList.add('active');
+    activeNewsFilter = pill.dataset.filter;
+    if (newsLoaded) renderNewsGrid();
+  });
+}
+
+function fetchAllNews() {
+  const grid = document.getElementById('newsGrid');
+  grid.innerHTML = '<div class="news-loader"><div class="spinner"></div><p>Loading news…</p></div>';
+
+  Promise.all(NEWS_CATEGORIES.map(cat =>
+    apiFetch('/api/news?category=' + cat.id)
+      .then(data => (data.items || []).map(item => ({ ...item, category: cat.id, categoryLabel: `${cat.icon} ${cat.label}` })))
+      .catch(() => [])
+  )).then(results => {
+    allNewsItems = results.flat();
+    allNewsItems.sort((a, b) => (b.pubDateMs || 0) - (a.pubDateMs || 0));
+    newsLoaded = true;
+    renderNewsGrid();
+  }).catch(() => {
+    grid.innerHTML = '<div class="news-error">⚠️ Could not load news. Try the ⟳ Refresh button.</div>';
+  });
+}
+
+function renderNewsGrid() {
+  const grid = document.getElementById('newsGrid');
+  const items = activeNewsFilter === 'all'
+    ? allNewsItems
+    : allNewsItems.filter(i => i.category === activeNewsFilter);
+
+  if (!items.length) {
+    grid.innerHTML = '<div class="empty"><p>No news in this category yet.</p></div>';
+    return;
+  }
+
+  grid.innerHTML = items.map(item => {
+    const domain = extractDomain(item.link);
+    const bias = getBias(domain || 'bbc.co.uk');
+    const ago = timeAgo(item.pubDate);
+    const catBadge = `<span class="badge badge-${item.category}" style="font-size:0.65rem;">${item.categoryLabel}</span>`;
+    const biasBadgeHtml = `<span class="badge ${biasBadge(bias.bias)}" style="font-size:0.65rem;">${bias.label}</span>`;
+
+    return `<a href="${item.link}" target="_blank" rel="noopener" class="news-item">
+      <div class="news-body">
+        <div class="news-title">${escapeHtml(item.title)}</div>
+        <div class="news-meta">
+          ${catBadge}
+          ${biasBadgeHtml}
+          <span class="news-source">${domain || (item.author || 'source')}</span>
+          <span>${ago}</span>
+        </div>
+      </div>
+    </a>`;
+  }).join('');
+}
+
+document.getElementById('newsRefresh').addEventListener('click', () => {
+  newsLoaded = false;
+  fetchAllNews();
+});
+
+// ═══════════════════════════════════════════════════════════════════
+// USA LAWS
+let activeLawsFilter = 'for-you';
+let allLaws = [];
+let lawsLoaded = false;
+
+// Personal profile: H-1B immigrant, family (wife + 8-month daughter),
+// homeowner with mortgage, stock/ETF investor.
+// Keyword rules used to tag each bill's relevance to this profile.
+const LAW_RULES = [
+  { key: 'immigration', label: 'Immigration', icon: '🛂',
+    words: ['immigration', 'immigrant', 'visa', 'h-1b', 'h1b', 'green card', 'citizenship', 'naturaliz', 'alien', 'deport', 'asylum', 'work authorization', 'nonimmigrant', 'foreign worker', 'dhs', 'border', 'permanent resident', 'lawful permanent', 'immigrant visa'] },
+  { key: 'family', label: 'Family', icon: '👨‍👩‍👧',
+    words: ['child', 'children', 'family', 'parental', 'maternity', 'paternity', 'infant', 'newborn', 'baby', 'daycare', 'childcare', 'child care', 'dependent', 'paid leave', 'family leave', 'fmla', 'birth', 'toddler', 'kindergarten', 'adoption', 'foster'] },
+  { key: 'housing', label: 'Housing', icon: '🏠',
+    words: ['housing', 'mortgage', 'homeowner', 'home ownership', 'real estate', 'property tax', 'rental', 'renter', 'foreclosure', 'down payment', 'home loan', 'refinanc', 'housing market', 'zoning', 'landlord'] },
+  { key: 'investing', label: 'Investing', icon: '📈',
+    words: ['capital gain', 'stock', 'etf', 'retirement', '401(k)', '401k', 'roth ira', 'traditional ira', 'individual retirement', 'dividend', 'securities', 'stock exchange', 'investment', 'index fund', 'tax-deferred', 'rmd', 'pension', 'annuity', 'mutual fund', 'savings bond', 'investor', 'inflation'] }
+];
+
+function categorizeLaw(title) {
+  const t = title.toLowerCase();
+  const tags = [];
+  for (const rule of LAW_RULES) {
+    if (rule.words.some(w => t.includes(w))) tags.push(rule.key);
+  }
+  return tags.length ? tags : ['other'];
+}
+
+function fetchLaws() {
+  const grid = document.getElementById('lawsGrid');
+  grid.innerHTML = '<div class="news-loader"><div class="spinner"></div><p>Loading laws…</p></div>';
+
+  apiFetch('/api/laws')
+    .then(data => {
+      const items = data.items || [];
+      if (!items.length) throw new Error('empty');
+      allLaws = items.map(item => ({ ...item, tags: categorizeLaw(item.title) }));
+      lawsLoaded = true;
+      renderLaws(activeLawsFilter);
+    })
+    .catch(err => {
+      grid.innerHTML = `<div class="news-error">⚠️ Could not load laws. ${err.message} — try the ⟳ Refresh button.</div>`;
+    });
+}
+
+function lawMatchesFilter(item, filter) {
+  if (filter === 'all') return true;
+  if (filter === 'for-you') return item.tags.some(t => t !== 'other');
+  if (filter === 'other') return item.tags.includes('other');
+  return item.tags.includes(filter);
+}
+
+function statusClass(statusKey) {
+  if (statusKey === 'enacted' || statusKey === 'enacted-signature' || statusKey === 'enacted-veto-override') return 'enacted';
+  if (statusKey === 'passed' || statusKey === 'passed-simple') return 'passed';
+  if (statusKey === 'introduced') return 'introduced';
+  return 'pending';
+}
+
+function renderLaws(filter) {
+  const grid = document.getElementById('lawsGrid');
+  const filtered = allLaws.filter(item => lawMatchesFilter(item, filter));
+
+  // Update filter counts
+  document.querySelectorAll('.laws-filter').forEach(t => {
+    const f = t.dataset.laws;
+    const c = t.querySelector('.count');
+    c.textContent = allLaws.filter(item => lawMatchesFilter(item, f)).length;
+  });
+
+  if (!filtered.length) {
+    grid.innerHTML = '<div class="empty"><p>No laws match this filter.</p></div>';
+    return;
+  }
+
+  grid.innerHTML = filtered.map(item => {
+    const badge = (key, label) => `<span class="badge badge-${key}" style="font-size:0.65rem;">${label}</span>`;
+    const tagsHtml = item.tags.map(t =>
+      t === 'other' ? badge('law', '🗂️ Other') : badge(t, `${LAW_RULES.find(r => r.key === t).icon} ${LAW_RULES.find(r => r.key === t).label}`)
+    ).join(' ');
+    const statusHtml = `<span class="laws-status ${statusClass(item.statusKey)}">${statusText(item)}</span>`;
+    const sponsorHtml = item.sponsor ? `<span class="badge badge-sponsor" style="font-size:0.65rem;">👤 ${escapeHtml(item.sponsor)}</span>` : '';
+    const chamberHtml = item.chamber ? `<span>${escapeHtml(item.chamber)}</span>` : '';
+
+    return `<a href="${item.link}" target="_blank" rel="noopener" class="laws-item">
+      <div class="laws-body">
+        <div class="laws-title">${escapeHtml(item.number)}: ${escapeHtml(item.title)}</div>
+        <div class="laws-meta">
+          ${tagsHtml}
+          ${statusHtml}
+          ${chamberHtml}
+          ${sponsorHtml}
+          <span>📅 ${formatDate(item.statusDate)}</span>
+        </div>
+      </div>
+    </a>`;
+  }).join('');
+}
+
+function statusText(item) {
+  if (item.statusKey === 'enacted' || item.statusKey === 'enacted-signature' || item.statusKey === 'enacted-veto-override') return '✓ Enacted into law';
+  if (item.statusKey === 'passed' || item.statusKey === 'passed-simple') return '✓ Passed one chamber';
+  if (item.statusKey === 'introduced') return '📝 Introduced';
+  return `⏳ ${item.status || 'Pending'}`;
+}
+
+function formatDate(d) {
+  if (!d) return '';
+  const date = new Date(d);
+  if (isNaN(date)) return d;
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+// Laws filter clicks (client-side, no re-fetch)
+document.querySelectorAll('.laws-filter').forEach(tab => {
   tab.addEventListener('click', () => {
-    document.querySelectorAll('.news-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.laws-filter').forEach(t => t.classList.remove('active'));
     tab.classList.add('active');
-    activeNewsTab = tab.dataset.news;
-    if (newsCache[activeNewsTab]) {
-      renderNews(activeNewsTab, newsCache[activeNewsTab]);
-    } else {
-      fetchNews(activeNewsTab);
-    }
+    activeLawsFilter = tab.dataset.laws;
+    if (lawsLoaded) renderLaws(activeLawsFilter);
   });
 });
 
-document.getElementById('newsRefresh').addEventListener('click', () => {
-  newsCache = {};
-  fetchNews(activeNewsTab);
+document.getElementById('lawsRefresh').addEventListener('click', () => {
+  lawsLoaded = false;
+  fetchLaws();
 });
 
 // ═══════════════════════════════════════════════════════════════════
@@ -592,16 +850,23 @@ document.getElementById('mainToggle').addEventListener('click', e => {
 
   const newsEl = document.getElementById('newsSection');
   const dbEl = document.getElementById('dbSection');
+  const lawsEl = document.getElementById('lawsSection');
 
   // Hide all primary sections first
-  ['newsSection', 'dbSection', 'archivesSection', 'aiSection', 'dealsSection'].forEach(id => {
+  ['newsSection', 'dbSection', 'lawsSection', 'archivesSection', 'aiSection', 'dealsSection'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
 
   if (section === 'news') {
     newsEl.style.display = 'block';
-    if (!newsCache[activeNewsTab]) fetchNews(activeNewsTab);
+    initializeNewsFilter();
+    if (!newsLoaded) fetchAllNews();
+    else renderNewsGrid();
+  } else if (section === 'laws') {
+    lawsEl.style.display = 'block';
+    if (!lawsLoaded) fetchLaws();
+    else renderLaws(activeLawsFilter);
   } else if (section === 'archives') {
     document.getElementById('archivesSection').style.display = 'block';
   } else if (section === 'ai') {

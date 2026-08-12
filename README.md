@@ -1,54 +1,89 @@
 # 📚 Research Hub
 
-A single-page dashboard that brings together **120+ research databases** from:
+A single-page dashboard that brings together **120+ research databases**, **live multi-source news with media-bias ratings**, and **personalized USA legislation tracking**.
 
 - **📍 NC Libraries** — Wake Tech, Wake County Public Libraries, and NC LIVE resources
 - **🌐 International** — Open-access publishers, preprint servers, and academic search engines
 - **🇮🇳 India** — Indian theses repositories, journals, legal databases, government data, and more
 - **⚡ Sci-Hub** — 85M+ free scholarly articles
-- **📰 News** — Live multi-source news with media bias ratings (World, Tech, Business, AI, US, India)
+- **📰 News** — All World / Tech / Business / AI / US / India news in one feed, each article bias-rated (AllSides)
+- **⚖️ Laws** — Individual bills from Congress (via [GovTrack](https://www.govtrack.us/)), tagged by relevance to your profile (immigration, family, housing, investing) with a default **⭐ For You** view
 
-### Features
+## Features
 
 - 🔍 **Search** across all databases by name, keyword, or subject
-- 🏷️ **Filter** by access type (NC LIVE Shared / Wake Tech / Wake County / Open Access / India)
-- 📂 **Section toggle** — view NC, International, or India resources independently
-- 📊 **Subject pills** — narrow by 14+ categories
+- 🏷️ **Filter** databases by access type (NC LIVE / Wake Tech / Wake County / Open Access / India) and subject
+- 📰 **Live news** — aggregated RSS from BBC, Al Jazeera, DW, The Guardian, NPR, Politico, Bloomberg, CNBC, Hacker News, The Verge, TechCrunch, MIT Tech Review, The Hindu, Indian Express. Filter by category with pills; every item shows category + bias flair
+- ⚖️ **Laws** — recent bills + topic searches merged, sorted by latest action. Each bill shows relevance badges (🛂 Immigration / 👨👩👧 Family / 🏠 Housing / 📈 Investing), status (Enacted / Passed / Introduced), sponsor, chamber, and date
 - 🌟 **Popular Picks** — hand-picked recommendations at the top
-- 📰 **Live news** — aggregated RSS from BBC, Al Jazeera, DW, The Guardian, NPR, Politico, Bloomberg, CNBC, Hacker News, The Verge, TechCrunch, MIT Tech Review, The Hindu, Indian Express — each article bias-rated via AllSides
 - 🔴 **Impact badges** — Breaking (< 2h) / Today, sorted by recency
 
-### Architecture
+## Project structure
 
-- **`index.html`** — the dashboard UI (pure HTML/CSS/JS, served as a static asset)
-- **`worker.js`** — a Cloudflare Worker that:
-  1. serves the static site, and
-  2. exposes `/api/news?category=world|tech|business|ai|india|us` — fetching multiple RSS feeds **server-side** (no CORS limits), merging + sorting by recency
-- **Fallback:** if `/api/news` isn't available, the page automatically falls back to a direct BBC RSS fetch (CORS-enabled) so news never breaks
-
-### Deploy (Cloudflare Worker)
-
-```bash
-# 1. One-time: authorize wrangler with your Cloudflare account
-npx wrangler login
-
-# 2. Serve locally to test (http://localhost:8787)
-npm run dev
-
-# 3. Publish to your Worker (research-hub.pintun8.workers.dev)
-npm run deploy
-# = npx wrangler deploy
+```
+research-hub/
+├── public/
+│   └── index.html      # THE dashboard UI (single source of truth — edit this)
+├── worker.js           # Cloudflare Worker: serves assets + /api/news + /api/laws
+├── wrangler.toml       # Cloudflare config (main = worker.js, assets = public/)
+├── scripts/
+│   ├── check.mjs       # validates inline JS in public/index.html (npm run check)
+│   ├── README.md
+│   └── legacy/         # historical one-off HTML-patch scripts (reference only)
+├── .github/workflows/
+│   └── pages.yml       # GitHub Actions → GitHub Pages (deploys public/)
+├── package.json        # dev / deploy / check scripts
+└── README.md
 ```
 
-After deploy, visit `https://research-hub.pintun8.workers.dev` — the news section will use the
-multi-source `/api/news` route automatically.
+> **Only one `index.html` exists** — `public/index.html`. It is served by the Cloudflare
+> Worker *and* deployed to GitHub Pages. Edit that file.
 
-### Alternative: static-only hosting
+## Architecture
 
-If you prefer plain static hosting (Cloudflare Pages / Netlify / Vercel / local), just upload
-`index.html`. News will fall back to direct BBC RSS (CORS-enabled) — single source, but no server needed.
+- **`public/index.html`** — the entire dashboard UI (pure HTML/CSS/JS, zero build step)
+- **`worker.js`** — Cloudflare Worker that:
+  1. serves the static site from `public/`, and
+  2. exposes JSON APIs:
+     - `/api/news?category=world|tech|business|ai|india|us` — multi-source RSS merged server-side, sorted by recency
+     - `/api/laws` — individual bills from the GovTrack API (recent + topic searches), deduped and sorted
+- **Resilient front-end:** every API call tries the same origin first, then falls back to the deployed
+  Worker's absolute URL (`Access-Control-Allow-Origin: *`), so the site stays fully functional on any
+  static host — including GitHub Pages.
 
-### Data Sources
+## Development
+
+```bash
+npm install          # install wrangler
+npm run check        # validate inline JS in public/index.html (run after edits)
+npm run dev          # serve locally at http://localhost:8787 (worker + assets)
+```
+
+Open `public/index.html` directly in a browser for a static-only preview (news/laws
+will hit the deployed Worker via the fallback).
+
+## Deploy
+
+### Cloudflare Worker (primary)
+
+```bash
+npm run deploy       # = npx wrangler deploy
+# → https://research-hub.pintun8.workers.dev
+```
+
+### GitHub Pages (mirror)
+
+Push to `master` and the [GitHub Actions workflow](.github/workflows/pages.yml)
+deploys `public/` automatically:
+
+```
+https://<owner>.github.io/research-hub/
+```
+
+To deploy manually from your machine: `npx http-server public -p 8080` to preview,
+then push (the workflow handles Pages).
+
+## Data sources
 
 - [Wake Tech A-Z Databases](https://researchguides.waketech.edu/az/databases)
 - [NC LIVE](https://www.nclive.org/)
@@ -56,7 +91,8 @@ If you prefer plain static hosting (Cloudflare Pages / Netlify / Vercel / local)
 - [Shodhganga / INFLIBNET](https://shodhganga.inflibnet.ac.in/)
 - [National Digital Library of India](https://ndl.iitkgp.ac.in/)
 - [AllSides Media Bias Ratings](https://www.allsides.com/media-bias/media-bias-ratings)
+- [GovTrack](https://www.govtrack.us/) — US legislation API (free, no key)
 
-### License
+## License
 
 MIT

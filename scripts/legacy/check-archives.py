@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-with open('/Users/nayak/projects/library-dashboard/public/index.html', 'r') as f:
+with open('public/index.html', 'r') as f:
     content = f.read()
     
 # Find the archives section

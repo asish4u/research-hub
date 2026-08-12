@@ -3,7 +3,7 @@
 and repopulate AI Resources with popular working AI demo sites."""
 import re
 
-P = '/Users/nayak/projects/library-dashboard/public/index.html'
+P = 'public/index.html'
 with open(P) as f:
     c = f.read()
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import re
 
-P = '/Users/nayak/projects/library-dashboard/public/index.html'
+P = 'public/index.html'
 with open(P) as f:
     c = f.read()
 
