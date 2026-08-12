@@ -45,20 +45,19 @@ const FEEDS = {
 };
 
 // GovTrack API — free, no key required. Returns individual bills.
-// Relevant-topic searches so the user (H1B immigrant, homeowner,
-// investor, new parent) actually sees laws that can affect them.
+// Enacted laws only, from the past 6 months (realtime).
 const GOVTRACK_BASE = 'https://www.govtrack.us/api/v2/bill';
-const LAWS_QUERIES = [
-  // Recently acted-upon bills (includes recent enactments)
-  `${GOVTRACK_BASE}?congress=119&order_by=-current_status_date&limit=60`,
-  // Brand-new introductions
-  `${GOVTRACK_BASE}?congress=119&order_by=-introduced_date&limit=60`,
-  // Topic-focused searches
-  `${GOVTRACK_BASE}?congress=119&q=immigration%20OR%20visa%20OR%20h-1b%20OR%20green%20card&order_by=-current_status_date&limit=25`,
-  `${GOVTRACK_BASE}?congress=119&q=mortgage%20OR%20housing%20OR%20homeowner%20OR%20real%20estate&order_by=-current_status_date&limit=25`,
-  `${GOVTRACK_BASE}?congress=119&q=child%20tax%20credit%20OR%20family%20leave%20OR%20parental%20OR%20childcare&order_by=-current_status_date&limit=25`,
-  `${GOVTRACK_BASE}?congress=119&q=capital%20gains%20OR%20retirement%20OR%20stock%20OR%20etf%20OR%20dividend&order_by=-current_status_date&limit=25`
-];
+const LAWS_MONTHS = 6; // how far back to look for enacted laws
+
+// Build GovTrack queries for enacted laws since `sinceDate` (YYYY-MM-DD).
+// Enacted statuses: signed by the President, 10-day rule (unsigned), veto override.
+function lawsQueries(sinceDate) {
+  return [
+    `${GOVTRACK_BASE}?congress=119&current_status=enacted_signed&current_status_date__gte=${sinceDate}&order_by=-current_status_date&limit=200`,
+    `${GOVTRACK_BASE}?congress=119&current_status=enacted_tendayrule&current_status_date__gte=${sinceDate}&order_by=-current_status_date&limit=50`,
+    `${GOVTRACK_BASE}?congress=119&current_status=enacted_veto_override&current_status_date__gte=${sinceDate}&order_by=-current_status_date&limit=50`
+  ];
+}
 
 const LAWS_CACHE_TTL_MS = 10 * 60 * 1000;
 
@@ -146,8 +145,13 @@ async function handleLaws(category) {
     return json({ status: 'ok', items: cached.items, cached: true });
   }
 
+  // Enacted laws from the past 6 months
+  const since = new Date();
+  since.setMonth(since.getMonth() - LAWS_MONTHS);
+  const sinceDate = since.toISOString().slice(0, 10);
+
   const results = await Promise.allSettled(
-    LAWS_QUERIES.map(async (url) => {
+    lawsQueries(sinceDate).map(async (url) => {
       const resp = await fetch(url, {
         headers: { 'User-Agent': 'ResearchHub/1.0' },
         redirect: 'follow'
@@ -167,17 +171,26 @@ async function handleLaws(category) {
   }
 
   let items = [...byNumber.values()];
-  // Most recently acted-upon first
+  // Most recently enacted first
   items.sort((a, b) => (b.statusDateMs || 0) - (a.statusDateMs || 0));
-  items = items.slice(0, 80);
 
   cache.set(cacheKey, { ts: Date.now(), items });
-  return json({ status: 'ok', items, cached: false });
+  return json({
+    status: 'ok',
+    items,
+    months: LAWS_MONTHS,
+    since: sinceDate,
+    cached: false
+  });
 }
 
 function billToItem(b) {
   // Strip the "H.R. 12345: " / "H.J.Res. 213: " / "S. 998: " prefix for display
   const title = (b.title || '').replace(/^[A-Za-z.]+\s*\d+\s*:\s*/, '').trim() || b.title;
+  // Public law number, e.g. "Public Law 119-102" for signed/veto-override enactments
+  const lawNum = (b.sliplawpubpriv === 'PUB' && b.sliplawnum)
+    ? `Public Law ${b.congress}-${b.sliplawnum}`
+    : '';
   return {
     number: b.display_number || '',
     title,
@@ -188,7 +201,8 @@ function billToItem(b) {
     statusDateMs: b.current_status_date ? Date.parse(b.current_status_date) || 0 : 0,
     introducedDate: b.introduced_date || '',
     sponsor: (b.sponsor && b.sponsor.name) ? b.sponsor.name.replace(/^Rep\. |^Sen\. /, '') : '',
-    chamber: b.bill_type_label || ''
+    chamber: b.bill_type_label || '',
+    lawNum
   };
 }
 

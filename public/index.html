@@ -164,6 +164,7 @@
   .badge-housing { background: #1a1508; color: #d29922; border: 1px solid #4d3d1a; }
   .badge-investing { background: #0a2e1a; color: #3fb950; border: 1px solid #1a4f2e; }
   .badge-sponsor { background: #1a1a2e; color: #9ca3af; border: 1px solid #333; }
+  .badge-enacted { background: #0b2e1a; color: var(--green); border: 1px solid #1a4f2e; }
   /* News category filter pills */
   .news-category-pills { display: flex; gap: 0.35rem; flex-wrap: wrap; margin-bottom: 0.75rem; }
   .news-category-pill {
@@ -326,7 +327,7 @@
   <!-- ════════════════════════════════════════════════════════════ -->
   <div id="lawsSection" style="display:none;">
     <div class="featured-section">
-      <h2 class="laws-h2">⚖️ USA Laws & Legislation <span style="font-size:0.75rem;color:var(--text2);font-weight:400;">— realtime from Congress.gov</span></h2>
+      <h2 class="laws-h2">⚖️ Newly Enacted Laws <span style="font-size:0.75rem;color:var(--text2);font-weight:400;">— every law enacted in the last 6 months · realtime via GovTrack</span></h2>
 
       <div class="laws-controls" role="tablist" aria-label="Law categories">
         <button class="laws-filter" data-laws="all" role="tab">📋 All <span class="count"></span></button>
@@ -345,7 +346,7 @@
         <span class="badge badge-housing">🏠 Housing</span>
         <span class="badge badge-investing">📈 Investing</span>
         <span class="badge badge-law">Other</span>
-        <span style="margin-left:0.5rem;">Personalized to your profile: <strong>H-1B immigrant · family · homeowner · investor</strong> — via <a href="https://www.govtrack.us/" target="_blank" style="color:var(--accent);">GovTrack</a> (individual bills)</span>
+        <span style="margin-left:0.5rem;">Every law enacted in the last <strong>6 months</strong> · tagged for your profile: <strong>H-1B immigrant · family · homeowner · investor</strong> — via <a href="https://www.govtrack.us/" target="_blank" style="color:var(--accent);">GovTrack</a></span>
       </div>
 
       <div class="laws-grid" id="lawsGrid" role="feed" aria-label="USA Laws">
@@ -763,8 +764,8 @@ function lawMatchesFilter(item, filter) {
 }
 
 function statusClass(statusKey) {
-  if (statusKey === 'enacted' || statusKey === 'enacted-signature' || statusKey === 'enacted-veto-override') return 'enacted';
-  if (statusKey === 'passed' || statusKey === 'passed-simple') return 'passed';
+  if (statusKey && statusKey.startsWith('enacted')) return 'enacted';
+  if (statusKey && (statusKey === 'passed' || statusKey === 'passed-simple')) return 'passed';
   if (statusKey === 'introduced') return 'introduced';
   return 'pending';
 }
@@ -791,6 +792,7 @@ function renderLaws(filter) {
       t === 'other' ? badge('law', '🗂️ Other') : badge(t, `${LAW_RULES.find(r => r.key === t).icon} ${LAW_RULES.find(r => r.key === t).label}`)
     ).join(' ');
     const statusHtml = `<span class="laws-status ${statusClass(item.statusKey)}">${statusText(item)}</span>`;
+    const lawNumHtml = item.lawNum ? `<span class="badge badge-enacted" style="font-size:0.65rem;">🔖 ${escapeHtml(item.lawNum)}</span>` : '';
     const sponsorHtml = item.sponsor ? `<span class="badge badge-sponsor" style="font-size:0.65rem;">👤 ${escapeHtml(item.sponsor)}</span>` : '';
     const chamberHtml = item.chamber ? `<span>${escapeHtml(item.chamber)}</span>` : '';
 
@@ -800,6 +802,7 @@ function renderLaws(filter) {
         <div class="laws-meta">
           ${tagsHtml}
           ${statusHtml}
+          ${lawNumHtml}
           ${chamberHtml}
           ${sponsorHtml}
           <span>📅 ${formatDate(item.statusDate)}</span>
@@ -810,7 +813,7 @@ function renderLaws(filter) {
 }
 
 function statusText(item) {
-  if (item.statusKey === 'enacted' || item.statusKey === 'enacted-signature' || item.statusKey === 'enacted-veto-override') return '✓ Enacted into law';
+  if (item.statusKey && item.statusKey.startsWith('enacted')) return '✓ Enacted into law';
   if (item.statusKey === 'passed' || item.statusKey === 'passed-simple') return '✓ Passed one chamber';
   if (item.statusKey === 'introduced') return '📝 Introduced';
   return `⏳ ${item.status || 'Pending'}`;
@@ -838,6 +841,18 @@ document.getElementById('lawsRefresh').addEventListener('click', () => {
   fetchLaws();
 });
 
+// Realtime: silently re-fetch enacted laws every 10 minutes while the tab is open.
+let lawsAutoRefreshTimer = null;
+function startLawsAutoRefresh() {
+  if (lawsAutoRefreshTimer) return;
+  lawsAutoRefreshTimer = setInterval(() => {
+    if (lawsLoaded) fetchLaws(); // fetchLaws re-renders with the active filter
+  }, 10 * 60 * 1000);
+}
+function stopLawsAutoRefresh() {
+  if (lawsAutoRefreshTimer) { clearInterval(lawsAutoRefreshTimer); lawsAutoRefreshTimer = null; }
+}
+
 // ═══════════════════════════════════════════════════════════════════
 // SECTION TOGGLE
 // ═══════════════════════════════════════════════════════════════════
@@ -858,6 +873,9 @@ document.getElementById('mainToggle').addEventListener('click', e => {
     if (el) el.style.display = 'none';
   });
 
+  // Stop realtime refresh when leaving the Laws section
+  if (section !== 'laws') stopLawsAutoRefresh();
+
   if (section === 'news') {
     newsEl.style.display = 'block';
     initializeNewsFilter();
@@ -865,6 +883,7 @@ document.getElementById('mainToggle').addEventListener('click', e => {
     else renderNewsGrid();
   } else if (section === 'laws') {
     lawsEl.style.display = 'block';
+    startLawsAutoRefresh();
     if (!lawsLoaded) fetchLaws();
     else renderLaws(activeLawsFilter);
   } else if (section === 'archives') {

@@ -7,14 +7,14 @@ A single-page dashboard that brings together **120+ research databases**, **live
 - **🇮🇳 India** — Indian theses repositories, journals, legal databases, government data, and more
 - **⚡ Sci-Hub** — 85M+ free scholarly articles
 - **📰 News** — All World / Tech / Business / AI / US / India news in one feed, each article bias-rated (AllSides)
-- **⚖️ Laws** — Individual bills from Congress (via [GovTrack](https://www.govtrack.us/)), tagged by relevance to your profile (immigration, family, housing, investing) with a default **⭐ For You** view
+- **⚖️ Laws** — Every law enacted in the last 6 months (via [GovTrack](https://www.govtrack.us/)), realtime, tagged by relevance to your profile (immigration, family, housing, investing) with a default **⭐ For You** view and auto-refresh
 
 ## Features
 
 - 🔍 **Search** across all databases by name, keyword, or subject
 - 🏷️ **Filter** databases by access type (NC LIVE / Wake Tech / Wake County / Open Access / India) and subject
 - 📰 **Live news** — aggregated RSS from BBC, Al Jazeera, DW, The Guardian, NPR, Politico, Bloomberg, CNBC, Hacker News, The Verge, TechCrunch, MIT Tech Review, The Hindu, Indian Express. Filter by category with pills; every item shows category + bias flair
-- ⚖️ **Laws** — recent bills + topic searches merged, sorted by latest action. Each bill shows relevance badges (🛂 Immigration / 👨👩👧 Family / 🏠 Housing / 📈 Investing), status (Enacted / Passed / Introduced), sponsor, chamber, and date
+- ⚖️ **Laws** — all enacted laws from the last 6 months, sorted newest-first, auto-refreshing every 10 min. Each law shows relevance badges (🛂 Immigration / 👨👩👧 Family / 🏠 Housing / 📈 Investing), ✓ Enacted status, public law number, sponsor, chamber, and enactment date
 - 🌟 **Popular Picks** — hand-picked recommendations at the top
 - 🔴 **Impact badges** — Breaking (< 2h) / Today, sorted by recency
 
@@ -46,7 +46,7 @@ research-hub/
   1. serves the static site from `public/`, and
   2. exposes JSON APIs:
      - `/api/news?category=world|tech|business|ai|india|us` — multi-source RSS merged server-side, sorted by recency
-     - `/api/laws` — individual bills from the GovTrack API (recent + topic searches), deduped and sorted
+     - `/api/laws` — every law enacted in the past 6 months from the GovTrack API (signed / 10-day rule / veto override), deduped and sorted by enactment date
 - **Resilient front-end:** every API call tries the same origin first, then falls back to the deployed
   Worker's absolute URL (`Access-Control-Allow-Origin: *`), so the site stays fully functional on any
   static host — including GitHub Pages.
