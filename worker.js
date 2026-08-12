@@ -45,17 +45,33 @@ const FEEDS = {
 };
 
 // GovTrack API — free, no key required. Returns individual bills.
-// Enacted laws only, from the past 6 months (realtime).
+// Enacted laws + in-progress bills (yet to be enacted) from the past 12 months.
 const GOVTRACK_BASE = 'https://www.govtrack.us/api/v2/bill';
-const LAWS_MONTHS = 6; // how far back to look for enacted laws
+const LAWS_MONTHS = 12; // how far back to look
 
-// Build GovTrack queries for enacted laws since `sinceDate` (YYYY-MM-DD).
+// Build GovTrack queries since `sinceDate` (YYYY-MM-DD).
 // Enacted statuses: signed by the President, 10-day rule (unsigned), veto override.
+// Pending statuses: bills that passed at least one chamber (closest to becoming law)
+// plus the newest introductions for breadth.
 function lawsQueries(sinceDate) {
+  const enacted = [
+    ['enacted_signed', 200],
+    ['enacted_tendayrule', 50],
+    ['enacted_veto_override', 50]
+  ];
+  const pending = [
+    ['pass_over_senate', 100],
+    ['pass_over_house', 100],
+    ['pass_back_senate', 100],
+    ['pass_back_house', 100],
+    ['passed_bill', 100],
+    ['passed_simpleres', 50]
+  ];
   return [
-    `${GOVTRACK_BASE}?congress=119&current_status=enacted_signed&current_status_date__gte=${sinceDate}&order_by=-current_status_date&limit=200`,
-    `${GOVTRACK_BASE}?congress=119&current_status=enacted_tendayrule&current_status_date__gte=${sinceDate}&order_by=-current_status_date&limit=50`,
-    `${GOVTRACK_BASE}?congress=119&current_status=enacted_veto_override&current_status_date__gte=${sinceDate}&order_by=-current_status_date&limit=50`
+    ...enacted.map(([s, l]) => `${GOVTRACK_BASE}?congress=119&current_status=${s}&current_status_date__gte=${sinceDate}&order_by=-current_status_date&limit=${l}`),
+    ...pending.map(([s, l]) => `${GOVTRACK_BASE}?congress=119&current_status=${s}&current_status_date__gte=${sinceDate}&order_by=-current_status_date&limit=${l}`),
+    // Newest introductions within the window (breadth)
+    `${GOVTRACK_BASE}?congress=119&introduced_date__gte=${sinceDate}&order_by=-introduced_date&limit=60`
   ];
 }
 
@@ -152,13 +168,20 @@ async function handleLaws(category) {
 
   const results = await Promise.allSettled(
     lawsQueries(sinceDate).map(async (url) => {
-      const resp = await fetch(url, {
-        headers: { 'User-Agent': 'ResearchHub/1.0' },
-        redirect: 'follow'
-      });
-      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-      const data = await resp.json();
-      return (data.objects || []).map(billToItem);
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 12000);
+      try {
+        const resp = await fetch(url, {
+          headers: { 'User-Agent': 'ResearchHub/1.0' },
+          redirect: 'follow',
+          signal: controller.signal
+        });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const data = await resp.json();
+        return (data.objects || []).map(billToItem);
+      } finally {
+        clearTimeout(timer);
+      }
     })
   );
 
@@ -191,18 +214,30 @@ function billToItem(b) {
   const lawNum = (b.sliplawpubpriv === 'PUB' && b.sliplawnum)
     ? `Public Law ${b.congress}-${b.sliplawnum}`
     : '';
+  const statusKey = b.current_status || '';
+  const statusDateMs = b.current_status_date ? Date.parse(b.current_status_date) || 0 : 0;
+  // Attention flags:
+  //  - 'new'   → enacted within the last 30 days (brand-new law)
+  //  - 'close' → pending bill that already passed at least one chamber
+  let attention = '';
+  const enacted = statusKey.startsWith('enacted');
+  const passedAChamber = statusKey.startsWith('pass_') || statusKey === 'passed_bill' || statusKey === 'passed_simpleres';
+  if (enacted && statusDateMs && (Date.now() - statusDateMs) < 30 * 24 * 3600 * 1000) attention = 'new';
+  else if (!enacted && passedAChamber) attention = 'close';
+
   return {
     number: b.display_number || '',
     title,
     link: b.link || '',
     status: b.current_status_label || b.current_status || '',
-    statusKey: b.current_status || '',
+    statusKey,
     statusDate: b.current_status_date || '',
-    statusDateMs: b.current_status_date ? Date.parse(b.current_status_date) || 0 : 0,
+    statusDateMs,
     introducedDate: b.introduced_date || '',
     sponsor: (b.sponsor && b.sponsor.name) ? b.sponsor.name.replace(/^Rep\. |^Sen\. /, '') : '',
     chamber: b.bill_type_label || '',
-    lawNum
+    lawNum,
+    attention
   };
 }
 

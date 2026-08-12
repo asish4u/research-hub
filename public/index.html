@@ -114,7 +114,9 @@
   .featured-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 0.75rem; }
 
   /* ── LAWS SECTION ── */
-  .laws-controls { display: flex; gap: 0.4rem; margin-bottom: 1rem; flex-wrap: wrap; }
+  .laws-controls { display: flex; gap: 0.4rem; margin-bottom: 0.5rem; flex-wrap: wrap; }
+  .laws-status-filter { display: flex; gap: 0.4rem; margin-bottom: 1rem; flex-wrap: wrap; }
+  .laws-status-filter .laws-filter { border-style: dashed; }
   .laws-filter {
     background: var(--surface); border: 1px solid var(--border); border-radius: 20px;
     color: var(--text2); font-size: 0.82rem; padding: 0.4rem 0.9rem;
@@ -165,6 +167,7 @@
   .badge-investing { background: #0a2e1a; color: #3fb950; border: 1px solid #1a4f2e; }
   .badge-sponsor { background: #1a1a2e; color: #9ca3af; border: 1px solid #333; }
   .badge-enacted { background: #0b2e1a; color: var(--green); border: 1px solid #1a4f2e; }
+  .badge-attention { background: #2e1a0a; color: #fbbf24; border: 1px solid #5e3b1a; }
   /* News category filter pills */
   .news-category-pills { display: flex; gap: 0.35rem; flex-wrap: wrap; margin-bottom: 0.75rem; }
   .news-category-pill {
@@ -327,7 +330,7 @@
   <!-- ════════════════════════════════════════════════════════════ -->
   <div id="lawsSection" style="display:none;">
     <div class="featured-section">
-      <h2 class="laws-h2">⚖️ Newly Enacted Laws <span style="font-size:0.75rem;color:var(--text2);font-weight:400;">— every law enacted in the last 6 months · realtime via GovTrack</span></h2>
+      <h2 class="laws-h2">⚖️ US Laws — Enacted & In Progress <span style="font-size:0.75rem;color:var(--text2);font-weight:400;">— last 12 months · realtime via GovTrack</span></h2>
 
       <div class="laws-controls" role="tablist" aria-label="Law categories">
         <button class="laws-filter" data-laws="all" role="tab">📋 All <span class="count"></span></button>
@@ -340,13 +343,20 @@
         <button class="laws-refresh" id="lawsRefresh" title="Refresh laws">⟳ Refresh</button>
       </div>
 
+      <div class="laws-status-filter" role="tablist" aria-label="Law status">
+        <button class="laws-filter active" data-lawstatus="all" role="tab">🗂️ All statuses <span class="count"></span></button>
+        <button class="laws-filter" data-lawstatus="enacted" role="tab">✅ Enacted <span class="count"></span></button>
+        <button class="laws-filter" data-lawstatus="pending" role="tab">⏳ In progress <span class="count"></span></button>
+        <button class="laws-filter" data-lawstatus="attention" role="tab">⚠️ Needs attention <span class="count"></span></button>
+      </div>
+
       <div style="margin-bottom:0.75rem;display:flex;flex-wrap:wrap;gap:0.3rem;font-size:0.7rem;color:var(--text2);">
         <span class="badge badge-immigration">🛂 Immigration</span>
         <span class="badge badge-family">👨‍👩‍👧 Family</span>
         <span class="badge badge-housing">🏠 Housing</span>
         <span class="badge badge-investing">📈 Investing</span>
         <span class="badge badge-law">Other</span>
-        <span style="margin-left:0.5rem;">Every law enacted in the last <strong>6 months</strong> · tagged for your profile: <strong>H-1B immigrant · family · homeowner · investor</strong> — via <a href="https://www.govtrack.us/" target="_blank" style="color:var(--accent);">GovTrack</a></span>
+        <span style="margin-left:0.5rem;">All laws & bills from the last <strong>12 months</strong> · tagged for your profile: <strong>H-1B immigrant · family · homeowner · investor</strong> — via <a href="https://www.govtrack.us/" target="_blank" style="color:var(--accent);">GovTrack</a></span>
       </div>
 
       <div class="laws-grid" id="lawsGrid" role="feed" aria-label="USA Laws">
@@ -756,16 +766,30 @@ function fetchLaws() {
     });
 }
 
-function lawMatchesFilter(item, filter) {
+let activeLawsStatus = 'all'; // 'all' | 'enacted' | 'pending' | 'attention'
+
+function lawMatchesStatus(item, status) {
+  const enacted = item.statusKey && item.statusKey.startsWith('enacted');
+  if (status === 'enacted') return enacted;
+  if (status === 'pending') return !enacted;
+  if (status === 'attention') return !!item.attention;
+  return true; // 'all'
+}
+
+function lawMatchesRelevance(item, filter) {
   if (filter === 'all') return true;
   if (filter === 'for-you') return item.tags.some(t => t !== 'other');
   if (filter === 'other') return item.tags.includes('other');
   return item.tags.includes(filter);
 }
 
+function lawMatchesFilter(item, filter) {
+  return lawMatchesRelevance(item, filter) && lawMatchesStatus(item, activeLawsStatus);
+}
+
 function statusClass(statusKey) {
   if (statusKey && statusKey.startsWith('enacted')) return 'enacted';
-  if (statusKey && (statusKey === 'passed' || statusKey === 'passed-simple')) return 'passed';
+  if (statusKey && (statusKey.startsWith('pass_') || statusKey === 'passed_bill' || statusKey === 'passed_simpleres')) return 'passed';
   if (statusKey === 'introduced') return 'introduced';
   return 'pending';
 }
@@ -774,11 +798,23 @@ function renderLaws(filter) {
   const grid = document.getElementById('lawsGrid');
   const filtered = allLaws.filter(item => lawMatchesFilter(item, filter));
 
-  // Update filter counts
-  document.querySelectorAll('.laws-filter').forEach(t => {
+  // Update relevance-filter counts (respecting the active status filter)
+  document.querySelectorAll('.laws-controls .laws-filter').forEach(t => {
     const f = t.dataset.laws;
     const c = t.querySelector('.count');
-    c.textContent = allLaws.filter(item => lawMatchesFilter(item, f)).length;
+    c.textContent = allLaws.filter(item => {
+      if (f === 'all') return lawMatchesStatus(item, activeLawsStatus);
+      if (f === 'for-you') return item.tags.some(t => t !== 'other') && lawMatchesStatus(item, activeLawsStatus);
+      if (f === 'other') return item.tags.includes('other') && lawMatchesStatus(item, activeLawsStatus);
+      return item.tags.includes(f) && lawMatchesStatus(item, activeLawsStatus);
+    }).length;
+  });
+
+  // Update status-filter counts (respecting the active relevance filter)
+  document.querySelectorAll('.laws-status-filter .laws-filter').forEach(t => {
+    const s = t.dataset.lawstatus;
+    const c = t.querySelector('.count');
+    c.textContent = allLaws.filter(item => lawMatchesRelevance(item, filter) && lawMatchesStatus(item, s)).length;
   });
 
   if (!filtered.length) {
@@ -792,6 +828,11 @@ function renderLaws(filter) {
       t === 'other' ? badge('law', '🗂️ Other') : badge(t, `${LAW_RULES.find(r => r.key === t).icon} ${LAW_RULES.find(r => r.key === t).label}`)
     ).join(' ');
     const statusHtml = `<span class="laws-status ${statusClass(item.statusKey)}">${statusText(item)}</span>`;
+    const attentionHtml = item.attention === 'new'
+      ? badge('enacted', '🆕 New law')
+      : item.attention === 'close'
+        ? badge('attention', '⚠️ Needs attention')
+        : '';
     const lawNumHtml = item.lawNum ? `<span class="badge badge-enacted" style="font-size:0.65rem;">🔖 ${escapeHtml(item.lawNum)}</span>` : '';
     const sponsorHtml = item.sponsor ? `<span class="badge badge-sponsor" style="font-size:0.65rem;">👤 ${escapeHtml(item.sponsor)}</span>` : '';
     const chamberHtml = item.chamber ? `<span>${escapeHtml(item.chamber)}</span>` : '';
@@ -802,6 +843,7 @@ function renderLaws(filter) {
         <div class="laws-meta">
           ${tagsHtml}
           ${statusHtml}
+          ${attentionHtml}
           ${lawNumHtml}
           ${chamberHtml}
           ${sponsorHtml}
@@ -814,9 +856,10 @@ function renderLaws(filter) {
 
 function statusText(item) {
   if (item.statusKey && item.statusKey.startsWith('enacted')) return '✓ Enacted into law';
-  if (item.statusKey === 'passed' || item.statusKey === 'passed-simple') return '✓ Passed one chamber';
+  if (item.statusKey && item.statusKey.startsWith('pass_')) return '⏳ Passed, awaiting next step';
+  if (item.statusKey === 'passed_bill' || item.statusKey === 'passed_simpleres') return '⏳ Passed, awaiting next step';
   if (item.statusKey === 'introduced') return '📝 Introduced';
-  return `⏳ ${item.status || 'Pending'}`;
+  return `⏳ ${item.status || 'In progress'}`;
 }
 
 function formatDate(d) {
@@ -826,12 +869,22 @@ function formatDate(d) {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
-// Laws filter clicks (client-side, no re-fetch)
-document.querySelectorAll('.laws-filter').forEach(tab => {
+// Laws relevance-filter clicks (client-side, no re-fetch)
+document.querySelectorAll('.laws-controls .laws-filter').forEach(tab => {
   tab.addEventListener('click', () => {
-    document.querySelectorAll('.laws-filter').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.laws-controls .laws-filter').forEach(t => t.classList.remove('active'));
     tab.classList.add('active');
     activeLawsFilter = tab.dataset.laws;
+    if (lawsLoaded) renderLaws(activeLawsFilter);
+  });
+});
+
+// Laws status-filter clicks (client-side, no re-fetch)
+document.querySelectorAll('.laws-status-filter .laws-filter').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.laws-status-filter .laws-filter').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    activeLawsStatus = tab.dataset.lawstatus;
     if (lawsLoaded) renderLaws(activeLawsFilter);
   });
 });
