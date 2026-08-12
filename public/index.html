@@ -612,13 +612,21 @@ function escapeHtml(text) {
 }
 
 // Belt-and-suspenders: decode any entities the worker may have missed
-// (e.g. &apos;) before escaping for display.
+// (e.g. &apos;, &#8217;, or double-escaped &amp;#8217;) before escaping.
+// Loops so multi-escaped entities resolve fully.
 function cleanTitle(t) {
-  return String(t)
-    .replace(/&#x([0-9a-f]+);/gi, (_, h) => String.fromCodePoint(parseInt(h, 16)))
-    .replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(parseInt(n, 10)))
-    .replace(/&apos;/g, "'")
-    .replace(/&quot;/g, '"');
+  let s = String(t);
+  for (let i = 0; i < 4; i++) {
+    const out = s
+      .replace(/&#x([0-9a-f]+);/gi, (_, h) => String.fromCodePoint(parseInt(h, 16)))
+      .replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(parseInt(n, 10)))
+      .replace(/&apos;/g, "'")
+      .replace(/&quot;/g, '"')
+      .replace(/&amp;/g, '&');
+    if (out === s || !/[&]/.test(out)) return out;
+    s = out;
+  }
+  return s;
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -683,7 +691,7 @@ function fetchAllNews() {
 
   Promise.all(NEWS_CATEGORIES.map(cat =>
     // &v=3 busts stale CDN caches after the entity-decoding fix
-    apiFetch('/api/news?category=' + cat.id + '&v=3')
+    apiFetch('/api/news?category=' + cat.id + '&v=4')
       .then(data => (data.items || []).map(item => ({ ...item, category: cat.id, categoryLabel: `${cat.icon} ${cat.label}` })))
       .catch(() => [])
   )).then(results => {
@@ -863,13 +871,13 @@ function renderLaws(filter) {
     const sentimentHtml = (item.buzz || 0) > 0
       ? badge('sentiment', `🔥 Public attention (${item.buzz} news)`)
       : '';
-    const lawNumHtml = item.lawNum ? `<span class="badge badge-enacted" style="font-size:0.65rem;">🔖 ${escapeHtml(item.lawNum)}</span>` : '';
+    const lawNumHtml = item.lawNum ? `<span class="badge badge-enacted" style="font-size:0.65rem;">🔖 ${escapeHtml(cleanTitle(item.lawNum))}</span>` : '';
     const sponsorHtml = item.sponsor ? `<span class="badge badge-sponsor" style="font-size:0.65rem;">👤 ${escapeHtml(item.sponsor)}</span>` : '';
     const chamberHtml = item.chamber ? `<span>${escapeHtml(item.chamber)}</span>` : '';
 
     return `<a href="${item.link}" target="_blank" rel="noopener" class="laws-item">
       <div class="laws-body">
-        <div class="laws-title">${escapeHtml(item.number)}: ${escapeHtml(item.title)}</div>
+        <div class="laws-title">${escapeHtml(cleanTitle(item.number))}: ${escapeHtml(cleanTitle(item.title))}</div>
         <div class="laws-meta">
           ${tagsHtml}
           ${statusHtml}

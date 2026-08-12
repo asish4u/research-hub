@@ -364,20 +364,26 @@ function json(data, status = 200) {
 }
 
 // Decode HTML entities in RSS titles/descriptions. Must handle &apos; (which
-// BBC/Guardian feeds use for apostrophes) and numeric entities, and decode
-// &amp; LAST so double-escaped text like "&amp;apos;" stays literal "&apos;"
-// instead of becoming an apostrophe.
+// BBC/Guardian feeds use for apostrophes), numeric entities (&#8217; etc.), and
+// double-escaped forms ("&amp;#8217;" from feeds that encode entities twice).
+// Runs in a loop until nothing decodable remains, so every level of escaping
+// resolves to the final character.
 function decodeEntities(s) {
   if (!s) return s;
-  return s
-    .replace(/&#x([0-9a-f]+);/gi, (_, h) => safeChar(parseInt(h, 16)))
-    .replace(/&#(\d+);/g, (_, n) => safeChar(parseInt(n, 10)))
-    .replace(/&apos;/g, "'")
-    .replace(/&quot;/g, '"')
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&amp;/g, '&');
+  for (let i = 0; i < 4; i++) {
+    const out = s
+      .replace(/&#x([0-9a-f]+);/gi, (_, h) => safeChar(parseInt(h, 16)))
+      .replace(/&#(\d+);/g, (_, n) => safeChar(parseInt(n, 10)))
+      .replace(/&apos;/g, "'")
+      .replace(/&quot;/g, '"')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&amp;/g, '&');
+    if (out === s || !/[&]/.test(out)) return out;
+    s = out;
+  }
+  return s;
 }
 
 function safeChar(code) {
