@@ -4,3 +4,8 @@ compatibility_date = "2024-09-23"
 
 # Serve static assets from public/ directory (keeps node_modules out)
 assets = { directory = "./public", binding = "ASSETS", html_handling = "auto-trailing-slash", not_found_handling = "single-page-application" }
+
+# Pre-warm the /api/laws + /api/laws/buzz edge caches every 10 minutes so
+# visitors never wait on slow GovTrack/Google News upstream fetches.
+[triggers]
+crons = ["*/10 * * * *"]

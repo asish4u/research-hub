@@ -168,6 +168,7 @@
   .badge-sponsor { background: #1a1a2e; color: #9ca3af; border: 1px solid #333; }
   .badge-enacted { background: #0b2e1a; color: var(--green); border: 1px solid #1a4f2e; }
   .badge-attention { background: #2e1a0a; color: #fbbf24; border: 1px solid #5e3b1a; }
+  .badge-sentiment { background: #2e0a0a; color: #f87171; border: 1px solid #5e1a1a; }
   /* News category filter pills */
   .news-category-pills { display: flex; gap: 0.35rem; flex-wrap: wrap; margin-bottom: 0.75rem; }
   .news-category-pill {
@@ -348,6 +349,7 @@
         <button class="laws-filter" data-lawstatus="enacted" role="tab">✅ Enacted <span class="count"></span></button>
         <button class="laws-filter" data-lawstatus="pending" role="tab">⏳ In progress <span class="count"></span></button>
         <button class="laws-filter" data-lawstatus="attention" role="tab">⚠️ Needs attention <span class="count"></span></button>
+        <button class="laws-filter" data-lawstatus="sentiment" role="tab">🔥 Public attention <span class="count"></span></button>
       </div>
 
       <div style="margin-bottom:0.75rem;display:flex;flex-wrap:wrap;gap:0.3rem;font-size:0.7rem;color:var(--text2);">
@@ -356,7 +358,7 @@
         <span class="badge badge-housing">🏠 Housing</span>
         <span class="badge badge-investing">📈 Investing</span>
         <span class="badge badge-law">Other</span>
-        <span style="margin-left:0.5rem;">All laws & bills from the last <strong>12 months</strong> · tagged for your profile: <strong>H-1B immigrant · family · homeowner · investor</strong> — via <a href="https://www.govtrack.us/" target="_blank" style="color:var(--accent);">GovTrack</a></span>
+        <span style="margin-left:0.5rem;">⚠️ = passed a chamber · 🔥 = top news coverage (public sentiment) · All laws & bills from the last <strong>12 months</strong>, tagged for your profile: <strong>H-1B immigrant · family · homeowner · investor</strong> — via <a href="https://www.govtrack.us/" target="_blank" style="color:var(--accent);">GovTrack</a> + <a href="https://news.google.com" target="_blank" style="color:var(--accent);">Google News</a></span>
       </div>
 
       <div class="laws-grid" id="lawsGrid" role="feed" aria-label="USA Laws">
@@ -609,6 +611,16 @@ function escapeHtml(text) {
   return d.innerHTML;
 }
 
+// Belt-and-suspenders: decode any entities the worker may have missed
+// (e.g. &apos;) before escaping for display.
+function cleanTitle(t) {
+  return String(t)
+    .replace(/&#x([0-9a-f]+);/gi, (_, h) => String.fromCodePoint(parseInt(h, 16)))
+    .replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(parseInt(n, 10)))
+    .replace(/&apos;/g, "'")
+    .replace(/&quot;/g, '"');
+}
+
 // ═══════════════════════════════════════════════════════════════════
 // API FETCH — same-origin first (Cloudflare Worker), then fall back to
 // the deployed Worker's absolute URL (CORS enabled) so the site also
@@ -670,7 +682,8 @@ function fetchAllNews() {
   grid.innerHTML = '<div class="news-loader"><div class="spinner"></div><p>Loading news…</p></div>';
 
   Promise.all(NEWS_CATEGORIES.map(cat =>
-    apiFetch('/api/news?category=' + cat.id)
+    // &v=3 busts stale CDN caches after the entity-decoding fix
+    apiFetch('/api/news?category=' + cat.id + '&v=3')
       .then(data => (data.items || []).map(item => ({ ...item, category: cat.id, categoryLabel: `${cat.icon} ${cat.label}` })))
       .catch(() => [])
   )).then(results => {
@@ -703,7 +716,7 @@ function renderNewsGrid() {
 
     return `<a href="${item.link}" target="_blank" rel="noopener" class="news-item">
       <div class="news-body">
-        <div class="news-title">${escapeHtml(item.title)}</div>
+        <div class="news-title">${escapeHtml(cleanTitle(item.title))}</div>
         <div class="news-meta">
           ${catBadge}
           ${biasBadgeHtml}
@@ -753,17 +766,30 @@ function fetchLaws() {
   const grid = document.getElementById('lawsGrid');
   grid.innerHTML = '<div class="news-loader"><div class="spinner"></div><p>Loading laws…</p></div>';
 
-  apiFetch('/api/laws')
+  // ?v= busts the CDN/edge cache when the payload format changes
+  apiFetch('/api/laws?v=4')
     .then(data => {
       const items = data.items || [];
       if (!items.length) throw new Error('empty');
-      allLaws = items.map(item => ({ ...item, tags: categorizeLaw(item.title) }));
+      allLaws = items.map(item => ({ ...item, tags: categorizeLaw(item.title), buzz: 0 }));
       lawsLoaded = true;
       renderLaws(activeLawsFilter);
+      // Public sentiment arrives separately so the list renders immediately
+      fetchLawsBuzz();
     })
     .catch(err => {
       grid.innerHTML = `<div class="news-error">⚠️ Could not load laws. ${err.message} — try the ⟳ Refresh button.</div>`;
     });
+}
+
+function fetchLawsBuzz() {
+  apiFetch('/api/laws/buzz?v=3')
+    .then(data => {
+      const buzz = data.buzz || {};
+      allLaws.forEach(item => { item.buzz = buzz[item.number] || 0; });
+      if (lawsLoaded) renderLaws(activeLawsFilter);
+    })
+    .catch(() => { /* sentiment unavailable — the rest of the page still works */ });
 }
 
 let activeLawsStatus = 'all'; // 'all' | 'enacted' | 'pending' | 'attention'
@@ -773,6 +799,7 @@ function lawMatchesStatus(item, status) {
   if (status === 'enacted') return enacted;
   if (status === 'pending') return !enacted;
   if (status === 'attention') return !!item.attention;
+  if (status === 'sentiment') return (item.buzz || 0) > 0;
   return true; // 'all'
 }
 
@@ -833,6 +860,9 @@ function renderLaws(filter) {
       : item.attention === 'close'
         ? badge('attention', '⚠️ Needs attention')
         : '';
+    const sentimentHtml = (item.buzz || 0) > 0
+      ? badge('sentiment', `🔥 Public attention (${item.buzz} news)`)
+      : '';
     const lawNumHtml = item.lawNum ? `<span class="badge badge-enacted" style="font-size:0.65rem;">🔖 ${escapeHtml(item.lawNum)}</span>` : '';
     const sponsorHtml = item.sponsor ? `<span class="badge badge-sponsor" style="font-size:0.65rem;">👤 ${escapeHtml(item.sponsor)}</span>` : '';
     const chamberHtml = item.chamber ? `<span>${escapeHtml(item.chamber)}</span>` : '';
@@ -844,6 +874,7 @@ function renderLaws(filter) {
           ${tagsHtml}
           ${statusHtml}
           ${attentionHtml}
+          ${sentimentHtml}
           ${lawNumHtml}
           ${chamberHtml}
           ${sponsorHtml}

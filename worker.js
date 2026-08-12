@@ -55,27 +55,24 @@ const LAWS_MONTHS = 12; // how far back to look
 // plus the newest introductions for breadth.
 function lawsQueries(sinceDate) {
   const enacted = [
-    ['enacted_signed', 200],
-    ['enacted_tendayrule', 50],
-    ['enacted_veto_override', 50]
+    ['enacted_signed', 150],
+    ['enacted_tendayrule', 40],
+    ['enacted_veto_override', 40]
   ];
   const pending = [
-    ['pass_over_senate', 100],
-    ['pass_over_house', 100],
-    ['pass_back_senate', 100],
-    ['pass_back_house', 100],
-    ['passed_bill', 100],
-    ['passed_simpleres', 50]
+    ['pass_over_senate', 80],
+    ['pass_over_house', 80],
+    ['pass_back_senate', 80],
+    ['pass_back_house', 80],
+    ['passed_bill', 80]
   ];
   return [
     ...enacted.map(([s, l]) => `${GOVTRACK_BASE}?congress=119&current_status=${s}&current_status_date__gte=${sinceDate}&order_by=-current_status_date&limit=${l}`),
     ...pending.map(([s, l]) => `${GOVTRACK_BASE}?congress=119&current_status=${s}&current_status_date__gte=${sinceDate}&order_by=-current_status_date&limit=${l}`),
     // Newest introductions within the window (breadth)
-    `${GOVTRACK_BASE}?congress=119&introduced_date__gte=${sinceDate}&order_by=-introduced_date&limit=60`
+    `${GOVTRACK_BASE}?congress=119&introduced_date__gte=${sinceDate}&order_by=-introduced_date&limit=50`
   ];
 }
-
-const LAWS_CACHE_TTL_MS = 10 * 60 * 1000;
 
 const PER_FEED_LIMIT = 8;
 const TOTAL_LIMIT = 40;
@@ -92,11 +89,15 @@ export default {
     }
 
     if (url.pathname === '/api/laws') {
-      const category = url.searchParams.get('category') || 'all';
-      return handleLaws(category);
+      return safe(handleLaws());
+    }
+
+    if (url.pathname === '/api/laws/buzz') {
+      return safe(handleLawsBuzz());
     }
 
     // Serve index.html for all other paths
+
     // Cloudflare returns 'text/html' without charset by default (assets 
     // binding). Without charset=utf-8, em-dash, curly quotes, arrows, and 
     // emoji (multi-byte UTF-8) render as mojibake “codes” in many 
@@ -112,6 +113,12 @@ export default {
       status: response.status,
       statusText: response.statusText,
     });
+  },
+
+  // Cron warm-up: keep the laws + buzz caches fresh so user requests
+  // hit the edge cache instead of waiting on GovTrack/Google upstream.
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(Promise.allSettled([handleLaws(), handleLawsBuzz()]));
   }
 };
 
@@ -153,36 +160,123 @@ async function handleNews(category) {
   return json({ status: 'ok', items, cached: false });
 }
 
-async function handleLaws(category) {
-  // Cache hit?
-  const cacheKey = 'laws_' + category;
-  const cached = cache.get(cacheKey);
-  if (cached && Date.now() - cached.ts < LAWS_CACHE_TTL_MS) {
-    return json({ status: 'ok', items: cached.items, cached: true });
+// ── helpers ──────────────────────────────────────────────────────────
+async function fetchWithTimeout(url, timeoutMs) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const resp = await fetch(url, {
+      headers: { 'User-Agent': 'ResearchHub/1.0' },
+      redirect: 'follow',
+      signal: controller.signal
+    });
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    return resp;
+  } finally {
+    clearTimeout(timer);
+  }
+}// Public-attention proxy: count Google News articles mentioning a bill number in the last 7 days.
+const NEWS_BASE = 'https://news.google.com/rss/search?hl=en-US&gl=US&ceid=US:en&q=';
+const BING_NEWS_BASE = 'https://www.bing.com/news/search?setlang=en-US&format=rss&q=';
+// Cloudflare caps subrequests at 50/invocation, so keep the total well under:
+//   BUZZ_TOP_N bills × (2 Google attempts + 1 Bing fallback) + 9 GovTrack ≤ ~40
+const BUZZ_TOP_N = 8;   // how many recent pending bills get a news-buzz check
+const BUZZ_BATCH = 4;   // concurrent news fetches per wave (Google 503s on bursts)
+
+// Browser-like headers — Google News intermittently 503s plain bot UAs.
+const BROWSER_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36';
+
+async function fetchRssCount(url, timeoutMs = 6000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const resp = await fetch(url, {
+      headers: {
+        'User-Agent': BROWSER_UA,
+        'Accept': 'application/rss+xml, application/xml;q=0.9, */*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9'
+      },
+      redirect: 'follow',
+      signal: controller.signal
+    });
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const xml = await resp.text();
+    return (xml.match(/<item>/g) || []).length;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// Google News primary (retries once — it intermittently 503s), then Bing News.
+async function newsCount(number) {
+  const variants = [number, number.replace(/\./g, '')];
+  const query = encodeURIComponent(variants.map(v => `"${v}"`).join(' OR ') + ' when:7d');
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      return await fetchRssCount(NEWS_BASE + query);
+    } catch (e) {
+      if (attempt === 0) await new Promise(r => setTimeout(r, 1200));
+    }
+  }
+  try {
+    return await fetchRssCount(BING_NEWS_BASE + encodeURIComponent(variants.map(v => `"${v}"`).join(' OR ')));
+  } catch (e) {
+    return 0;
+  }
+}
+
+// Public-sentiment buzz for the most recent in-progress bills.
+// Separate endpoint so the main list renders fast and each request
+// stays well under Cloudflare's per-request execution limits.
+async function handleLawsBuzz() {
+  const cacheKey = 'https://api.local/laws-buzz/v3';
+  const cacheApi = caches.default;
+  const cachedRes = await cacheApi.match(cacheKey);
+  if (cachedRes) return cachedRes;
+
+  const base = await handleLaws(); // cached — cheap after first call
+  const data = await base.json();
+  const pending = (data.items || [])
+    .filter(i => !i.statusKey.startsWith('enacted'))
+    .slice(0, BUZZ_TOP_N);
+
+  const buzz = new Map();
+  for (let i = 0; i < pending.length; i += BUZZ_BATCH) {
+    const batch = pending.slice(i, i + BUZZ_BATCH);
+    const counts = await Promise.allSettled(batch.map(item => newsCount(item.number)));
+    counts.forEach((r, j) => buzz.set(batch[j].number, r.status === 'fulfilled' ? r.value : 0));
+    if (i + BUZZ_BATCH < pending.length) await new Promise(r => setTimeout(r, 1000)); // ease rate limits
   }
 
-  // Enacted laws from the past 6 months
+  const payload = JSON.stringify({
+    status: 'ok',
+    buzz: Object.fromEntries(buzz)
+  });
+  const resp = new Response(payload, {
+    headers: {
+      'Content-Type': 'application/json; charset=utf-8',
+      'Access-Control-Allow-Origin': '*',
+      'Cache-Control': 'public, max-age=600'
+    }
+  });
+  await cacheApi.put(cacheKey, resp.clone());
+  return resp;
+}
+
+async function handleLaws() {
+  const cacheKey = 'https://api.local/laws/v4';
+
+  // Edge cache (Cloudflare Cache API) — serves the payload without re-hitting GovTrack.
+  const cacheApi = caches.default;
+  const cachedRes = await cacheApi.match(cacheKey);
+  if (cachedRes) return cachedRes;
+
   const since = new Date();
   since.setMonth(since.getMonth() - LAWS_MONTHS);
   const sinceDate = since.toISOString().slice(0, 10);
 
   const results = await Promise.allSettled(
-    lawsQueries(sinceDate).map(async (url) => {
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 12000);
-      try {
-        const resp = await fetch(url, {
-          headers: { 'User-Agent': 'ResearchHub/1.0' },
-          redirect: 'follow',
-          signal: controller.signal
-        });
-        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-        const data = await resp.json();
-        return (data.objects || []).map(billToItem);
-      } finally {
-        clearTimeout(timer);
-      }
-    })
+    lawsQueries(sinceDate).map(url => fetchWithTimeout(url, 10000).then(r => r.json()).then(d => (d.objects || []).map(billToItem)))
   );
 
   const byNumber = new Map();
@@ -194,17 +288,34 @@ async function handleLaws(category) {
   }
 
   let items = [...byNumber.values()];
-  // Most recently enacted first
+  // Most recently acted-upon first
   items.sort((a, b) => (b.statusDateMs || 0) - (a.statusDateMs || 0));
 
-  cache.set(cacheKey, { ts: Date.now(), items });
-  return json({
+  const payload = JSON.stringify({
     status: 'ok',
     items,
     months: LAWS_MONTHS,
     since: sinceDate,
     cached: false
   });
+  const resp = new Response(payload, {
+    headers: {
+      'Content-Type': 'application/json; charset=utf-8',
+      'Access-Control-Allow-Origin': '*',
+      'Cache-Control': 'public, max-age=600'
+    }
+  });
+  await cacheApi.put(cacheKey, resp.clone());
+  return resp;
+}
+
+// Wrap handlers so upstream errors return clean JSON instead of Cloudflare 1101.
+async function safe(promise) {
+  try {
+    return await promise;
+  } catch (e) {
+    return json({ status: 'error', error: String((e && e.message) || e) }, 500);
+  }
 }
 
 function billToItem(b) {
@@ -233,11 +344,11 @@ function billToItem(b) {
     statusKey,
     statusDate: b.current_status_date || '',
     statusDateMs,
-    introducedDate: b.introduced_date || '',
     sponsor: (b.sponsor && b.sponsor.name) ? b.sponsor.name.replace(/^Rep\. |^Sen\. /, '') : '',
     chamber: b.bill_type_label || '',
     lawNum,
-    attention
+    attention,
+    buzz: 0 // filled in by handleLaws from Google News attention
   };
 }
 
@@ -252,14 +363,25 @@ function json(data, status = 200) {
   });
 }
 
+// Decode HTML entities in RSS titles/descriptions. Must handle &apos; (which
+// BBC/Guardian feeds use for apostrophes) and numeric entities, and decode
+// &amp; LAST so double-escaped text like "&amp;apos;" stays literal "&apos;"
+// instead of becoming an apostrophe.
 function decodeEntities(s) {
+  if (!s) return s;
   return s
-    .replace(/&amp;/g, '&')
+    .replace(/&#x([0-9a-f]+);/gi, (_, h) => safeChar(parseInt(h, 16)))
+    .replace(/&#(\d+);/g, (_, n) => safeChar(parseInt(n, 10)))
+    .replace(/&apos;/g, "'")
+    .replace(/&quot;/g, '"')
+    .replace(/&nbsp;/g, ' ')
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
-    .replace(/&#0?39;/g, "'")
-    .replace(/&quot;/g, '"')
-    .replace(/&nbsp;/g, ' ');
+    .replace(/&amp;/g, '&');
+}
+
+function safeChar(code) {
+  return (code >= 0 && code <= 0x10ffff) ? String.fromCodePoint(code) : '';
 }
 
 function textOf(block, tag) {
