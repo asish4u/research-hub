@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Research Hub — unified library databases + bias-rated news. Deploys as a Cloudflare Worker (worker.js) serving static index.html + /api/news.",
+  "description": "Research Hub — unified library databases + bias-rated news. Deploys as a Cloudflare Worker (worker.js) serving static public/index.html + /api/news.",
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
