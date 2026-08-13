@@ -215,6 +215,12 @@
   .news-tab:hover { background: var(--surface2); border-color: var(--text2); color: var(--text); }
   .news-tab.active { background: var(--accent); border-color: var(--accent); color: #fff; }
   .news-tab .count { opacity: 0.7; font-weight: 400; margin-left: 0.25rem; }
+  .news-flair {
+    background: var(--surface2); border: 1px solid var(--border); border-radius: 999px;
+    color: var(--text2); font-size: 0.68rem; padding: 0.05rem 0.55rem; line-height: 1.4;
+    cursor: pointer; white-space: nowrap;
+  }
+  .news-flair:hover, .news-flair:focus-visible { border-color: var(--accent); color: var(--accent); }
 
   .news-refresh {
     margin-left: auto; background: var(--surface); border: 1px solid var(--border); border-radius: 20px;
@@ -304,9 +310,16 @@
   <!-- ════════════════════════════════════════════════════════════ -->
   <div id="newsSection" style="display:none;">
     <div class="featured-section">
-      <h2 class="news-h2">Live News <span style="font-size:0.75rem;color:var(--text2);font-weight:400;">— all categories together, bias-rated, newest first. Use the pills below to filter.</span></h2>
+      <h2 class="news-h2">Live News <span style="font-size:0.75rem;color:var(--text2);font-weight:400;">— bias-rated, de-duplicated, filter by flair</span></h2>
 
       <div class="news-controls" role="tablist" aria-label="News categories">
+        <button class="news-tab active" data-news="all" role="tab" aria-selected="true">🗂️ All <span class="count"></span></button>
+        <button class="news-tab" data-news="world" role="tab">🌍 World <span class="count"></span></button>
+        <button class="news-tab" data-news="tech" role="tab">💻 Tech <span class="count"></span></button>
+        <button class="news-tab" data-news="business" role="tab">📈 Business <span class="count"></span></button>
+        <button class="news-tab" data-news="ai" role="tab">🤖 AI <span class="count"></span></button>
+        <button class="news-tab" data-news="us" role="tab">🇺🇸 US <span class="count"></span></button>
+        <button class="news-tab" data-news="india" role="tab">🇮🇳 India <span class="count"></span></button>
         <button class="news-refresh" id="newsRefresh" title="Refresh news">⟳ Refresh</button>
       </div>
 
@@ -317,7 +330,7 @@
         <span class="badge badge-leanright">Lean Right</span>
         <span class="badge badge-right">Right</span>
         <span class="badge badge-factual">Factual</span>
-        <span style="margin-left:0.5rem;">News via <strong>BBC RSS</strong> (CORS-enabled) · ↑ Bias ratings by <a href="https://www.allsides.com/media-bias" target="_blank" style="color:var(--accent);">AllSides</a></span>
+        <span style="margin-left:0.5rem;">News via <a href="https://www.reddit.com/r/worldnews/" target="_blank" style="color:var(--accent);"><strong>r/worldnews</strong></a> + <strong>RSS</strong> · ↑ Bias ratings by <a href="https://www.allsides.com/media-bias" target="_blank" style="color:var(--accent);">AllSides</a></span>
       </div>
 
       <div class="news-grid" id="newsGrid" role="feed" aria-label="News articles">
@@ -325,6 +338,7 @@
       </div>
     </div>
   </div>
+
 
   <!-- ════════════════════════════════════════════════════════════ -->
   <!-- LAWS SECTION -->
@@ -547,19 +561,32 @@ function biasBadge(bias) {
 
 // ═══════════════════════════════════════════════════════════════════
 // NEWS — Worker route /api/news (multi-source, server-side).
-//         Falls back to direct BBC RSS if the route isn't deployed yet.
+//         Same-origin first, then the deployed Worker's absolute URL
+//         (GitHub Pages / any static host), then BBC RSS via CORS
+//         proxies — news never breaks.
 // ═══════════════════════════════════════════════════════════════════
-const BBC_FALLBACK = {
+const FALLBACK_FEEDS = {
   world:    'https://feeds.bbci.co.uk/news/world/rss.xml',
   tech:     'https://feeds.bbci.co.uk/news/technology/rss.xml',
   business: 'https://feeds.bbci.co.uk/news/business/rss.xml',
   ai:       'https://feeds.bbci.co.uk/news/technology/rss.xml',
-  india:    'https://feeds.bbci.co.uk/news/world/asia/india/rss.xml',
-  us:       'https://feeds.bbci.co.uk/news/world/us_and_canada/rss.xml'
+  us:       'https://feeds.bbci.co.uk/news/world/us_and_canada/rss.xml',
+  india:    'https://feeds.bbci.co.uk/news/world/asia/india/rss.xml'
 };
 
-let activeNewsTab = 'tech';
-let newsCache = {};
+const NEWS_FLAIRS = {
+  world:    '🌍 World',
+  tech:     '💻 Tech',
+  business: '📈 Business',
+  ai:       '🤖 AI',
+  us:       '🇺🇸 US',
+  india:    '🇮🇳 India'
+};
+
+let activeNewsTab = 'all';
+let allNews = null;             // combined, de-duplicated list; each item has .category
+let seenNewsKeys = new Set();   // de-dup guard for the fallback path
+let seenNewsTokens = [];
 
 function extractDomain(url) {
   try { return new URL(url).hostname.replace(/^www\./, ''); } catch(e) { return ''; }
@@ -594,21 +621,173 @@ function parseRSS(xmlText) {
   return items;
 }
 
-function timeAgo(pubDate) {
-  if (!pubDate) return '';
-  const utc = new Date(pubDate).getTime();
-  const sec = Math.floor((Date.now() - utc) / 1000);
-  if (sec < 0) return 'just now';
-  if (sec < 60) return 'just now';
-  if (sec < 3600) return `${Math.floor(sec/60)}m ago`;
-  if (sec < 86400) return `${Math.floor(sec/3600)}h ago`;
-  return `${Math.floor(sec/86400)}d ago`;
+// ── Client-side de-duplication (cross-tab guard) ───────────────────
+const NEWS_STOPWORDS = new Set([
+  'the','a','an','and','or','but','if','then','else','of','to','in','on','at',
+  'by','for','with','about','against','between','into','through','during',
+  'before','after','above','below','from','up','down','out','off','over','under',
+  'again','further','once','here','there','when','where','why','how','all','any',
+  'both','each','few','more','most','other','some','such','no','nor','not','only',
+  'own','same','so','than','too','very','can','will','just','should','now','is',
+  'are','was','were','be','been','being','have','has','had','do','does','did',
+  'it','its','this','that','these','those','am','they','them','their','what',
+  'which','who','whom','his','her','he','she','we','our','you','your','us','as',
+  'i','me','my','s','t','vs','amid','new','says','say','said','report','reports',
+  'reported','first','last','one','two','year','years','day','days','week',
+  'weekend','official','officials','watch','video','live','update','updates',
+  'latest','breaking','exclusive','story'
+]);
+
+function normalizeTitle(title) {
+  return String(title || '')
+    .toLowerCase()
+    .replace(/&amp;/g, '&')
+    .replace(/&#0?39;|&apos;/g, "'")
+    .replace(/[^a-z0-9']+/g, ' ')
+    .trim()
+    .split(/\s+/)
+    .filter(w => w && (w.length >= 2 || w === 'a' || w === 'i'))
+    .join(' ');
 }
 
-function escapeHtml(text) {
-  const d = document.createElement('div');
-  d.textContent = text;
-  return d.innerHTML;
+function newsTitleTokens(title) {
+  return new Set(
+    String(title || '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, ' ')
+      .trim()
+      .split(/\s+/)
+      .filter(w => w.length >= 3 && !NEWS_STOPWORDS.has(w))
+  );
+}
+
+function newsIsNearDup(a, b) {
+  if (a.size < 4 || b.size < 4) return false;
+  const smaller = a.size <= b.size ? a : b;
+  const larger = a.size <= b.size ? b : a;
+  let inter = 0;
+  for (const w of smaller) if (larger.has(w)) inter++;
+  return inter / smaller.size >= 0.7;
+}
+
+function dedupeNews(items) {
+  const out = [];
+  for (const item of items) {
+    const key = normalizeTitle(item.title);
+    if (!key || seenNewsKeys.has(key)) continue;
+    const tokens = newsTitleTokens(item.title);
+    let dup = false;
+    for (const s of seenNewsTokens) {
+      if (newsIsNearDup(tokens, s)) { dup = true; break; }
+    }
+    if (dup) continue;
+    seenNewsKeys.add(key);
+    seenNewsTokens.push(tokens);
+    out.push(item);
+  }
+  return out;
+}
+
+// API FETCH — same-origin first (Cloudflare Worker), then fall back to the
+// deployed Worker's absolute URL (CORS enabled) so the site also works on
+// GitHub Pages / any static host.
+const API_FALLBACK_BASE = 'https://research-hub.pintun8.workers.dev';
+
+function apiFetch(path) {
+  return fetch(path)
+    .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
+    .catch(() => fetch(API_FALLBACK_BASE + path)
+      .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); }));
+}
+
+function fetchNews(forceRefresh) {
+  const grid = document.getElementById('newsGrid');
+  grid.innerHTML = '<div class="news-loader"><div class="spinner"></div><p>Loading news…</p></div>';
+
+  // Load EVERYTHING once (category=all), then filter client-side by flair.
+  apiFetch('/api/news?category=all' + (forceRefresh ? '&refresh=1' : ''))
+    .then(data => {
+      const items = data.items || [];
+      if (!items.length) throw new Error('empty');
+      allNews = items;
+      renderNews();
+    })
+    .catch(() => {
+      // Last resort: BBC RSS via CORS proxies (static hosting, no Worker)
+      fetchAllFallback()
+        .then(items => {
+          if (!items.length) throw new Error('no items');
+          allNews = items;
+          renderNews();
+        })
+        .catch(err => {
+          if (allNews) { renderNews(); return; }
+          grid.innerHTML = `<div class="news-error">⚠️ Could not load news. ${err.message}</div>`;
+        });
+    });
+}
+
+// ── CORS-friendly proxy chain (static-hosting fallback) ──────────────
+// BBC's RSS feeds don't send `Access-Control-Allow-Origin`, so a browser
+// fetch is blocked on static hosting (no Worker). These public proxies
+// re-serve the feed with CORS headers. They're tried in order, so a single
+// flaky proxy can't break the fallback. Each returns the raw RSS/Atom XML
+// (allorigins /get returns it JSON-wrapped, hence the .json() path).
+function fetchWithTimeout(url, ms) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), ms);
+  return fetch(url, { mode: 'cors', signal: ctrl.signal })
+    .finally(() => clearTimeout(timer));
+}
+
+const CORS_PROXIES = [
+  async (u) => { const r = await fetchWithTimeout(`https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`, 12000); if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.text(); },
+  async (u) => { const r = await fetchWithTimeout(`https://api.allorigins.win/get?url=${encodeURIComponent(u)}`, 12000); if (!r.ok) throw new Error(`HTTP ${r.status}`); const j = await r.json(); if (!j || !j.contents) throw new Error('empty'); return j.contents; },
+  async (u) => { const r = await fetchWithTimeout(`https://api.cors.lol/?url=${encodeURIComponent(u)}`, 12000); if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.text(); },
+  async (u) => { const r = await fetchWithTimeout(`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`, 12000); if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.text(); },
+];
+
+async function fetchViaProxy(url) {
+  let lastErr;
+  for (const proxy of CORS_PROXIES) {
+    try {
+      const text = await proxy(url);
+      if (typeof text === 'string' && /<item[\s>]|<entry[\s>]|<rss[\s>]|<feed[\s>]/i.test(text)) return text;
+      throw new Error('unrecognized response');
+    } catch (err) { lastErr = err; }
+  }
+  throw lastErr || new Error('all CORS proxies failed');
+}
+
+async function fetchAllFallback() {
+  // Group categories by feed URL so shared feeds (tech/AI share one feed)
+  // go through the proxy chain only once.
+  const byUrl = {};
+  for (const [cat, url] of Object.entries(FALLBACK_FEEDS)) {
+    (byUrl[url] = byUrl[url] || []).push(cat);
+  }
+  const results = await Promise.allSettled(
+    Object.entries(byUrl).map(([url, cats]) =>
+      fetchViaProxy(url).then(xml =>
+        cats.flatMap(cat => parseRSS(xml).map(it => ({ ...it, category: cat })))
+      )
+    )
+  );
+  let all = [];
+  results.forEach(res => { if (res.status === 'fulfilled') all = all.concat(res.value); });
+  all = dedupeNews(all);
+  all.sort((a, b) => (b.pubDateMs || 0) - (a.pubDateMs || 0));
+  return all;
+}
+
+function countFor(cat) {
+  if (!allNews) return '';
+  return cat === 'all' ? allNews.length : allNews.filter(it => it.category === cat).length;
+}
+
+function visibleItems() {
+  if (!allNews) return [];
+  return activeNewsTab === 'all' ? allNews : allNews.filter(it => it.category === activeNewsTab);
 }
 
 // Belt-and-suspenders: decode any entities the worker may have missed
@@ -629,116 +808,92 @@ function cleanTitle(t) {
   return s;
 }
 
-// ═══════════════════════════════════════════════════════════════════
-// API FETCH — same-origin first (Cloudflare Worker), then fall back to
-// the deployed Worker's absolute URL (CORS enabled) so the site also
-// works on GitHub Pages / any static host.
-// ═══════════════════════════════════════════════════════════════════
-const API_FALLBACK_BASE = 'https://research-hub.pintun8.workers.dev';
+function itemHtml(item) {
+  const domain = item.domain || extractDomain(item.link);
+  const bias = getBias(domain || 'reddit.com');
+  const ago = timeAgo(item.pubDate);
+  const source = item.subreddit ? `r/${item.subreddit}` : (domain || (item.author || 'source'));
+  const flair = item.category ? (NEWS_FLAIRS[item.category] || item.category) : '';
 
-function apiFetch(path) {
-  return fetch(path)
-    .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
-    .catch(() => fetch(API_FALLBACK_BASE + path)
-      .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); }));
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// NEWS — show ALL categories together with flair, simple client-side filter
-// ═══════════════════════════════════════════════════════════════════
-const NEWS_CATEGORIES = [
-  { id: 'world', label: 'World', icon: '🌍' },
-  { id: 'tech', label: 'Tech', icon: '💻' },
-  { id: 'business', label: 'Business', icon: '📈' },
-  { id: 'ai', label: 'AI', icon: '🤖' },
-  { id: 'us', label: 'US', icon: '🇺🇸' },
-  { id: 'india', label: 'India', icon: '🇮🇳' }
-];
-
-let allNewsItems = [];
-let newsLoaded = false;
-let activeNewsFilter = 'all';
-let newsFilterInitialized = false;
-
-function initializeNewsFilter() {
-  if (newsFilterInitialized) return;
-  newsFilterInitialized = true;
-
-  // Simple single-select filter pills: All + each category
-  const pills = document.createElement('div');
-  pills.className = 'news-category-pills';
-  pills.innerHTML = `<button class="news-category-pill active" data-filter="all">📰 All</button>` +
-    NEWS_CATEGORIES.map(c =>
-      `<button class="news-category-pill" data-filter="${c.id}">${c.icon} ${c.label}</button>`
-    ).join('');
-
-  const grid = document.getElementById('newsGrid');
-  grid.parentNode.insertBefore(pills, grid);
-
-  pills.addEventListener('click', e => {
-    const pill = e.target.closest('.news-category-pill');
-    if (!pill) return;
-    pills.querySelectorAll('.news-category-pill').forEach(p => p.classList.remove('active'));
-    pill.classList.add('active');
-    activeNewsFilter = pill.dataset.filter;
-    if (newsLoaded) renderNewsGrid();
-  });
-}
-
-function fetchAllNews() {
-  const grid = document.getElementById('newsGrid');
-  grid.innerHTML = '<div class="news-loader"><div class="spinner"></div><p>Loading news…</p></div>';
-
-  Promise.all(NEWS_CATEGORIES.map(cat =>
-    // &v=3 busts stale CDN caches after the entity-decoding fix
-    apiFetch('/api/news?category=' + cat.id + '&v=4')
-      .then(data => (data.items || []).map(item => ({ ...item, category: cat.id, categoryLabel: `${cat.icon} ${cat.label}` })))
-      .catch(() => [])
-  )).then(results => {
-    allNewsItems = results.flat();
-    allNewsItems.sort((a, b) => (b.pubDateMs || 0) - (a.pubDateMs || 0));
-    newsLoaded = true;
-    renderNewsGrid();
-  }).catch(() => {
-    grid.innerHTML = '<div class="news-error">⚠️ Could not load news. Try the ⟳ Refresh button.</div>';
-  });
-}
-
-function renderNewsGrid() {
-  const grid = document.getElementById('newsGrid');
-  const items = activeNewsFilter === 'all'
-    ? allNewsItems
-    : allNewsItems.filter(i => i.category === activeNewsFilter);
-
-  if (!items.length) {
-    grid.innerHTML = '<div class="empty"><p>No news in this category yet.</p></div>';
-    return;
-  }
-
-  grid.innerHTML = items.map(item => {
-    const domain = extractDomain(item.link);
-    const bias = getBias(domain || 'bbc.co.uk');
-    const ago = timeAgo(item.pubDate);
-    const catBadge = `<span class="badge badge-${item.category}" style="font-size:0.65rem;">${item.categoryLabel}</span>`;
-    const biasBadgeHtml = `<span class="badge ${biasBadge(bias.bias)}" style="font-size:0.65rem;">${bias.label}</span>`;
-
-    return `<a href="${item.link}" target="_blank" rel="noopener" class="news-item">
-      <div class="news-body">
-        <div class="news-title">${escapeHtml(cleanTitle(item.title))}</div>
-        <div class="news-meta">
-          ${catBadge}
-          ${biasBadgeHtml}
-          <span class="news-source">${domain || (item.author || 'source')}</span>
-          <span>${ago}</span>
-        </div>
+  return `<a href="${item.link}" target="_blank" rel="noopener" class="news-item">
+    <div class="news-body">
+      <div class="news-title">${escapeHtml(cleanTitle(item.title))}</div>
+      <div class="news-meta">
+        <span class="news-source">${escapeHtml(source)}</span>
+        ${flair ? `<span class="news-flair" role="button" tabindex="0" data-flair="${item.category}">${escapeHtml(flair)}</span>` : ''}
+        <span class="badge ${biasBadge(bias.bias)}" style="font-size:0.65rem;">${bias.label}</span>
+        <span>${ago}</span>
       </div>
-    </a>`;
-  }).join('');
+    </div>
+  </a>`;
 }
+
+function renderNews() {
+  const grid = document.getElementById('newsGrid');
+
+  document.querySelectorAll('.news-tab').forEach(t => {
+    t.querySelector('.count').textContent = countFor(t.dataset.news);
+  });
+
+  const items = visibleItems();
+  grid.innerHTML = items.length
+    ? items.map(itemHtml).join('')
+    : '<div class="news-loader"><p>No news in this category yet.</p></div>';
+}
+
+function setActiveTab(cat) {
+  activeNewsTab = cat;
+  document.querySelectorAll('.news-tab').forEach(t => {
+    const active = t.dataset.news === cat;
+    t.classList.toggle('active', active);
+    t.setAttribute('aria-selected', active ? 'true' : 'false');
+  });
+  renderNews();
+}
+
+function timeAgo(pubDate) {
+  if (!pubDate) return '';
+  const utc = new Date(pubDate).getTime();
+  const sec = Math.floor((Date.now() - utc) / 1000);
+  if (sec < 0) return 'just now';
+  if (sec < 60) return 'just now';
+  if (sec < 3600) return `${Math.floor(sec/60)}m ago`;
+  if (sec < 86400) return `${Math.floor(sec/3600)}h ago`;
+  return `${Math.floor(sec/86400)}d ago`;
+}
+
+function escapeHtml(text) {
+  const d = document.createElement('div');
+  d.textContent = text;
+  return d.innerHTML;
+}
+
+// News tab clicks — instant client-side filter (no network round-trip)
+document.querySelectorAll('.news-tab').forEach(tab => {
+  tab.addEventListener('click', () => setActiveTab(tab.dataset.news));
+});
+
+// Click (or Enter) a flair badge on any item to filter by that flair
+document.getElementById('newsGrid').addEventListener('click', e => {
+  const flair = e.target.closest('.news-flair');
+  if (!flair) return;
+  e.preventDefault();
+  e.stopPropagation();
+  setActiveTab(flair.dataset.flair);
+});
+
+document.getElementById('newsGrid').addEventListener('keydown', e => {
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.classList.contains('news-flair')) {
+    e.preventDefault();
+    setActiveTab(e.target.dataset.flair);
+  }
+});
 
 document.getElementById('newsRefresh').addEventListener('click', () => {
-  newsLoaded = false;
-  fetchAllNews();
+  allNews = null;
+  seenNewsKeys = new Set();
+  seenNewsTokens = [];
+  fetchNews(true);
 });
 
 // ═══════════════════════════════════════════════════════════════════
@@ -970,9 +1125,8 @@ document.getElementById('mainToggle').addEventListener('click', e => {
 
   if (section === 'news') {
     newsEl.style.display = 'block';
-    initializeNewsFilter();
-    if (!newsLoaded) fetchAllNews();
-    else renderNewsGrid();
+    if (!allNews) fetchNews();
+    else renderNews();
   } else if (section === 'laws') {
     lawsEl.style.display = 'block';
     startLawsAutoRefresh();

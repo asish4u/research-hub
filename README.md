@@ -6,14 +6,14 @@ A single-page dashboard that brings together **120+ research databases**, **live
 - **🌐 International** — Open-access publishers, preprint servers, and academic search engines
 - **🇮🇳 India** — Indian theses repositories, journals, legal databases, government data, and more
 - **⚡ Sci-Hub** — 85M+ free scholarly articles
-- **📰 News** — All World / Tech / Business / AI / US / India news in one feed, each article bias-rated (AllSides)
+- **📰 News** — All World / Tech / Business / AI / US / India news in one feed, each article bias-rated (AllSides), sourced from **r/worldnews (Reddit)** + RSS
 - **⚖️ Laws** — All laws and bills from the last 12 months (via [GovTrack](https://www.govtrack.us/)): enacted laws **and** bills still in progress. Real-time, tagged by relevance to your profile (immigration, family, housing, investing), with filters to show only enacted / only in-progress / only items needing attention, and auto-refresh
 
 ## Features
 
 - 🔍 **Search** across all databases by name, keyword, or subject
 - 🏷️ **Filter** databases by access type (NC LIVE / Wake Tech / Wake County / Open Access / India) and subject
-- 📰 **Live news** — aggregated RSS from BBC, Al Jazeera, DW, The Guardian, NPR, Politico, Bloomberg, CNBC, Hacker News, The Verge, TechCrunch, MIT Tech Review, The Hindu, Indian Express. Filter by category with pills; every item shows category + bias flair
+- 📰 **Live news** — aggregated from **r/worldnews (Reddit)** plus RSS from BBC, Al Jazeera, DW, The Guardian, NPR, Politico, Bloomberg, CNBC, Hacker News, The Verge, TechCrunch, MIT Tech Review, The Hindu, Indian Express — loaded in one request and filtered by flair client-side (instant tab switches). Every story is de-duplicated across all feeds and tabs, so no headline repeats under a different flair. Click a flair pill to jump straight to that category
 - ⚖️ **Laws** — enacted laws + in-progress bills from the last 12 months, sorted newest-first, auto-refreshing every 10 min. Status filters: all / ✅ enacted / ⏳ in progress / ⚠️ needs attention. Each item shows relevance badges (🛂 Immigration / 👨👩👧 Family / 🏠 Housing / 📈 Investing), status, public law number (when enacted), sponsor, chamber, and date
 - 🌟 **Popular Picks** — hand-picked recommendations at the top
 - 🔴 **Impact badges** — Breaking (< 2h) / Today, sorted by recency
@@ -45,11 +45,12 @@ research-hub/
 - **`worker.js`** — Cloudflare Worker that:
   1. serves the static site from `public/`, and
   2. exposes JSON APIs:
-     - `/api/news?category=world|tech|business|ai|india|us` — multi-source RSS merged server-side, sorted by recency
+     - `/api/news?category=world|tech|business|ai|us|india|all` — r/worldnews + multi-source RSS fetched **server-side** (no CORS limits), de-duplicated across all feeds and categories so a story never repeats under a different tab, merged + sorted by recency
      - `/api/laws` — every law enacted in the past 12 months (signed / 10-day rule / veto override) plus bills still in progress that have passed at least one chamber, deduped and sorted by latest action
-- **Resilient front-end:** every API call tries the same origin first, then falls back to the deployed
-  Worker's absolute URL (`Access-Control-Allow-Origin: *`), so the site stays fully functional on any
-  static host — including GitHub Pages.
+- **Resilient front-end:** news/laws API calls try the same origin first, then fall back to the
+  deployed Worker's absolute URL (`Access-Control-Allow-Origin: *`), and finally to BBC RSS via a
+  chain of CORS-friendly public proxies — so the site stays fully functional on any static host,
+  including GitHub Pages
 
 ## Development
 
