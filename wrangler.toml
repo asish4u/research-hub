@@ -5,6 +5,11 @@ compatibility_date = "2024-09-23"
 # Serve static assets from public/ directory (keeps node_modules out)
 assets = { directory = "./public", binding = "ASSETS", html_handling = "auto-trailing-slash", not_found_handling = "single-page-application" }
 
+# Persist the user's auction watchlist (synced to the auction site account)
+[[kv_namespaces]]
+binding = "DEAL_KV"
+id = "795961a4b5b544f5b743c4176f18600b"
+
 # Pre-warm the /api/laws + /api/laws/buzz edge caches every 10 minutes so
 # visitors never wait on slow GovTrack/Google News upstream fetches.
 [triggers]

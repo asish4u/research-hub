@@ -265,6 +265,252 @@
   .empty { text-align: center; padding: 3rem 1rem; color: var(--text2); }
   .footer { border-top: 1px solid var(--border); padding: 1.5rem; text-align: center; color: var(--text2); font-size: 0.8rem; }
 
+  /* ── AUCTION FINDER (LiquidDeal, powered by Worker) ── */
+  .auction-h2 { color: var(--green); }
+  .auction-h2::before { content: '🔨'; font-size: 1.1rem; }
+  .auction-status {
+    display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center;
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 0.6rem 1rem; margin-bottom: 1rem; font-size: 0.8rem; color: var(--text2);
+  }
+  .auction-live-dot {
+    width: 8px; height: 8px; border-radius: 50%; background: var(--green); display: inline-block;
+    animation: aPulse 2s infinite;
+  }
+  @keyframes aPulse {
+    0% { box-shadow: 0 0 0 0 rgba(63,185,80,.5); }
+    70% { box-shadow: 0 0 0 6px rgba(63,185,80,0); }
+    100% { box-shadow: 0 0 0 0 rgba(63,185,80,0); }
+  }
+  .auction-refresh {
+    margin-left: auto; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 20px; color: var(--text2); font-size: 0.78rem; padding: 0.4rem 0.9rem;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .auction-refresh:hover { background: var(--surface2); border-color: var(--accent); color: var(--accent); }
+  .auction-refresh:disabled { opacity: 0.6; cursor: default; }
+
+  .auction-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0.6rem; margin-bottom: 1rem; }
+  .auction-stat {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 0.7rem 0.95rem;
+  }
+  .auction-stat .v { font-size: 1.3rem; font-weight: 700; line-height: 1.2; }
+  .auction-stat .l { font-size: 0.7rem; color: var(--text2); margin-top: 0.15rem; }
+  .auction-stat.cyan .v { color: #22d3ee; }
+  .auction-stat.emerald .v { color: #34d399; }
+  .auction-stat.violet .v { color: #a78bfa; }
+  .auction-stat.amber .v { color: #fbbf24; }
+
+  .auction-controls {
+    display: flex; gap: 0.6rem; flex-wrap: wrap; align-items: center;
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 0.8rem 1rem; margin-bottom: 0.75rem;
+  }
+  .auction-select {
+    background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm);
+    color: var(--text); padding: 0.5rem 0.65rem; font-size: 0.85rem; outline: none;
+  }
+  .auction-select:focus { border-color: var(--accent); }
+  .auction-search {
+    flex: 1; min-width: 160px; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 0.55rem 0.85rem; color: var(--text); font-size: 0.85rem;
+    outline: none; transition: border-color 0.2s;
+  }
+  .auction-search:focus { border-color: var(--accent); }
+  .profile-label { font-size: 0.75rem; color: var(--text2); }
+  .auction-profile-btn {
+    background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm);
+    color: var(--text2); font-size: 0.78rem; padding: 0.4rem 0.8rem; cursor: pointer; transition: all 0.15s;
+  }
+  .auction-profile-btn:hover { border-color: var(--text2); color: var(--text); }
+  .auction-profile-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  .auction-loader, .auction-error { text-align: center; padding: 2.5rem 1rem; color: var(--text2); }
+  .auction-loader .spinner {
+    display: inline-block; width: 1.4rem; height: 1.4rem;
+    border: 2px solid var(--border); border-top-color: var(--accent);
+    border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 0.5rem;
+  }
+  .auction-error { color: var(--orange); }
+
+  .lot-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 0.75rem; }
+  .lot-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    overflow: hidden; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column;
+  }
+  .lot-card:hover { border-color: var(--accent); transform: translateY(-1px); }
+  .lot-card.steal { border-color: #1a4f2e; }
+  .lot-thumb { position: relative; aspect-ratio: 4 / 3; background: #0a0e14; overflow: hidden; }
+  .lot-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .lot-no {
+    position: absolute; top: 0.4rem; left: 0.4rem; z-index: 2;
+    background: rgba(13,17,23,.85); border: 1px solid var(--border); color: var(--text);
+    font-size: 0.68rem; font-weight: 600; padding: 0.15rem 0.5rem; border-radius: 999px;
+  }
+  .lot-steal-badge {
+    position: absolute; top: 0.4rem; right: 0.4rem; z-index: 2;
+    background: #0b2e1a; color: var(--green); border: 1px solid #1a4f2e;
+    font-size: 0.65rem; font-weight: 700; padding: 0.15rem 0.5rem; border-radius: 999px;
+  }
+  .lot-nav-btn {
+    position: absolute; top: 50%; transform: translateY(-50%); z-index: 2;
+    background: rgba(13,17,23,.7); border: 1px solid var(--border); color: var(--text);
+    width: 26px; height: 26px; border-radius: 50%; cursor: pointer; display: flex; align-items: center;
+    justify-content: center; font-size: 0.9rem; opacity: 0; transition: opacity 0.15s;
+  }
+  .lot-card:hover .lot-nav-btn { opacity: 1; }
+  .lot-nav-btn.left { left: 0.35rem; }
+  .lot-nav-btn.right { right: 0.35rem; }
+  .lot-dots { position: absolute; bottom: 0.35rem; left: 0; right: 0; z-index: 2; display: flex; gap: 0.25rem; justify-content: center; }
+  .lot-dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,.4); }
+  .lot-dot.active { background: var(--accent); }
+
+  .lot-body { padding: 0.8rem 0.9rem 0.9rem; display: flex; flex-direction: column; gap: 0.5rem; flex: 1; }
+  .lot-badges { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+  .lot-badge {
+    font-size: 0.65rem; font-weight: 600; padding: 0.1rem 0.45rem; border-radius: 999px;
+    background: var(--surface2); border: 1px solid var(--border); color: var(--text2);
+  }
+  .lot-badge.new { color: var(--green); border-color: #1a4f2e; background: #0b2e1a; }
+  .lot-badge.like-new { color: #a78bfa; border-color: #3b2870; background: #1c1335; }
+  .lot-badge.damaged { color: var(--orange); border-color: #4d3d1a; background: #1c1a10; }
+  .lot-badge.baby { color: #f472b6; border-color: #4a1a5e; background: #1a0a2e; }
+  .lot-badge.save { color: #818cf8; border-color: rgba(129,140,248,.35); background: rgba(129,140,248,.1); }
+  .lot-title {
+    font-size: 0.85rem; font-weight: 600; color: var(--text); line-height: 1.4;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 2.4em;
+  }
+  .lot-prices { display: grid; grid-template-columns: 1fr 1fr; gap: 0.35rem 0.75rem; }
+  .lot-price { display: flex; justify-content: space-between; align-items: baseline; gap: 0.4rem; font-size: 0.75rem; }
+  .lot-price .k { color: var(--text2); }
+  .lot-price .v { font-weight: 600; color: var(--text); }
+  .lot-price .v.bid { color: var(--accent); }
+  .lot-price .v.total { color: var(--green); }
+  .lot-price .v.amazon { color: #fbbf24; }
+  .lot-rank { display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--text2); }
+  .lot-rank b { color: var(--text); }
+
+  .deal-meter .head { display: flex; justify-content: space-between; font-size: 0.65rem; color: var(--text2); margin-bottom: 0.25rem; }
+  .deal-meter .head .st { font-weight: 700; }
+  .deal-meter .head .st.steal { color: var(--green); }
+  .deal-meter .head .st.good { color: #a78bfa; }
+  .deal-meter .head .st.warn { color: var(--orange); }
+  .deal-meter .head .st.over { color: var(--red); }
+  .deal-meter .bar { position: relative; height: 6px; background: var(--surface2); border-radius: 999px; }
+  .deal-meter .fill { position: absolute; top: 0; left: 0; bottom: 0; border-radius: 999px; background: var(--green); }
+  .deal-meter .fill.warn { background: var(--orange); }
+  .deal-meter .fill.over { background: var(--red); }
+  .deal-meter .marker { position: absolute; top: -2px; width: 2px; height: 10px; background: var(--accent); }
+
+  .lot-footer {
+    display: flex; justify-content: space-between; align-items: center; font-size: 0.72rem; color: var(--text2);
+    border-top: 1px solid var(--border); padding-top: 0.5rem; margin-top: auto;
+  }
+
+  .page-nav { display: flex; justify-content: center; align-items: center; gap: 0.75rem; margin-top: 1rem; }
+  .page-nav button {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
+    color: var(--text2); width: 32px; height: 32px; cursor: pointer; transition: all 0.15s;
+  }
+  .page-nav button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+  .page-nav button:disabled { opacity: 0.4; cursor: default; }
+  .page-nav span { font-size: 0.85rem; color: var(--text2); }
+
+  /* Deals tab sub-sections (Auctions / Deal Websites) */
+  .deal-subtabs { display: flex; gap: 0.4rem; margin-bottom: 1rem; flex-wrap: wrap; }
+  .deal-subtab {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
+    color: var(--text2); font-size: 0.85rem; font-weight: 600; padding: 0.5rem 1.1rem;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .deal-subtab:hover { border-color: var(--text2); color: var(--text); }
+  .deal-subtab.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  /* Watch button on lot cards */
+  .lot-watch-btn {
+    position: absolute; bottom: 0.4rem; right: 0.4rem; z-index: 2;
+    background: rgba(13,17,23,.85); border: 1px solid var(--border); color: var(--text2);
+    font-size: 0.66rem; font-weight: 700; padding: 0.2rem 0.55rem; border-radius: 999px;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .lot-watch-btn:hover { border-color: #fbbf24; color: #fbbf24; }
+  .lot-watch-btn.watched { background: #3a2c10; border-color: #fbbf24; color: #fbbf24; }
+
+  /* Recommended max-bid breakdown */
+  .rec-breakdown { display: grid; gap: 0.3rem; margin-top: 0.5rem; }
+  .rec-breakdown .row { display: flex; justify-content: space-between; gap: 1rem; font-size: 0.75rem; color: var(--text2); }
+  .rec-breakdown .row b { color: var(--text); }
+  .rec-breakdown .row.total { border-top: 1px solid var(--border); padding-top: 0.4rem; font-weight: 700; color: var(--green); }
+  .rec-breakdown .row.total b { color: var(--green); }
+
+  /* Lot detail modal */
+  .modal-overlay {
+    position: fixed; inset: 0; z-index: 100; background: rgba(5,8,12,.78);
+    display: flex; align-items: flex-start; justify-content: center; padding: 2rem 1rem;
+    overflow-y: auto;
+  }
+  .modal-box {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    max-width: 760px; width: 100%; padding: 1.25rem;
+  }
+  .modal-close {
+    float: right; background: none; border: none; color: var(--text2); font-size: 1.1rem;
+    cursor: pointer; padding: 0.2rem 0.4rem;
+  }
+  .modal-close:hover { color: var(--text); }
+  .modal-lot-no { font-size: 0.7rem; color: var(--text2); font-weight: 600; letter-spacing: 0.04em; }
+  .modal-title { font-size: 1.1rem; font-weight: 700; margin: 0.3rem 0 0.9rem; line-height: 1.4; }
+  .modal-gallery { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem; }
+  .modal-main-img {
+    width: 100%; max-height: 420px; object-fit: contain; background: #0a0e14;
+    border-radius: var(--radius); border: 1px solid var(--border);
+  }
+  .modal-thumbs { display: flex; gap: 0.5rem; overflow-x: auto; padding-bottom: 0.25rem; }
+  .modal-thumbs img {
+    width: 58px; height: 58px; object-fit: cover; border-radius: var(--radius-sm);
+    border: 2px solid transparent; cursor: pointer; opacity: 0.65; transition: all 0.15s; flex: 0 0 auto;
+  }
+  .modal-thumbs img.active { border-color: var(--accent); opacity: 1; }
+  .modal-section { margin-bottom: 1rem; }
+  .modal-section h4 {
+    font-size: 0.8rem; font-weight: 600; color: var(--text2); text-transform: uppercase;
+    letter-spacing: 0.04em; margin-bottom: 0.5rem;
+  }
+  .invoice {
+    background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm);
+    padding: 0.8rem 1rem; font-size: 0.82rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    display: flex; flex-direction: column; gap: 0.4rem;
+  }
+  .invoice .row { display: flex; justify-content: space-between; }
+  .invoice .row.total {
+    font-weight: 700; color: var(--green); font-size: 0.92rem;
+    border-top: 1px solid var(--border); padding-top: 0.45rem;
+  }
+  .modal-desc {
+    font-size: 0.85rem; color: var(--text); max-height: 220px; overflow-y: auto;
+    background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm);
+    padding: 0.8rem 1rem; line-height: 1.6;
+  }
+  .modal-actions { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-top: 0.25rem; }
+  .modal-link {
+    flex: 1; min-width: 180px; text-align: center; text-decoration: none;
+    background: var(--accent); color: #fff; border-radius: var(--radius-sm);
+    padding: 0.65rem 1rem; font-size: 0.85rem; font-weight: 600; transition: all 0.15s;
+  }
+  .modal-link:hover { filter: brightness(1.1); }
+  .modal-link.ghost { background: var(--surface2); border: 1px solid var(--border); color: var(--text); }
+  .modal-link.ghost:hover { border-color: var(--accent); color: var(--accent); }
+  .modal-link.modal-watch { cursor: pointer; background: var(--surface2); border: 1px solid var(--border); color: var(--text); }
+  .modal-link.modal-watch:hover { border-color: #fbbf24; color: #fbbf24; }
+  .modal-link.modal-watch.watched { background: #3a2c10; border-color: #fbbf24; color: #fbbf24; }
+
+  @media (max-width: 640px) {
+    .modal-overlay { padding: 1rem 0.6rem; }
+    .modal-box { padding: 1rem; }
+  }
+
   @media (max-width: 640px) {
     .header h1 { font-size: 1.3rem; }
     .card .top { flex-direction: column; align-items: flex-start; }
@@ -1138,6 +1384,7 @@ document.getElementById('mainToggle').addEventListener('click', e => {
     document.getElementById('aiSection').style.display = 'block';
   } else if (section === 'deals') {
     document.getElementById('dealsSection').style.display = 'block';
+    DealFinder.ensureStarted();
   } else {
     // all, nc, intl, india → show database section
     dbEl.style.display = 'block';
@@ -1464,6 +1711,655 @@ function render() {
 
 // Initialize
 render();
+
+// AUCTION FINDER — LiquidDeal-style browser backed by the Worker
+// (read-only: /api/auctions, /api/lots, /api/stats, /api/lot/images)
+// ═══════════════════════════════════════════════════════════════════
+const DealFinder = (() => {
+  const LIMIT = 24;
+  const $ = id => document.getElementById(id);
+
+  let auctions = [];
+  let currentLots = [];
+  let selectedId = '';
+  let searchQuery = '';
+  let conditionFilter = 'all';
+  let sortBy = 'deal_score';
+  let sortOrder = 'desc';
+  let activeProfile = '';
+  let page = 1;
+  let total = 0;
+  let started = false;
+  let loading = false;
+  let pollTimer = null;
+  let imagesCache = {};
+  let thumbIdx = {};
+  let modalImages = [];
+  let modalImgIdx = 0;
+  let watchedSet = new Set();
+  let watchlistMode = false;
+  let watchlistLots = [];
+
+  function esc(s) {
+    const d = document.createElement('div');
+    d.textContent = s == null ? '' : String(s);
+    return d.innerHTML;
+  }
+
+  function fmtPrice(v) {
+    if (v === null || v === undefined || isNaN(v)) return 'N/A';
+    return '$' + Number(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function debounce(fn, ms) {
+    let t;
+    return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
+  }
+
+  function getAuctionDate(title) {
+    const dateMatch = title.match(/(\d{2}\/\d{2}\/\d{4})/);
+    if (dateMatch) {
+      const dayMatch = title.match(/(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)/i);
+      return dayMatch ? `${dayMatch[1]} ${dateMatch[1]}` : dateMatch[1];
+    }
+    const days = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+    for (const d of days) if (title.toLowerCase().includes(d.toLowerCase())) return d;
+    return 'Active Listings';
+  }
+
+  function groupOptions() {
+    const groups = {};
+    auctions.forEach(a => {
+      const d = getAuctionDate(a.title);
+      (groups[d] = groups[d] || []).push(a);
+    });
+    return groups;
+  }
+
+  function renderAuctionOptions() {
+    const sel = $('auctionSelect');
+    const groups = groupOptions();
+    const opts = [];
+    Object.keys(groups).forEach(dateStr => {
+      const ga = groups[dateStr];
+      if (ga.length > 1) {
+        opts.push(`<option value="unified:${ga.map(a => a.row_id).join(',')}">📅 ${dateStr} (Unified Anderson + Raleigh)</option>`);
+      }
+    });
+    if (opts.length) opts.push('<option disabled>──────────────</option>');
+    Object.keys(groups).forEach(dateStr => {
+      opts.push(`<option disabled style="font-weight:bold;">─── ${dateStr} ───</option>`);
+      groups[dateStr].forEach(a => {
+        opts.push(`<option value="${a.row_id}">📍 ${a.title}</option>`);
+      });
+    });
+    sel.innerHTML = opts.join('');
+    sel.value = selectedId;
+  }
+
+  function apiParams() {
+    const p = new URLSearchParams();
+    if (selectedId.startsWith('unified:')) p.set('auction_ids', selectedId.split(':')[1]);
+    else p.set('auction_id', selectedId);
+    p.set('search', searchQuery);
+    p.set('condition', conditionFilter);
+    p.set('sort_by', sortBy);
+    p.set('sort_order', sortOrder);
+    p.set('profile', activeProfile);
+    p.set('limit', String(LIMIT));
+    p.set('offset', String((page - 1) * LIMIT));
+    return p;
+  }
+
+  function statsParams() {
+    const p = new URLSearchParams();
+    if (selectedId.startsWith('unified:')) p.set('auction_ids', selectedId.split(':')[1]);
+    else p.set('auction_id', selectedId);
+    p.set('profile', activeProfile);
+    return p;
+  }
+
+  function setStatus(text, ok) {
+    $('auctionStatusText').textContent = text;
+    $('auctionStatus').querySelector('.auction-live-dot').style.background = ok ? 'var(--green)' : 'var(--orange)';
+  }
+
+  function ensureStarted() {
+    if (started) { startPolling(); return; }
+    started = true;
+    init();
+    startPolling();
+    loadAuctions();
+  }
+
+  function retry() { loadAuctions(); }
+
+  function startPolling() {
+    stopPolling();
+    pollTimer = setInterval(() => {
+      const el = $('dealsSection');
+      if (el && el.style.display !== 'none') {
+        if (watchlistMode) loadWatchlistView();
+        else loadFeed(true);
+      }
+    }, 60000);
+  }
+
+  function stopPolling() {
+    if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+  }
+
+  function reload() {
+    page = 1;
+    if (watchlistMode) loadWatchlistView();
+    else loadFeed();
+  }
+
+  function setProfile(profile) {
+    activeProfile = profile;
+    watchlistMode = profile === 'watchlist';
+    document.querySelectorAll('#auctionProfileRow .auction-profile-btn').forEach(x => x.classList.toggle('active', x.dataset.profile === profile));
+  }
+
+  function init() {
+    $('auctionSelect').addEventListener('change', e => { selectedId = e.target.value; setProfile(''); page = 1; loadFeed(); });
+    $('auctionSearch').addEventListener('input', debounce(e => { searchQuery = e.target.value.trim(); page = 1; if (watchlistMode) loadWatchlistView(); else loadFeed(); }, 350));
+    $('auctionCondition').addEventListener('change', e => { conditionFilter = e.target.value; reload(); });
+    $('auctionSort').addEventListener('change', e => { sortBy = e.target.value; reload(); });
+    $('auctionOrder').addEventListener('change', e => { sortOrder = e.target.value; reload(); });
+    $('auctionRefresh').addEventListener('click', () => { if (watchlistMode) loadWatchlistView(); else loadFeed(); });
+
+    document.querySelectorAll('.deal-subtab').forEach(b => {
+      b.addEventListener('click', () => {
+        document.querySelectorAll('.deal-subtab').forEach(x => x.classList.toggle('active', x === b));
+        $('dealAuctionsSub').style.display = b.dataset.sub === 'auctions' ? '' : 'none';
+        $('dealWebsitesSub').style.display = b.dataset.sub === 'websites' ? '' : 'none';
+      });
+    });
+
+    $('auctionProfileRow').addEventListener('click', e => {
+      const b = e.target.closest('.auction-profile-btn');
+      if (!b) return;
+      setProfile(b.dataset.profile);
+      page = 1;
+      if (watchlistMode) loadWatchlistView();
+      else loadFeed();
+    });
+
+    loadWatchlist();
+
+    $('pagePrev').addEventListener('click', () => { if (page > 1) { page--; loadFeed(); scrollToFinder(); } });
+    $('pageNext').addEventListener('click', () => { if (page < Math.ceil(total / LIMIT)) { page++; loadFeed(); scrollToFinder(); } });
+
+    const grid = $('lotGrid');
+    grid.addEventListener('click', e => {
+      const card = e.target.closest('.lot-card');
+      if (!card) return;
+      const nav = e.target.closest('.lot-nav-btn');
+      const rid = card.dataset.row;
+      if (nav) {
+        if (nav.dataset.action === 'prev') prevThumb(rid);
+        else nextThumb(rid);
+        return;
+      }
+      const watchBtn = e.target.closest('.lot-watch-btn');
+      if (watchBtn) {
+        const lot = currentLots.find(l => l.row_id === rid);
+        toggleWatch(rid, lot, watchBtn);
+        return;
+      }
+      openLot(rid);
+    });
+    grid.addEventListener('mouseover', e => {
+      const card = e.target.closest('.lot-card');
+      if (card) warmImages(card.dataset.row);
+    });
+
+    $('modalOverlay').addEventListener('click', e => { if (e.target === $('modalOverlay')) closeModal(); });
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && $('modalOverlay').style.display !== 'none') closeModal();
+    });
+  }
+
+  function scrollToFinder() {
+    const el = $('auctionFinder');
+    window.scrollTo({ top: (el ? el.offsetTop : 0) - 100, behavior: 'smooth' });
+  }
+
+  function loadAuctions() {
+    fetch('/api/auctions')
+      .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(data => {
+        auctions = data.auctions || [];
+        if (!auctions.length) throw new Error('No upcoming auctions found');
+        const groups = groupOptions();
+        if (!selectedId) {
+          const firstDate = Object.keys(groups)[0];
+          if (firstDate && groups[firstDate].length > 1) {
+            selectedId = 'unified:' + groups[firstDate].map(a => a.row_id).join(',');
+          } else {
+            selectedId = auctions[0].row_id;
+          }
+        }
+        renderAuctionOptions();
+        $('auctionLoader').style.display = 'none';
+        $('auctionContent').style.display = '';
+        setStatus('Live from Cloudflare', true);
+        loadFeed();
+      })
+      .catch(err => {
+        $('auctionLoader').innerHTML = `<div class="auction-error">⚠️ Could not load auctions from the auction site.<br><span style="font-size:0.8rem;">${esc(err.message)}</span><br><button class="auction-refresh" style="margin:0.75rem auto 0;display:inline-block;" onclick="DealFinder.retry()">⟳ Retry</button></div>`;
+        setStatus('Auction site unreachable', false);
+      });
+  }
+
+  let feedSeq = 0;
+  function loadFeed(silent) {
+    if (!selectedId) return;
+    const seq = ++feedSeq;
+    loading = true;
+    if (!silent) {
+      $('auctionContent').style.display = '';
+      $('lotGrid').innerHTML = '<div class="auction-loader" style="grid-column:1/-1;"><div class="spinner"></div><p>Loading lots…</p></div>';
+    }
+    Promise.all([
+      fetch('/api/lots?' + apiParams().toString()).then(r => r.json()),
+      fetch('/api/stats?' + statsParams().toString()).then(r => r.json())
+    ])
+      .then(([lotsData, statsData]) => {
+        if (seq !== feedSeq) return; // stale — a newer filter request is in flight
+        if (lotsData.error) throw new Error(lotsData.error);
+        total = lotsData.total || 0;
+        renderStats(statsData);
+        renderLots(lotsData.lots || []);
+        renderPagination();
+        const d = new Date();
+        $('auctionLastUpdated').style.display = '';
+        $('auctionLastUpdated').textContent = ' · Last check: ' + d.toLocaleTimeString();
+        setStatus('Live from Cloudflare', true);
+      })
+      .catch(err => {
+        if (seq !== feedSeq) return;
+        if (!silent) {
+          $('lotGrid').innerHTML = `<div class="auction-error" style="grid-column:1/-1;">⚠️ Could not load lots: ${esc(err.message)}</div>`;
+          setStatus('Refresh failed', false);
+        }
+      })
+      .finally(() => { if (seq === feedSeq) loading = false; });
+  }
+
+  // ── Watchlist ──
+  function loadWatchlist() {
+    fetch('/api/watchlist')
+      .then(r => r.json())
+      .then(data => {
+        watchedSet = new Set((data.lots || []).map(l => l.row_id));
+        watchlistLots = data.lots || [];
+        updateWatchlistBtn();
+        refreshWatchButtons();
+      })
+      .catch(() => {});
+  }
+
+  function updateWatchlistBtn() {
+    const btn = $('auctionWatchlistBtn');
+    if (btn) btn.textContent = `★ Watchlist (${watchedSet.size})`;
+  }
+
+  function refreshWatchButtons() {
+    document.querySelectorAll('.lot-watch-btn').forEach(b => {
+      const rid = b.dataset.row;
+      const on = watchedSet.has(rid);
+      b.classList.toggle('watched', on);
+      b.innerHTML = on ? '★ Watched' : '☆ Watch';
+      b.title = on ? 'Remove from watchlist' : 'Add to watchlist (syncs to auction account)';
+    });
+    const mw = $('modalWatchBtn');
+    if (mw) {
+      const on = watchedSet.has(mw.dataset.row);
+      mw.classList.toggle('watched', on);
+      mw.textContent = on ? '★ In Watchlist' : '☆ Add to Watchlist';
+    }
+  }
+
+  function toggleWatch(rowId, lot, btn) {
+    const body = { row_id: rowId, watched: !watchedSet.has(rowId) };
+    if (lot) body.lot = lot;
+    fetch('/api/watchlist', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (data.watched) watchedSet.add(rowId);
+        else watchedSet.delete(rowId);
+        if (data.watched && lot) {
+          watchlistLots = watchlistLots.filter(l => l.row_id !== rowId);
+          watchlistLots.unshift({ ...lot, added_at: new Date().toISOString() });
+        } else if (!data.watched) {
+          watchlistLots = watchlistLots.filter(l => l.row_id !== rowId);
+        }
+        updateWatchlistBtn();
+        refreshWatchButtons();
+        let msg = data.watched ? '☆ Added to watchlist' : 'Removed from watchlist';
+        if (data.synced) msg += ' · synced to auction account ✓';
+        else if (data.sync_error) msg += ' · live sync failed: ' + data.sync_error;
+        setStatus(msg, true);
+        if (watchlistMode && !data.watched) loadWatchlistView();
+      })
+      .catch(() => setStatus('Watchlist update failed', false));
+  }
+
+  function matchesClient(l, q) {
+    const range = (l.baby_age_range || '').toLowerCase();
+    if (range.includes(q)) return true;
+    const title = (l.title || '').toLowerCase();
+    return q.split(/\s+/).filter(Boolean).every(w => new RegExp('\\b' + w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(?:s|es)?\\b', 'i').test(title));
+  }
+
+  function loadWatchlistView() {
+    watchlistLots = [];
+    $('auctionContent').style.display = '';
+    $('lotGrid').innerHTML = '<div class="auction-loader" style="grid-column:1/-1;"><div class="spinner"></div><p>Loading watchlist…</p></div>';
+    fetch('/api/watchlist')
+      .then(r => r.json())
+      .then(data => {
+        let lots = data.lots || [];
+        watchedSet = new Set(lots.map(l => l.row_id));
+        watchlistLots = lots;
+        if (searchQuery) {
+          const q = searchQuery.toLowerCase();
+          lots = lots.filter(l => matchesClient(l, q));
+        }
+        if (conditionFilter !== 'all') lots = lots.filter(l => l.condition_code === conditionFilter);
+        const dir = sortOrder.toLowerCase() === 'asc' ? 1 : -1;
+        lots.sort((a, b) => {
+          const av = a[sortBy] == null ? 0 : a[sortBy];
+          const bv = b[sortBy] == null ? 0 : b[sortBy];
+          if (av < bv) return -dir;
+          if (av > bv) return dir;
+          return 0;
+        });
+        total = lots.length;
+        if (page > Math.max(1, Math.ceil(total / LIMIT))) page = Math.max(1, Math.ceil(total / LIMIT));
+        const pageLots = lots.slice((page - 1) * LIMIT, page * LIMIT);
+        const withPrice = lots.filter(l => l.retail_price);
+        renderStats({
+          total_lots: total,
+          steals_count: lots.filter(l => l.retail_price && l.current_bid <= (l.recommended_bid || 0)).length,
+          average_discount: withPrice.length ? Math.round(withPrice.reduce((s, l) => s + (l.deal_score || 0), 0) / withPrice.length * 10) / 10 : 0,
+          avg_total_price: lots.length ? Math.round(lots.reduce((s, l) => s + (l.total_price || 0), 0) / lots.length * 100) / 100 : 0
+        });
+        renderLots(pageLots);
+        renderPagination();
+        setStatus('Watchlist · synced to auction account', true);
+      })
+      .catch(err => {
+        $('lotGrid').innerHTML = `<div class="auction-error" style="grid-column:1/-1;">⚠️ Could not load watchlist: ${esc(err.message)}</div>`;
+      });
+  }
+
+  function renderStats(s) {
+    $('auctionStats').innerHTML = `
+      <div class="auction-stat cyan"><div class="v">${s.total_lots || 0}</div><div class="l">Total Auction Lots</div></div>
+      <div class="auction-stat emerald"><div class="v">${s.steals_count || 0}</div><div class="l">Dealworthy Lots</div></div>
+      <div class="auction-stat violet"><div class="v">${s.average_discount || 0}%</div><div class="l">Avg. Savings vs Amazon</div></div>
+      <div class="auction-stat amber"><div class="v">${fmtPrice(s.avg_total_price)}</div><div class="l">Avg. Total Cost</div></div>`;
+  }
+
+  function dealStatus(lot) {
+    if (!lot.retail_price) return { text: 'N/A', cls: 'over' };
+    const r = lot.recommended_bid || 0;
+    const b = lot.current_bid || 0;
+    if (b <= r) return { text: 'Dealworthy (Steal)', cls: 'steal' };
+    if (b <= r * 1.25) return { text: 'Good Price', cls: 'good' };
+    if (b <= r * 1.5) return { text: 'Fair Price', cls: 'warn' };
+    return { text: 'Overpriced', cls: 'over' };
+  }
+
+  function condLabel(code) {
+    if (code === 'A') return { text: 'New', cls: 'new' };
+    if (code === 'B') return { text: 'Like New', cls: 'like-new' };
+    return { text: 'Potentially Damaged', cls: 'damaged' };
+  }
+
+  function lotCard(lot) {
+    const deal = dealStatus(lot);
+    const cond = condLabel(lot.condition_code);
+    const isSteal = deal.cls === 'steal';
+    const watched = watchedSet.has(lot.row_id);
+    const images = (imagesCache[lot.row_id] && imagesCache[lot.row_id].length) ? imagesCache[lot.row_id] : [lot.image_url];
+    const idx = thumbIdx[lot.row_id] || 0;
+    const img = images[idx] || lot.image_url;
+    const costPct = lot.retail_price ? Math.min(100, ((lot.total_price || 0) / lot.retail_price) * 100) : 0;
+    const targetPct = lot.condition_code === 'A' ? 50 : lot.condition_code === 'B' ? 35 : 15;
+
+    return `<div class="lot-card ${isSteal ? 'steal' : ''}" data-row="${esc(lot.row_id)}">
+      <div class="lot-thumb">
+        <span class="lot-no">Lot ${esc(lot.lot_number)}</span>
+        ${isSteal ? '<span class="lot-steal-badge">🔨 Dealworthy</span>' : ''}
+        <button class="lot-watch-btn ${watched ? 'watched' : ''}" data-row="${esc(lot.row_id)}" title="${watched ? 'Remove from watchlist' : 'Add to watchlist (syncs to auction account)'}">${watched ? '★ Watched' : '☆ Watch'}</button>
+        ${images.length > 1 ? `
+        <button class="lot-nav-btn left" data-action="prev" title="Previous photo">‹</button>
+        <button class="lot-nav-btn right" data-action="next" title="Next photo">›</button>
+        <div class="lot-dots">${images.map((_, i) => `<div class="lot-dot ${i === idx ? 'active' : ''}"></div>`).join('')}</div>` : ''}
+        ${img ? `<img src="${esc(img)}" alt="${esc(lot.title)}" loading="lazy">` : '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text2);font-size:0.75rem;">No image</div>'}
+      </div>
+      <div class="lot-body">
+        <div class="lot-badges">
+          <span class="lot-badge ${cond.cls}">${cond.text}</span>
+          ${lot.baby_age_range ? `<span class="lot-badge baby">👶 ${esc(lot.baby_age_range)}</span>` : ''}
+          ${lot.deal_score > 0 ? `<span class="lot-badge save">Save ${lot.deal_score}%</span>` : ''}
+        </div>
+        <div class="lot-title">${esc(lot.title)}</div>
+        <div class="lot-prices">
+          <div class="lot-price"><span class="k">Current Bid</span><span class="v bid">${fmtPrice(lot.current_bid)}</span></div>
+          <div class="lot-price"><span class="k">Total Cost</span><span class="v total">${fmtPrice(lot.total_price)}</span></div>
+          <div class="lot-price"><span class="k">Target Max</span><span class="v">${fmtPrice(lot.recommended_bid)}</span></div>
+          <div class="lot-price"><span class="k">Amazon Est.</span><span class="v amazon">${fmtPrice(lot.amazon_price)}</span></div>
+        </div>
+        <div class="lot-rank">
+          <span>🔥 <b>${lot.popularity_score > 60 ? 'High' : lot.popularity_score > 30 ? 'Med' : 'Low'}</b></span>
+          <span>💎 Resale <b>${lot.resale_score > 60 ? 'High' : lot.resale_score > 35 ? 'Moderate' : 'Low'}</b></span>
+        </div>
+        ${lot.retail_price ? `
+        <div class="deal-meter">
+          <div class="head"><span>Acquisition Ratio</span><span class="st ${deal.cls}">${deal.text}</span></div>
+          <div class="bar">
+            <div class="fill ${deal.cls === 'warn' ? 'warn' : deal.cls === 'over' ? 'over' : ''}" style="width:${costPct}%"></div>
+            <div class="marker" style="left:${targetPct}%" title="Target limit ${targetPct}%"></div>
+          </div>
+        </div>` : ''}
+        <div class="lot-footer">
+          <span>⏱ ${esc(lot.time_left || 'Active')}</span>
+          <span>📍 ${esc((lot.location_name || '').split(',')[0] || 'Active')}</span>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  function renderLots(lots) {
+    currentLots = lots;
+    const grid = $('lotGrid');
+    if (!lots.length) {
+      grid.innerHTML = '<div class="auction-error" style="grid-column:1/-1;">No lots found — try altering your search or filters.</div>';
+      return;
+    }
+    grid.innerHTML = lots.map(lotCard).join('');
+  }
+
+  function renderPagination() {
+    const pages = Math.ceil(total / LIMIT);
+    $('pageInfo').textContent = pages > 1 ? `Page ${page} of ${pages} · ${total} lots` : `${total} lots`;
+    $('pagePrev').disabled = page <= 1;
+    $('pageNext').disabled = page >= pages;
+    $('pageNav').style.display = total > 0 ? '' : 'none';
+  }
+
+  // ── Images ──
+  function warmImages(rowId) {
+    if (imagesCache[rowId] && imagesCache[rowId].length > 1) return;
+    const card = document.querySelector(`.lot-card[data-row="${CSS.escape(rowId)}"]`);
+    const imgEl = card && card.querySelector('.lot-thumb img');
+    imagesCache[rowId] = [imgEl ? imgEl.src : ''];
+    fetch('/api/lot/images?row_id=' + encodeURIComponent(rowId))
+      .then(r => r.json())
+      .then(data => {
+        if (data && data.images && data.images.length > 1) {
+          imagesCache[rowId] = data.images;
+          rerenderCard(rowId);
+        }
+      })
+      .catch(() => {});
+  }
+
+  function rerenderCard(rowId) {
+    const card = document.querySelector(`.lot-card[data-row="${CSS.escape(rowId)}"]`);
+    if (!card) return;
+    const idx = thumbIdx[rowId] || 0;
+    const images = imagesCache[rowId] || [];
+    const img = card.querySelector('.lot-thumb img');
+    if (img && images[idx]) img.src = images[idx];
+    const dots = card.querySelector('.lot-dots');
+    if (dots) dots.innerHTML = images.map((_, i) => `<div class="lot-dot ${i === idx ? 'active' : ''}"></div>`).join('');
+  }
+
+  function prevThumb(rowId) {
+    const len = (imagesCache[rowId] || []).length;
+    if (len < 2) return;
+    thumbIdx[rowId] = ((thumbIdx[rowId] || 0) - 1 + len) % len;
+    rerenderCard(rowId);
+  }
+
+  function nextThumb(rowId) {
+    const len = (imagesCache[rowId] || []).length;
+    if (len < 2) return;
+    thumbIdx[rowId] = ((thumbIdx[rowId] || 0) + 1) % len;
+    rerenderCard(rowId);
+  }
+
+  // ── Modal ──
+  function openLot(rowId) {
+    const lot = currentLots.find(l => l.row_id === rowId);
+    if (!lot) return;
+    modalImages = ((imagesCache[rowId] && imagesCache[rowId].length) ? imagesCache[rowId] : [lot.image_url]).filter(Boolean);
+    modalImgIdx = 0;
+    renderModal(lot);
+    $('modalOverlay').style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    if (modalImages.length <= 1) {
+      fetch('/api/lot/images?row_id=' + encodeURIComponent(rowId))
+        .then(r => r.json())
+        .then(data => {
+          if (data && data.images && data.images.length > 1) {
+            modalImages = data.images;
+            imagesCache[rowId] = data.images;
+            renderModalImages();
+            renderModalThumbs();
+          }
+        })
+        .catch(() => {});
+    }
+  }
+
+  function renderModal(lot) {
+    const cond = condLabel(lot.condition_code);
+    const fee = (lot.location_name || '').toLowerCase().includes('anderson') ? 5.0 : 0.0;
+    const platformUrl = lot.detail_url || ('https://auction.triangleliquidators.com/lots/view/' + encodeURIComponent(lot.row_id));
+    $('modalContent').innerHTML = `
+      <button class="modal-close" id="modalClose" title="Close">✕</button>
+      <div class="modal-lot-no">LOT #${esc(lot.lot_number)} · ID: ${esc(lot.row_id)}</div>
+      <h2 class="modal-title">${esc(lot.title)}</h2>
+
+      ${modalImages.length ? `
+      <div class="modal-gallery">
+        <img class="modal-main-img" id="modalMainImg" src="${esc(modalImages[0])}" alt="${esc(lot.title)}">
+        ${modalImages.length > 1 ? `<div class="modal-thumbs" id="modalThumbs">${modalImages.map((u, i) => `<img src="${esc(u)}" data-i="${i}" class="${i === 0 ? 'active' : ''}">`).join('')}</div>` : ''}
+      </div>` : ''}
+
+      <div class="modal-section">
+        <h4>Condition & Rankings</h4>
+        <div class="lot-badges">
+          <span class="lot-badge ${cond.cls}">${cond.text}</span>
+          ${lot.baby_age_range ? `<span class="lot-badge baby">👶 ${esc(lot.baby_age_range)}</span>` : ''}
+          <span class="lot-badge save">Popularity: ${Math.round(lot.popularity_score || 0)}/100</span>
+          <span class="lot-badge" style="color:#34d399;border-color:#1a4f2e;background:#0b2e1a;">Resale: ${Math.round(lot.resale_score || 0)}/100</span>
+        </div>
+      </div>
+
+      <div class="modal-section">
+        <h4>Acquisition Invoice Breakdown</h4>
+        <div class="invoice">
+          <div class="row"><span>Hammer/Bid Price</span><span>${fmtPrice(lot.current_bid)}</span></div>
+          <div class="row"><span>+ Buyer's Premium (15.00%)</span><span>${fmtPrice((lot.current_bid || 0) * 0.15)}</span></div>
+          <div class="row"><span>+ State Sales Tax (7.25%)</span><span>${fmtPrice((lot.current_bid || 0) * 0.0725)}</span></div>
+          <div class="row"><span>+ Pick-up Fee</span><span>${fmtPrice(fee)}</span></div>
+          <div class="row total"><span>Total Acquisition Cost</span><span>${fmtPrice(lot.total_price)}</span></div>
+        </div>
+      </div>
+
+      <div class="modal-section">
+        <h4>Valuation Comparisons</h4>
+        <div class="lot-prices" style="grid-template-columns:repeat(3,1fr);">
+          <div class="lot-price"><span class="k">Retail Value</span><span class="v">${fmtPrice(lot.retail_price)}</span></div>
+          <div class="lot-price"><span class="k">Amazon Market</span><span class="v amazon">${fmtPrice(lot.amazon_price)}</span></div>
+          <div class="lot-price"><span class="k">Target Max Bid</span><span class="v">${fmtPrice(lot.recommended_bid)}</span></div>
+        </div>
+      </div>
+
+      ${lot.recommend && lot.retail_price != null ? `
+      <div class="modal-section">
+        <h4>Recommended Max Bid — How It's Calculated</h4>
+        <div class="rec-breakdown">
+          <div class="row"><span>Base target (${cond.text} condition: ${lot.recommend.base_pct}% of retail)</span><b>${lot.recommend.base_pct}%</b></div>
+          <div class="row"><span>+ Popularity adjustment (score ${Math.round(lot.popularity_score || 0)}/100)</span><b>+${lot.recommend.popularity_adj}%</b></div>
+          <div class="row"><span>+ Resale adjustment (score ${Math.round(lot.resale_score || 0)}/100)</span><b>+${lot.recommend.resale_adj}%</b></div>
+          <div class="row"><span>+ Buyer's premium (15%) + tax (7.25%) + pickup fee</span><b>factored in</b></div>
+          <div class="row total"><span>Target ${lot.recommend.target_pct}% of retail → Max bid</span><b>${fmtPrice(lot.recommended_bid)}</b></div>
+        </div>
+      </div>` : ''}
+
+      <div class="modal-section">
+        <h4>Retailer Specifications & Description</h4>
+        <div class="modal-desc">${lot.description || 'No detailed specifications listed.'}</div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="modal-link modal-watch ${watchedSet.has(lot.row_id) ? 'watched' : ''}" id="modalWatchBtn" data-row="${esc(lot.row_id)}">${watchedSet.has(lot.row_id) ? '★ In Watchlist' : '☆ Add to Watchlist'}</button>
+        <a class="modal-link" href="${esc(platformUrl)}" target="_blank" rel="noopener">View on Auction Platform ↗</a>
+      </div>`;
+    $('modalClose').addEventListener('click', closeModal);
+    const mw = $('modalWatchBtn');
+    if (mw) mw.addEventListener('click', () => toggleWatch(lot.row_id, lot, mw));
+    renderModalThumbs();
+  }
+
+  function renderModalThumbs() {
+    const thumbs = $('modalThumbs');
+    if (!thumbs) return;
+    thumbs.onclick = e => {
+      const t = e.target.closest('img[data-i]');
+      if (!t) return;
+      modalImgIdx = parseInt(t.dataset.i, 10);
+      renderModalImages();
+    };
+  }
+
+  function renderModalImages() {
+    const main = $('modalMainImg');
+    if (main && modalImages[modalImgIdx]) main.src = modalImages[modalImgIdx];
+    const thumbs = $('modalThumbs');
+    if (thumbs) thumbs.querySelectorAll('img').forEach((t, i) => t.classList.toggle('active', i === modalImgIdx));
+  }
+
+  function closeModal() {
+    $('modalOverlay').style.display = 'none';
+    document.body.style.overflow = '';
+  }
+
+  return { ensureStarted, retry, stopPolling, openLot, warmImages, prevThumb, nextThumb };
+})();
 </script>
 
 <!-- ════════════════════════════════════════════════════════════ -->
@@ -1597,9 +2493,86 @@ render();
 <!-- DEALS SECTION -->
 <!-- ═════════💰════════════════════════════════════════ -->
 <div id="dealsSection" style="display:none;">
+
+  <!-- Deals sub-sections: Auctions / Deal Websites -->
+  <div class="deal-subtabs">
+    <button class="deal-subtab active" data-sub="auctions">🏛️ Live Auctions</button>
+    <button class="deal-subtab" data-sub="websites">🛍️ Deal Websites</button>
+  </div>
+
+  <div id="dealAuctionsSub">
+  <!-- ── Sub-section 1: Auction Finder (LiquidDeal, powered by Worker) ── -->
+  <div class="featured-section" id="auctionFinder">
+    <h2 class="auction-h2">Live Auction Finder <span style="font-size:0.75rem;color:var(--text2);font-weight:400;">— Triangle Liquidators · scraped live by the Cloudflare Worker</span></h2>
+
+    <div class="auction-status" id="auctionStatus">
+      <span class="auction-live-dot"></span>
+      <span id="auctionStatusText">Connecting to auction site…</span>
+      <span id="auctionLastUpdated" style="display:none;"></span>
+      <button class="auction-refresh" id="auctionRefresh" title="Refresh auction data">⟳ Refresh</button>
+    </div>
+
+    <div id="auctionBody">
+      <div class="auction-loader" id="auctionLoader">
+        <div class="spinner"></div><p>Loading auctions…</p>
+      </div>
+
+      <div id="auctionContent" style="display:none;">
+        <div class="auction-stats" id="auctionStats"></div>
+
+        <div class="auction-controls">
+          <select class="auction-select" id="auctionSelect" title="Choose auction feed"></select>
+          <input type="text" class="auction-search" id="auctionSearch" placeholder="Search listings (try 'baby')…">
+          <select class="auction-select" id="auctionCondition" title="Condition filter">
+            <option value="all">All Conditions</option>
+            <option value="A">New only</option>
+            <option value="B">Like New only</option>
+            <option value="C">Used & Damaged only</option>
+          </select>
+          <select class="auction-select" id="auctionSort" title="Sort & rank">
+            <option value="deal_score">Highest Savings</option>
+            <option value="resale_score">Resale Rank</option>
+            <option value="popularity_score">Popularity</option>
+            <option value="current_bid">Lowest Bid</option>
+            <option value="retail_price">Highest Retail</option>
+            <option value="lot_number">Lot Number</option>
+          </select>
+          <select class="auction-select" id="auctionOrder" title="Order">
+            <option value="desc">Descending</option>
+            <option value="asc">Ascending</option>
+          </select>
+        </div>
+
+        <div style="display:flex;flex-wrap:wrap;gap:0.4rem;align-items:center;margin-bottom:0.9rem;">
+          <span class="profile-label">Deal Profiles:</span>
+          <span id="auctionProfileRow" style="display:flex;flex-wrap:wrap;gap:0.4rem;">
+            <button class="auction-profile-btn active" data-profile="">All Deals</button>
+            <button class="auction-profile-btn" data-profile="kids_gift">🧸 Kids Gifting</button>
+            <button class="auction-profile-btn" data-profile="baby">👶 Baby Products</button>
+            <button class="auction-profile-btn" data-profile="adults_gift">🎁 Adults Gifting</button>
+            <button class="auction-profile-btn" data-profile="home">🏠 Home Necessities</button>
+            <button class="auction-profile-btn" data-profile="resell">📈 Reselling</button>
+            <button class="auction-profile-btn" data-profile="watchlist" id="auctionWatchlistBtn">★ Watchlist (0)</button>
+          </span>
+        </div>
+
+        <div class="lot-grid" id="lotGrid"></div>
+
+        <div class="page-nav" id="pageNav" style="display:none;">
+          <button id="pagePrev" title="Previous page">‹</button>
+          <span id="pageInfo"></span>
+          <button id="pageNext" title="Next page">›</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  </div>
+
+  <!-- ── Sub-section 2: Deal Websites ── -->
+  <div id="dealWebsitesSub" style="display:none;">
   <div class="featured-section">
-    <h2 class="news-h2">💰 Tech Deals <span style="font-size:0.75rem;color:var(--text2);font-weight:400;">— find the best deals on tech and more</span></h2>
-        <div class="featured-grid" id="dealsGrid">
+    <h2 class="news-h2">🛍️ Deal Websites <span style="font-size:0.75rem;color:var(--text2);font-weight:400;">— find the best deals on tech and more</span></h2>
+    <div class="featured-grid" id="dealsGrid">
       <a href="https://slickdeals.net" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">Slickdeals</span></div><span class="badge badge-open">Free</span></div><div class="desc">Community-curated deals. User-voted, real-time. Best tech deal aggregator.</div></a>
       <a href="https://www.techbargains.com" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">TechBargains</span></div><span class="badge badge-open">Free</span></div><div class="desc">Curated tech deals and coupons. Editors select best daily deals.</div></a>
       <a href="https://www.dealsofamerica.com" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">Deals of America</span></div><span class="badge badge-open">Free</span></div><div class="desc">Aggregated best deals on electronics, gadgets, and tools.</div></a>
@@ -1609,6 +2582,12 @@ render();
       <a href="https://www.newegg.com/DailyDeal" target="_blank" rel="noopener" class="card"><div class="top"><div class="name-wrapper"><span class="name">Newegg Daily Deals</span></div><span class="badge badge-open">Free</span></div><div class="desc">Daily deals on PC parts, electronics, gaming, and networking gear.</div></a>
     </div>
   </div>
+  </div>
+</div>
+
+<!-- Lot detail modal (Auction Finder) -->
+<div class="modal-overlay" id="modalOverlay" style="display:none;">
+  <div class="modal-box" id="modalContent"></div>
 </div>
 
 
