@@ -8,6 +8,7 @@
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
     "check": "node scripts/check.mjs",
+    "check:links": "node check-links.mjs",
     "pages:local": "npx http-server public -p 8080"
   },
   "devDependencies": {

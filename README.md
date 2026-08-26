@@ -25,6 +25,7 @@ research-hub/
 ├── public/
 │   └── index.html      # THE dashboard UI (single source of truth — edit this)
 ├── worker.js           # Cloudflare Worker: serves assets + /api/news + /api/laws
+├── check-links.mjs     # verifies every outbound link in public/index.html (npm run check:links)
 ├── wrangler.toml       # Cloudflare config (main = worker.js, assets = public/)
 ├── scripts/
 │   ├── check.mjs       # validates inline JS in public/index.html (npm run check)
@@ -57,8 +58,15 @@ research-hub/
 ```bash
 npm install          # install wrangler
 npm run check        # validate inline JS in public/index.html (run after edits)
+npm run check:links  # verify no outbound links in public/index.html are dead
 npm run dev          # serve locally at http://localhost:8787 (worker + assets)
 ```
+
+`npm run check:links` scans every outbound URL in `public/index.html` (both `href`
+attributes and the JS databases array), retries transient failures, and exits 1 if
+any link is dead — so broken links can't silently return. Hosts that block bots
+(Amazon, Google, Sci-Hub) live in an allowlist in `check-links.mjs` and are
+reported as "blocked" rather than failing the run.
 
 Open `public/index.html` directly in a browser for a static-only preview (news/laws
 will hit the deployed Worker via the fallback).
