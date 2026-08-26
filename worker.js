@@ -1194,7 +1194,7 @@ async function handleLaws() {
   const sinceDate = since.toISOString().slice(0, 10);
 
   const results = await Promise.allSettled(
-    lawsQueries(sinceDate).map(url => fetchWithTimeout(url, 10000).then(r => r.json()).then(d => (d.objects || []).map(billToItem)))
+    lawsQueries(sinceDate).map(url => fetchWithTimeout(url, 15000).then(r => r.json()).then(d => (d.objects || []).map(billToItem)))
   );
 
   const byNumber = new Map();
@@ -1223,7 +1223,10 @@ async function handleLaws() {
       'Cache-Control': 'public, max-age=600'
     }
   });
-  await cacheApi.put(cacheKey, resp.clone());
+  // Never cache an empty result: while GovTrack is slow/unreachable the
+  // empty payload would poison the edge cache for 10 minutes and keep the
+  // section blank even after the upstream recovers.
+  if (items.length) await cacheApi.put(cacheKey, resp.clone());
   return resp;
 }
 
