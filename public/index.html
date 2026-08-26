@@ -517,6 +517,68 @@
     .badge { align-self: flex-start; }
     .news-item { flex-direction: column; gap: 0.3rem; }
   }
+
+  .badge-free { background: #0b2e1a; color: var(--green); border: 1px solid #1a4f2e; }
+  .badge-paid { background: #2e1a0a; color: var(--orange); border: 1px solid #5e3b1a; }
+  .badge-kids { background: #1a2e1a; color: #56d364; border: 1px solid #1a4f2e; }
+  .badge-outdoor { background: #1a2e1a; color: #7ee787; border: 1px solid #2e5a2e; }
+  .badge-indoor { background: #1a1a2e; color: #a5b4fc; border: 1px solid #2e2e4e; }
+  .badge-venue { background: #1a1a2e; color: var(--text2); border: 1px solid var(--border); }
+  .badge-tba { background: #1a1a1a; color: #9ca3af; border: 1px solid #333; }
+  .badge-tm { background: #1a0e2e; color: #c084fc; border: 1px solid #3b1a5e; }
+
+  /* ── EVENTS SECTION ── */
+  .events-controls {
+    display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; align-items: center;
+  }
+  .events-loc-input {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 20px;
+    color: var(--text); font-size: 0.85rem; padding: 0.45rem 1rem; outline: none;
+    transition: border-color 0.2s; min-width: 160px; flex: 1; max-width: 280px;
+  }
+  .events-loc-input:focus { border-color: var(--accent); }
+  .events-radius-select {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 20px;
+    color: var(--text2); font-size: 0.8rem; padding: 0.45rem 0.75rem; cursor: pointer; outline: none;
+  }
+  .events-radius-select:focus { border-color: var(--accent); }
+  .events-refresh {
+    margin-left: auto; background: var(--surface); border: 1px solid var(--border); border-radius: 20px;
+    color: var(--text2); font-size: 0.78rem; padding: 0.4rem 0.9rem; cursor: pointer; transition: all 0.15s;
+  }
+  .events-refresh:hover { background: var(--surface2); border-color: var(--accent); color: var(--accent); }
+  .events-sort {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 20px;
+    color: var(--text2); font-size: 0.78rem; padding: 0.4rem 0.8rem; cursor: pointer; transition: all 0.15s;
+  }
+  .events-sort.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .events-sort:hover { background: var(--surface2); border-color: var(--text2); color: var(--text); }
+  .events-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 0.75rem; }
+  .event-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    padding: 0.9rem; transition: all 0.15s; text-decoration: none;
+    display: flex; gap: 0.75rem; cursor: pointer;
+  }
+  .event-card:hover { border-color: var(--accent); background: var(--surface2); }
+  .event-img {
+    width: 80px; height: 60px; border-radius: 6px; object-fit: cover; flex-shrink: 0;
+    background: var(--surface2);
+  }
+  .event-body { flex: 1; min-width: 0; }
+  .event-name { font-size: 0.85rem; font-weight: 600; color: var(--text); line-height: 1.3; }
+  .event-card:hover .event-name { color: var(--accent); }
+  .event-detail { font-size: 0.72rem; color: var(--text2); margin-top: 0.25rem; }
+  .event-flair { display: flex; flex-wrap: wrap; gap: 0.25rem; margin-top: 0.35rem; }
+  .event-flair .badge { font-size: 0.63rem; padding: 0.1rem 0.4rem; }
+  .filter-chips { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-bottom: 0.75rem; }
+  .filter-chip {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 20px;
+    color: var(--text2); font-size: 0.72rem; padding: 0.3rem 0.75rem; cursor: pointer;
+    transition: all 0.15s; user-select: none;
+  }
+  .filter-chip:hover { border-color: var(--accent); color: var(--text); }
+  .filter-chip.active { border-color: var(--accent); background: var(--accent); color: #fff; font-weight: 600; }
+  .events-count { font-size: 0.72rem; color: var(--text2); margin-bottom: 0.5rem; }
 </style>
 </head>
 <body>
@@ -545,6 +607,7 @@
     <button class="section-btn" data-section="archives">📚 Archives</button>
     <button class="section-btn" data-section="ai">🤖 AI Resources</button>
     <button class="section-btn" data-section="deals">💰 Deals</button>
+    <button class="section-btn" data-section="events">🎟️ Events</button>
     <button class="section-btn" data-section="nc">🏫 NC Wake Resources</button>
     <button class="section-btn" data-section="intl">🌐 International</button>
     <button class="section-btn" data-section="india">🇮🇳 India</button>
@@ -1364,7 +1427,7 @@ document.getElementById('mainToggle').addEventListener('click', e => {
   const lawsEl = document.getElementById('lawsSection');
 
   // Hide all primary sections first
-  ['newsSection', 'dbSection', 'lawsSection', 'archivesSection', 'aiSection', 'dealsSection'].forEach(id => {
+  ['newsSection', 'dbSection', 'lawsSection', 'archivesSection', 'aiSection', 'dealsSection', 'eventsSection'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
@@ -1388,6 +1451,10 @@ document.getElementById('mainToggle').addEventListener('click', e => {
   } else if (section === 'deals') {
     document.getElementById('dealsSection').style.display = 'block';
     DealFinder.ensureStarted();
+  } else if (section === 'events') {
+    document.getElementById('eventsSection').style.display = 'block';
+    if (!eventsData.items || !eventsData.items.length) fetchEvents();
+    else renderEvents();
   } else {
     // all, nc, intl, india → show database section
     dbEl.style.display = 'block';
@@ -2363,6 +2430,87 @@ const DealFinder = (() => {
 
   return { ensureStarted, retry, stopPolling, openLot, warmImages, prevThumb, nextThumb };
 })();
+
+let activeEventsLocation = 'Fuquay-Varina, NC';
+let eventsData = { items: [], status: 'loading' };
+let eventsFilter = new Set(['all']); // multi-select flairs: all | free | paid | kids | outdoor | indoor
+let eventsDateRange = 'all'; // all | today | weekend | week | month
+let eventsFromDate = '';
+let eventsToDate = '';
+
+function setDateRange(range) {
+  eventsDateRange = range;
+  eventsFromDate = '';
+  eventsToDate = '';
+  document.getElementById('eventsFrom').value = '';
+  document.getElementById('eventsTo').value = '';
+  document.querySelectorAll('#dateFilterChips .chip-dates').forEach(c => {
+    c.classList.toggle('active', c.dataset.daterange === range);
+  });
+  renderEvents();
+}
+
+function applyCustomDateRange() {
+  eventsFromDate = document.getElementById('eventsFrom').value;
+  eventsToDate = document.getElementById('eventsTo').value;
+  eventsDateRange = 'custom';
+  document.querySelectorAll('#dateFilterChips .chip-dates').forEach(c => {
+    c.classList.toggle('active', c.dataset.daterange === 'all');
+  });
+  renderEvents();
+}
+
+function eventInDateRange(dateStr) {
+  if (!dateStr) return eventsDateRange === 'all' || eventsDateRange === 'custom';
+  if (eventsDateRange === 'custom') {
+    if (eventsFromDate && dateStr < eventsFromDate) return false;
+    if (eventsToDate && dateStr > eventsToDate) return false;
+    return true;
+  }
+  if (eventsDateRange === 'all') return true;
+  const d = new Date(dateStr + 'T00:00:00');
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  if (eventsDateRange === 'today') return d.getTime() === today.getTime();
+  if (eventsDateRange === 'weekend') {
+    const day = d.getDay();
+    // This weekend = upcoming Sat/Sun, or today if it's a weekend day
+    const todayDow = today.getDay();
+    let sat = new Date(today);
+    if (todayDow === 0) sat.setDate(sat.getDate() - 1); // Sunday -> this weekend already started
+    else if (todayDow === 6) {} // Saturday
+    else sat.setDate(sat.getDate() + (6 - todayDow)); // upcoming Saturday
+    const sun = new Date(sat); sun.setDate(sun.getDate() + 1);
+    return d.getTime() >= sat.getTime() && d.getTime() <= sun.getTime();
+  }
+  if (eventsDateRange === 'week') {
+    const weekEnd = new Date(today); weekEnd.setDate(weekEnd.getDate() + 7);
+    return d.getTime() >= today.getTime() && d.getTime() < weekEnd.getTime();
+  }
+  if (eventsDateRange === 'month') {
+    const monthEnd = new Date(today); monthEnd.setDate(monthEnd.getDate() + 30);
+    return d.getTime() >= today.getTime() && d.getTime() <= monthEnd.getTime();
+  }
+  return true;
+}
+
+function toggleEventFilter(filter) {
+  const chips = document.querySelectorAll('#eventFilterChips .filter-chip');
+  if (filter === 'all') {
+    // Selecting 'All' clears everything else
+    eventsFilter = new Set(['all']);
+    chips.forEach(c => c.classList.toggle('active', c.dataset.filter === 'all'));
+  } else {
+    // Toggle the clicked flair, and always drop 'all' when specific flairs are active
+    if (eventsFilter.has(filter)) eventsFilter.delete(filter);
+    else eventsFilter.add(filter);
+    eventsFilter.delete('all');
+    if (eventsFilter.size === 0) eventsFilter.add('all');
+    chips.forEach(c => c.classList.toggle('active', eventsFilter.has(c.dataset.filter)));
+  }
+  renderEvents();
+}
+
 </script>
 
 <!-- ════════════════════════════════════════════════════════════ -->
@@ -2608,6 +2756,208 @@ const DealFinder = (() => {
 </div>
 
 
+
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- EVENTS SECTION -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<div id="eventsSection" style="display:none;">
+  <div class="featured-section">
+    <h2 class="news-h2">🎟️ Local Events <span style="font-size:0.75rem;color:var(--text2);font-weight:400;">— discover events near you</span></h2>
+
+    <div class="events-controls">
+      <input type="text" class="events-loc-input" id="eventsLocation" placeholder="City, State or ZIP…" value="Fuquay-Varina, NC">
+      <select class="events-radius-select" id="eventsRadius">
+        <option value="10">10 mi</option>
+        <option value="25" selected>25 mi</option>
+        <option value="50">50 mi</option>
+        <option value="100">100 mi</option>
+      </select>
+      <button class="events-refresh" id="eventsRefresh" title="Refresh events">⟳ Refresh</button>
+    </div>
+
+    <div class="filter-chips" id="eventFilterChips">
+      <span class="filter-chip chip-all active" data-filter="all" onclick="toggleEventFilter('all')">All</span>
+      <span class="filter-chip chip-free" data-filter="free" onclick="toggleEventFilter('free')">Free</span>
+      <span class="filter-chip chip-paid" data-filter="paid" onclick="toggleEventFilter('paid')">Paid</span>
+      <span class="filter-chip chip-kids" data-filter="kids" onclick="toggleEventFilter('kids')">👶 Child-friendly</span>
+      <span class="filter-chip chip-outdoor" data-filter="outdoor" onclick="toggleEventFilter('outdoor')">☀️ Outdoor</span>
+      <span class="filter-chip chip-indoor" data-filter="indoor" onclick="toggleEventFilter('indoor')">🏢 Indoor</span>
+    </div>
+    <div class="filter-chips" id="dateFilterChips" style="margin-top:-0.25rem;">
+      <span class="filter-chip chip-dates active" data-daterange="all" onclick="setDateRange('all')">📅 All dates</span>
+      <span class="filter-chip chip-dates" data-daterange="today" onclick="setDateRange('today')">Today</span>
+      <span class="filter-chip chip-dates" data-daterange="weekend" onclick="setDateRange('weekend')">This weekend</span>
+      <span class="filter-chip chip-dates" data-daterange="week" onclick="setDateRange('week')">This week</span>
+      <span class="filter-chip chip-dates" data-daterange="month" onclick="setDateRange('month')">Next 30 days</span>
+      <input type="date" id="eventsFrom" title="From date" style="background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:0.72rem;padding:0.25rem 0.4rem;color-scheme:dark;">
+      <span style="color:var(--text2);font-size:0.72rem;">to</span>
+      <input type="date" id="eventsTo" title="To date" style="background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:0.72rem;padding:0.25rem 0.4rem;color-scheme:dark;">
+      <button class="events-refresh" id="eventsClearDates" title="Clear date range" style="padding:0.25rem 0.6rem;font-size:0.7rem;">✕</button>
+    </div>
+    <div class="events-count" id="eventsCount"></div>
+
+    <div class="events-grid" id="eventsGrid">
+      <div class="news-loader"><div class="spinner"></div><p>Finding events near you…</p></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════
+// EVENTS SECTION
+// ═══════════════════════════════════════════════════════════════════
+function fetchEvents() {
+  const grid = document.getElementById('eventsGrid');
+  grid.innerHTML = '<div class="news-loader"><div class="spinner"></div><p>Finding events near you…</p></div>';
+
+  const location = document.getElementById('eventsLocation').value.trim() || 'Fuquay-Varina, NC';
+  const radius = document.getElementById('eventsRadius').value;
+  activeEventsLocation = location;
+
+  fetch(`/api/events?location=${encodeURIComponent(location)}&radius=${radius}`)
+    .then(r => r.json())
+    .then(data => {
+      eventsData = data;
+      renderEvents();
+    })
+    .catch(err => {
+      eventsData = { status: 'error', message: err.message, items: [] };
+      renderEvents();
+    });
+}
+
+function formatEventDate(dateStr, timeStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr + (timeStr ? 'T' + timeStr : ''));
+  const now = new Date();
+  const diffMs = d - now;
+  const diffDays = Math.floor(diffMs / 86400000);
+  const opts = { weekday: 'short', month: 'short', day: 'numeric' };
+  let out = d.toLocaleDateString('en-US', opts);
+  if (timeStr) {
+    out += ' · ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  }
+  if (diffDays === 0) out = 'Today' + (timeStr ? ' · ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : '');
+  else if (diffDays === 1) out = 'Tomorrow' + (timeStr ? ' · ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : '');
+  else if (diffDays > 0 && diffDays <= 7) out += ' (in ' + diffDays + 'd)';
+  return out;
+}
+
+function renderEvents() {
+  const grid = document.getElementById('eventsGrid');
+  const data = eventsData;
+
+  if (data.status === 'config') {
+    grid.innerHTML = '<div class="empty" style="padding:2rem;"><p><strong>🎟️ Events API key needed</strong></p><p style="margin-top:0.5rem;">Get a free key at <a href="https://developer.ticketmaster.com" target="_blank" style="color:var(--accent);">developer.ticketmaster.com</a></p><p style="margin-top:0.25rem;">Then run: <code style="background:var(--surface);padding:0.15rem 0.4rem;border-radius:4px;">wrangler secret put TICKETMASTER_API_KEY</code></p></div>';
+    return;
+  }
+
+  if (data.status === 'error') {
+    grid.innerHTML = `<div class="news-error">⚠️ ${data.message || 'Could not load events.'}</div>`;
+    return;
+  }
+
+  // Only show events from today onward (never past events).
+  // Build YYYY-MM-DD manually — toLocaleDateString format varies by browser.
+  const _now = new Date();
+  const todayStr = `${_now.getFullYear()}-${String(_now.getMonth() + 1).padStart(2, '0')}-${String(_now.getDate()).padStart(2, '0')}`;
+  const totalItems = (data.items || []).filter(e => e.date && e.date >= todayStr);
+  let items = totalItems;
+
+  // Multi-select flair filtering (AND logic — event must match ALL active flairs)
+  const activeFilters = [...eventsFilter].filter(f => f !== 'all');
+  if (activeFilters.length) {
+    items = items.filter(e => activeFilters.every(f => {
+      switch (f) {
+        case 'free': return e.price && e.price.type === 'free';
+        case 'paid': return e.price && e.price.type === 'paid';
+        case 'kids': return !!e.family;
+        case 'outdoor': return e.venueType && e.venueType.venue === 'outdoor';
+        case 'indoor': return e.venueType && e.venueType.venue === 'indoor';
+        default: return true;
+      }
+    }));
+  }
+
+  // Date-range filtering
+  const hasDateFilter = eventsDateRange !== 'all' || eventsFromDate || eventsToDate;
+  if (hasDateFilter) {
+    items = items.filter(e => eventInDateRange(e.date));
+  }
+
+  // Show result count
+  const countEl = document.getElementById('eventsCount');
+  if (countEl) {
+    const filterLabel = activeFilters.length
+      ? ` (filtered: ${activeFilters.map(f => f.charAt(0).toUpperCase() + f.slice(1)).join(' + ')})`
+      : '';
+    const dateLabel = hasDateFilter
+      ? (eventsDateRange === 'custom'
+          ? ` · dates: ${eventsFromDate || 'any'} → ${eventsToDate || 'any'}`
+          : ` · ${eventsDateRange}`)
+      : '';
+    countEl.textContent = `${items.length} of ${totalItems.length} events${filterLabel}${dateLabel}`;
+  }
+
+  if (!items.length) {
+    grid.innerHTML = (activeFilters.length || hasDateFilter)
+      ? '<div class="empty"><p>No events match your selected filters. Try removing a chip or expanding your radius.</p></div>'
+      : '<div class="empty"><p>No events found for this location. Try expanding your radius or changing location.</p></div>';
+    return;
+  }
+
+  grid.innerHTML = items.map(e => {
+    const priceBadge = e.price && e.price.type === 'free'
+      ? '<span class="badge badge-free">Free</span>'
+      : e.price && e.price.type === 'paid'
+        ? `<span class="badge badge-paid">${escapeHtml(e.price.label)}</span>`
+        : '<span class="badge badge-tba">TBA</span>';
+    const familyBadge = e.family ? '<span class="badge badge-kids">👶 Child-friendly</span>' : '';
+    const venueBadge = e.venueType
+      ? `<span class="badge ${e.venueType.venue === 'outdoor' ? 'badge-outdoor' : 'badge-indoor'}">${e.venueType.venue === 'outdoor' ? '☀️ Outdoor' : '🏢 Indoor'}</span>`
+      : '<span class="badge badge-venue">🏢 Indoor</span>';
+    const location = e.city ? `${e.city}${e.state ? ', ' + e.state : ''}` : '';
+    const sourceLabels = {
+      'ticketmaster': '🎟️ Ticketmaster',
+      'fuquay-varina': '🏛️ Fuquay-Varina',
+      'apex': '🏛️ Apex',
+      'holly-springs': '🏛️ Holly Springs',
+      'wake-county': '🏛️ Wake County'
+    };
+    // Deduped events carry a `sources` array; primary source is `e.source`
+    const srcList = (e.sources && e.sources.length) ? e.sources : [e.source];
+    const srcBadges = srcList
+      .filter(s => sourceLabels[s] && s !== 'ticketmaster')
+      .map(s => `<span class="badge badge-venue" style="border-color:#1a4f2e;color:#56d364;">${sourceLabels[s]}</span>`);
+    if (srcList.includes('ticketmaster')) {
+      srcBadges.unshift('<span class="badge badge-tm">🎟️ Ticketmaster</span>');
+    }
+    const sourceBadge = srcBadges.join(' ');
+    const imgHtml = e.image
+      ? `<img class="event-img" src="${e.image}" alt="" loading="lazy" onerror="this.style.display='none'">`
+      : '';
+
+    return `<a href="${e.url}" target="_blank" rel="noopener" class="event-card">
+      ${imgHtml}
+      <div class="event-body">
+        <div class="event-name">${escapeHtml(e.name)}</div>
+        <div class="event-detail">${formatEventDate(e.date, e.time)}${location ? ' · ' + escapeHtml(location) : ''}</div>
+        ${e.venue ? `<div class="event-detail">📍 ${escapeHtml(e.venue)}</div>` : ''}
+        <div class="event-flair">${priceBadge} ${familyBadge} ${venueBadge} ${sourceBadge}</div>
+      </div>
+    </a>`;
+  }).join('');
+}
+
+document.getElementById('eventsLocation').addEventListener('change', fetchEvents);
+document.getElementById('eventsLocation').addEventListener('keydown', e => { if (e.key === 'Enter') fetchEvents(); });
+document.getElementById('eventsRadius').addEventListener('change', fetchEvents);
+document.getElementById('eventsRefresh').addEventListener('click', () => { eventsData = { items: [] }; fetchEvents(); });
+document.getElementById('eventsFrom').addEventListener('change', applyCustomDateRange);
+document.getElementById('eventsTo').addEventListener('change', applyCustomDateRange);
+document.getElementById('eventsClearDates').addEventListener('click', () => setDateRange('all'));
+</script>
 
 <script>
   // Initialize: show 'all' section

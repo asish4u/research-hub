@@ -10,6 +10,9 @@ assets = { directory = "./public", binding = "ASSETS", html_handling = "auto-tra
 binding = "DEAL_KV"
 id = "795961a4b5b544f5b743c4176f18600b"
 
+# Ticketmaster Discovery API — free at https://developer.ticketmaster.com
+# Set via `wrangler secret put TICKETMASTER_API_KEY` or in .dev.vars for local
+
 # Pre-warm the /api/laws + /api/laws/buzz edge caches every 10 minutes so
 # visitors never wait on slow GovTrack/Google News upstream fetches.
 [triggers]

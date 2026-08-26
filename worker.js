@@ -702,6 +702,438 @@ async function handleWatchlistToggle(request, env) {
   });
 }
 
+
+// ═══════════════════════════════════════════════════════════════════
+// EVENTS API — Ticketmaster Discovery API (recommended config)
+// ═══════════════════════════════════════════════════════════════════
+const EVENTS_CACHE_TTL_MS = 15 * 60 * 1000;
+const eventsCache = new Map();
+
+// Venue outdoor/indoor keyword heuristics
+const OUTDOOR_WORDS = ['park', 'outdoor', 'amphitheatre', 'amphitheater', 'stadium', 'field', 'pavilion', 'raceway', 'speedway', 'grounds', 'garden', 'lawn', 'beach', 'fairground', 'greenway', 'trail', 'orchard', 'farm', 'vineyard'];
+const INDOOR_WORDS = ['theatre', 'theater', 'arena', 'center', 'centre', 'hall', 'ballroom', 'club', 'auditorium', 'playhouse', 'coliseum', 'dome', 'lounge', 'studio', 'warehouse', 'civic', 'convention', 'expo', 'bar', 'pub', 'restaurant', 'brewery', 'distillery', 'museum', 'gallery', 'cinema'];
+
+function classifyVenue(venueName) {
+  if (!venueName) return { venue: 'indoor', venueLabel: 'Indoor' };
+  const lower = venueName.toLowerCase();
+  // Check outdoor first (more specific), then indoor
+  if (OUTDOOR_WORDS.some(w => lower.includes(w))) {
+    return { venue: 'outdoor', venueLabel: 'Outdoor' };
+  }
+  if (INDOOR_WORDS.some(w => lower.includes(w))) {
+    return { venue: 'indoor', venueLabel: 'Indoor' };
+  }
+  return { venue: 'indoor', venueLabel: 'Indoor' };
+}
+
+function classifyEvent(raw) {
+  const classifications = (raw.classifications || []);
+
+  // Price flair: free / paid / TBA
+  const prices = raw.priceRanges;
+  let price = { type: 'tba', label: 'TBA' };
+  if (prices && prices.length > 0) {
+    const min = prices[0].min;
+    const max = prices[0].max;
+    if (min === 0 || min === undefined) {
+      price = { type: 'free', label: 'Free' };
+    } else {
+      price = { type: 'paid', label: `From $${min.toFixed(0)}` };
+    }
+  }
+
+  // Child/family-friendly
+  const family = classifications.some(c => c.family === true ||
+    (c.segment && c.segment.name === 'Family') ||
+    (c.genre && c.genre.name === 'Family'));
+
+  // Venue type
+  const venue = (raw._embedded && raw._embedded.venues && raw._embedded.venues.length > 0)
+    ? raw._embedded.venues[0]
+    : null;
+  const venueType = classifyVenue(venue ? venue.name : '');
+  const venueName = venue ? venue.name : '';
+  const city = venue && venue.city ? venue.city.name : '';
+  const state = venue && venue.state ? venue.state.stateCode : '';
+
+  // Date
+  const dateInfo = raw.dates && raw.dates.start;
+  const localDate = dateInfo ? dateInfo.localDate : '';
+  const localTime = dateInfo ? (dateInfo.localTime || '') : '';
+
+  // Image
+  const images = raw.images || [];
+  const img = images.find(i => i.width >= 300) || images[0] || null;
+
+  return {
+    id: raw.id,
+    name: raw.name,
+    url: raw.url,
+    date: localDate,
+    time: localTime,
+    venue: venueName,
+    city,
+    state,
+    image: img ? img.url : null,
+    price,
+    family,
+    venueType,
+    segment: classifications.length > 0 && classifications[0].segment
+      ? classifications[0].segment.name : ''
+  };
+}
+
+async function geocodeLocation(location) {
+  // Use Nominatim (OpenStreetMap) — free, no API key needed
+  const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(location)}&format=json&limit=1`;
+  const resp = await fetch(url, {
+    headers: { 'User-Agent': 'ResearchHub/1.0 (contact: admin@researchhub.dev)' }
+  });
+  if (!resp.ok) return null;
+  const results = await resp.json();
+  if (results.length === 0) return null;
+  return { lat: results[0].lat, lon: results[0].lon, display: results[0].display_name };
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// TOWN CALENDAR — Fuquay-Varina CivicPlus calendar (no API key needed)
+// Scrapes the month grid from fuquay-varina.org/calendar.aspx
+// ═══════════════════════════════════════════════════════════════════
+const TOWN_CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6h
+const townCache = new Map(); // 'src|YYYY-MM' -> items
+
+// CivicPlus town calendars — same month-grid HTML structure
+const CIVICPLUS_SOURCES = [
+  {
+    id: 'fuquay-varina',
+    label: 'Fuquay-Varina',
+    url: 'https://www.fuquay-varina.org/calendar.aspx',
+    categories: '45,24,25,14', // Main Calendar, Arts Center, etc.
+    city: 'Fuquay-Varina',
+    state: 'NC'
+  },
+  {
+    id: 'apex',
+    label: 'Apex',
+    url: 'https://www.apexnc.org/calendar.aspx',
+    categories: '30,14,23,34,27,31,29,37',
+    city: 'Apex',
+    state: 'NC'
+  },
+  {
+    id: 'holly-springs',
+    label: 'Holly Springs',
+    url: 'https://www.hollyspringsnc.us/calendar.aspx',
+    categories: '29,34,32,30,28,43,24,31,14',
+    city: 'Holly Springs',
+    state: 'NC'
+  }
+];
+
+function parseTownTime(t) {
+  // '8:00 AM&thinsp;-&thinsp;5:00 PM' or '7:00 PM' -> 'HH:MM:SS'
+  const m = /(\d{1,2}):(\d{2})\s*(AM|PM)/i.exec(t || '');
+  if (!m) return '';
+  let h = parseInt(m[1], 10);
+  const ap = m[3].toUpperCase();
+  if (ap === 'PM' && h !== 12) h += 12;
+  if (ap === 'AM' && h === 12) h = 0;
+  return `${String(h).padStart(2, '0')}:${m[2]}:00`;
+}
+
+function classifyTownEvent(name, category, location) {
+  const lower = (name + ' ' + category + ' ' + (location || '')).toLowerCase();
+  // Free by default (town community events); ticketed shows are rare
+  let price = { type: 'free', label: 'Free' };
+  if (/ticket|\$|admission|1776|musical/i.test(lower)) {
+    price = { type: 'paid', label: 'Paid' };
+  }
+  const family = /family|kids|children|youth|recreation|parks/i.test(lower);
+  const venueType = classifyVenue(location || '');
+  return { price, family, venueType };
+}
+
+async function fetchCivicPlusMonth(src, year, month) {
+  const cacheKey = `${src.id}|${year}-${String(month).padStart(2, '0')}`;
+  const cached = townCache.get(cacheKey);
+  if (cached && Date.now() - cached.ts < TOWN_CACHE_TTL_MS) {
+    return cached.items;
+  }
+
+  const url = `${src.url}?CID=${src.categories}&month=${month}&year=${year}`;
+  const resp = await fetch(url, {
+    headers: { 'User-Agent': 'Mozilla/5.0 (compatible; ResearchHub/1.0)' },
+    redirect: 'follow'
+  });
+  if (!resp.ok) return [];
+  const html = await resp.text();
+
+  const items = [];
+  // Split the month grid into day cells; each cell holds its day number + events
+  const cells = html.split(/<td/);
+  for (const cell of cells) {
+    const dm = /class="monthDayDate">\s*(\d+)/.exec(cell);
+    if (!dm) continue;
+    const day = parseInt(dm[1], 10);
+    const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    const nameRe = /itemprop="name">([^<]+)<\/span><span class="visuallyHidden">Category:\s*([^<]*)/g;
+    let m;
+    while ((m = nameRe.exec(cell)) !== null) {
+      const name = decodeEntities(m[1].trim());
+      const category = decodeEntities(m[2].trim());
+      const when = /<dt>When:<\/dt>\s*<dd>([^<]+)<\/dd>/.exec(cell);
+      const loc = /<dt>Location:<\/dt>\s*<dd>([^<]+)<\/dd>/.exec(cell);
+      const urlM = /href="(\/Calendar\.aspx\?EID=\d+[^"]*)"/.exec(cell);
+      const flair = classifyTownEvent(name, category, loc ? loc[1] : '');
+      items.push({
+        id: `${src.id}-${year}-${month}-${day}-${items.length}`,
+        name,
+        url: urlM ? `${src.url.split('/calendar.aspx')[0]}${urlM[1]}` : src.url,
+        date: dateStr,
+        time: parseTownTime(when ? when[1] : ''),
+        venue: loc ? decodeEntities(loc[1].trim()) : `${src.city}, ${src.state}`,
+        city: src.city,
+        state: src.state,
+        image: null,
+        price: flair.price,
+        family: flair.family,
+        venueType: flair.venueType,
+        segment: category || 'Community',
+        source: src.id
+      });
+    }
+  }
+
+  townCache.set(cacheKey, { ts: Date.now(), items });
+  return items;
+}
+
+// Wake County — Drupal site, events embedded in /events with pagination
+async function fetchWakeCountyEvents() {
+  const cacheKey = 'wake-county';
+  const cached = townCache.get(cacheKey);
+  if (cached && Date.now() - cached.ts < TOWN_CACHE_TTL_MS) {
+    return cached.items;
+  }
+
+  const items = [];
+  // Fetch up to 3 pages of the events listing
+  for (let page = 0; page < 3; page++) {
+    const url = `https://www.wake.gov/events?page=${page}`;
+    const resp = await fetch(url, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; ResearchHub/1.0)' },
+      redirect: 'follow'
+    });
+    if (!resp.ok) break;
+    const html = await resp.text();
+
+    // Split into event cards
+    const cardRe = /<article about="(\/events\/[^"]+)">([\s\S]*?)<\/article>/g;
+    let m;
+    while ((m = cardRe.exec(html)) !== null) {
+      const link = m[1];
+      const block = m[2];
+      const nameM = /<span>([^<]+)<\/span>\s*<\/a>/.exec(block);
+      if (!nameM) continue;
+      const name = decodeEntities(nameM[1].trim());
+      const dateM = /<strong>([^<]+)<\/strong>/.exec(block);
+      const timeM = /fa-clock[^>]*><\/i>\s*([^<]+)/.exec(block);
+      const locM = /fa-map-marker-alt[^>]*><\/i>\s*<a[^>]*>([^<]+)<\/a>/.exec(block);
+      const deptM = /department-name">([^<]+)<\/span>/.exec(block);
+
+      // Parse date like 'Friday, August 21, 2026' or multi-day
+      // 'Thursday, August 27, 2026 - Friday August 28, 2026' (take the start)
+      let dateStr = '';
+      if (dateM) {
+        const rawDate = dateM[1].split('-')[0]; // first date of a range
+        const d = new Date(rawDate);
+        if (!isNaN(d)) {
+          dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        }
+      }
+      const timeStr = timeM ? timeM[1].trim() : '';
+      const loc = locM ? decodeEntities(locM[1].trim()) : '';
+      const dept = deptM ? decodeEntities(deptM[1].trim()) : 'Wake County';
+      const flair = classifyTownEvent(name, dept, loc);
+
+      items.push({
+        id: `wake-${link}`,
+        name,
+        url: `https://www.wake.gov${link}`,
+        date: dateStr,
+        time: parseTownTime(timeStr),
+        venue: loc || 'Wake County, NC',
+        city: '',
+        state: 'NC',
+        image: null,
+        price: flair.price,
+        family: flair.family,
+        venueType: flair.venueType,
+        segment: dept,
+        source: 'wake-county'
+      });
+    }
+  }
+
+  townCache.set(cacheKey, { ts: Date.now(), items });
+  return items;
+}
+
+async function fetchTownEvents() {
+  const now = new Date();
+  const items = [];
+  // CivicPlus sources: current month + next 2 months
+  for (const src of CIVICPLUS_SOURCES) {
+    for (let i = 0; i < 3; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+      const monthItems = await fetchCivicPlusMonth(src, d.getFullYear(), d.getMonth() + 1);
+      items.push(...monthItems);
+    }
+  }
+  // Wake County Drupal listing
+  items.push(...await fetchWakeCountyEvents());
+  return items;
+}
+
+// Normalize an event name for cross-source matching:
+// - lowercase, collapse whitespace
+// - strip status prefixes like POSTPONED:/CANCELLED:
+// - strip trailing ' - City, ST' / '| City, ST' style suffixes that
+//   Ticketmaster appends (e.g. 'KARLOUS MILLER' vs 'Karlous Miller - Raleigh, NC')
+function normalizeEventName(name) {
+  return (name || '')
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .replace(/^(postponed|cancelled|rescheduled|sold out|moved|new date)\s*[:.)-]?\s*/i, '')
+    .replace(/\s*[\|\-–—]\s*(?:at\s+)?(raleigh|durham|cary|apex|holly springs|holly-springs|fuquay[-\s]*varina|charlotte|greensboro|winston[-\s]*salem)(?:,?\s*(nc|va))?\s*$/i, '')
+    .replace(/\s*\((raleigh|durham|cary|nc)\)\s*$/i, '')
+    .trim();
+}
+
+// Merge duplicate events (same normalized name + date) across sources.
+// Prefers the Ticketmaster entry (it has images + real prices); town entries
+// contribute their source to the kept item's `sources` array for the badge.
+function dedupeEvents(list) {
+  const seen = new Map(); // 'name|date' -> event
+  for (const e of list) {
+    const key = `${normalizeEventName(e.name)}|${e.date || ''}`;
+    const existing = seen.get(key);
+    if (!existing) {
+      seen.set(key, { ...e, sources: [e.source] });
+      continue;
+    }
+    // Merge source tags
+    const mergedSources = existing.sources.includes(e.source)
+      ? existing.sources
+      : [...existing.sources, e.source];
+    // Prefer Ticketmaster as the primary entry (richer data)
+    if (e.source === 'ticketmaster' && existing.source !== 'ticketmaster') {
+      seen.set(key, { ...e, sources: mergedSources });
+    } else {
+      seen.set(key, { ...existing, sources: mergedSources });
+    }
+  }
+  return [...seen.values()];
+}
+
+async function handleEvents(env, location, radius) {
+  const apiKey = env.TICKETMASTER_API_KEY || '';
+  if (!apiKey) {
+    return json({
+      status: 'config',
+      message: 'Set TICKETMASTER_API_KEY environment variable (free at developer.ticketmaster.com)',
+      items: []
+    });
+  }
+
+  const cacheKey = `${location}|${radius}`;
+  const cached = eventsCache.get(cacheKey);
+  if (cached && Date.now() - cached.ts < EVENTS_CACHE_TTL_MS) {
+    return json({ status: 'ok', items: cached.items, cached: true, location, radius });
+  }
+
+  // Geocode the location to lat/long for proper proximity search
+  const geo = await geocodeLocation(location);
+  if (!geo) {
+    return json({
+      status: 'error',
+      message: `Could not find location: ${location}. Try a city name, address, or ZIP code.`,
+      items: [],
+      location,
+      radius
+    }, 400);
+  }
+
+  try {
+    const params = new URLSearchParams({
+      apikey: apiKey,
+      latlong: `${geo.lat},${geo.lon}`,
+      radius,
+      unit: 'miles',
+      sort: 'date,asc',
+      size: '50',
+      locale: '*'
+    });
+    const apiUrl = `https://app.ticketmaster.com/discovery/v2/events.json?${params}`;
+
+    const resp = await fetch(apiUrl, {
+      headers: { 'User-Agent': 'ResearchHub/1.0' }
+    });
+
+    if (!resp.ok) {
+      const text = await resp.text();
+      return json({ status: 'error', message: `Ticketmaster API error: ${resp.status}`, items: [], location, radius }, 502);
+    }
+
+    const data = await resp.json();
+    const rawEvents = (data._embedded && data._embedded.events) || [];
+    const items = rawEvents.map(e => ({ ...classifyEvent(e), source: 'ticketmaster' }));
+
+    // Merge local town/county calendars when searching the Triangle area
+    // (Fuquay-Varina, Cary, Apex, Holly Springs, Raleigh, Durham, Wake Forest…)
+    let townItems = [];
+    const lat = parseFloat(geo.lat);
+    const lon = parseFloat(geo.lon);
+    const inTriangle = lat >= 35.4 && lat <= 36.2 && lon >= -79.3 && lon <= -78.3;
+    if (inTriangle) {
+      townItems = await fetchTownEvents();
+    }
+    // Keep only events from today onward (Triangle local time),
+    // deduplicate same-name + same-date across sources, sort by date
+    const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' }); // YYYY-MM-DD
+    const all = dedupeEvents(items.concat(townItems))
+      .filter(e => e.date && e.date >= today)
+      .sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+
+    // Per-source counts for the frontend (primary source of each kept event)
+    const sources = {};
+    for (const e of all) sources[e.source] = (sources[e.source] || 0) + 1;
+
+    eventsCache.set(cacheKey, { ts: Date.now(), items: all });
+
+    // Return with no-store so browsers/CDN never serve stale event lists
+    // (event dates change daily — a cached page could show past events)
+    return new Response(JSON.stringify({
+      status: 'ok',
+      items: all,
+      cached: false,
+      location,
+      radius,
+      sources,
+      total: data.page ? data.page.totalElements : items.length
+    }), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json; charset=utf-8',
+        'Access-Control-Allow-Origin': '*',
+        'Cache-Control': 'no-store'
+      }
+    });
+  } catch (err) {
+    return json({ status: 'error', message: err.message, items: [], location, radius }, 502);
+  }
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -727,6 +1159,16 @@ export default {
       if (request.method === 'GET') return handleWatchlistGet(env);
       if (request.method === 'POST') return handleWatchlistToggle(request, env);
       return json({ error: 'Method not allowed' }, 405);
+    }
+
+    if (url.pathname === '/api/events') {
+      const location = url.searchParams.get('location') || 'Fuquay-Varina, NC';
+      const radius = url.searchParams.get('radius') || '25';
+      return handleEvents(env, location, radius);
+    }
+
+    if (url.pathname.startsWith('/api/')) {
+      return json({ status: 'ok', path: url.pathname, apiCatchAll: true });
     }
 
     // Serve index.html for all other paths
