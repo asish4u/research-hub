@@ -1962,7 +1962,8 @@ const DealFinder = (() => {
     p.set('sort_order', sortOrder);
     p.set('profile', activeProfile);
     p.set('limit', String(LIMIT));
-    p.set('offset', String((page - 1) * LIMIT));
+    p.set('page', String(page));
+    p.set('offset', '0');
     return p;
   }
 

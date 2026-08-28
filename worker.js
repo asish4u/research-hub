@@ -111,8 +111,8 @@ const AUCTION_CDN = 'https://cdn.triangleliquidators.com';
 const AUCTION_UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 const AUCTION_CACHE_TTL = 120 * 1000;    // auctions + lots (fresh fetches)
 const IMAGE_CACHE_TTL = 10 * 60 * 1000;  // lot image galleries
-const LOT_PAGE_LIMIT = 100;              // API per_page cap
-const MAX_LOT_PAGES = 25;                // ~2,500 lots pool cap (subrequest-safe)
+const LOT_PAGE_LIMIT = 24;               // Match the mobile/desktop card page size
+const LOT_CACHE_TTL = 5 * 60 * 1000;     // Individual catalog pages
 
 const auctionCache = new Map(); // key -> { ts, ttl, value }
 
@@ -345,23 +345,21 @@ function parseLot(lot) {
 }
 
 // ── Lot pool fetching (new platform REST API) ─────────────────────
-// The new API caps per_page at 100 and the worker is limited to ~50
-// subrequests per invocation, so we fetch a bounded pool of the most
-// recently-ending lots (API default order) and cache it. Search (>=3
-// chars) and condition (A→1, B→2, C→3,4) are pushed down to the API so
-// specific items stay findable even outside the pool.
+// Fetch one catalog page on demand and cache it at the edge; search and
+// condition are pushed down to the API so the complete catalog remains
+// available without eagerly downloading thousands of lots per request.
 const CONDITION_API_MAP = { A: '1', B: '2', C: '3,4' };
 
 // row_id (lot id) -> raw lot from the platform, for the images endpoint.
 const lotRawIndex = new Map();
 
-async function fetchLotPool(ids, search, condition) {
+async function fetchLotPool(ids, search, condition, pageNumber = 1) {
   const locationParam = ids.join(',');
-  const cacheKey = `pool:${locationParam}|${search || ''}|${condition || 'all'}`;
+  const cacheKey = `pool:${locationParam}|${search || ''}|${condition || 'all'}|page:${pageNumber}`;
   const cached = aCacheGet(cacheKey);
   if (cached) return cached;
 
-  const base = new URLSearchParams({ per_page: String(LOT_PAGE_LIMIT), page: '1' });
+  const base = new URLSearchParams({ per_page: String(LOT_PAGE_LIMIT), page: String(pageNumber) });
   if (locationParam) base.set('location', locationParam);
   const q = (search || '').trim();
   if (q.length >= 3) base.set('search', q);
@@ -376,33 +374,15 @@ async function fetchLotPool(ids, search, condition) {
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     first = await resp.json();
   } catch (e) {
-    console.log(`[Auction] error fetching lots page 1: ${e.message}`);
-    aCacheSet(cacheKey, [], AUCTION_CACHE_TTL);
+    console.log(`[Auction] error fetching lots page ${pageNumber}: ${e.message}`);
+    aCacheSet(cacheKey, [], LOT_CACHE_TTL);
     return [];
   }
+  // Fetch exactly one catalog page per request. The previous implementation
+  // eagerly downloaded 2,500 lots for every filter and still missed the rest
+  // of the catalog. The frontend now asks for the page it needs, while this
+  // page remains cached for five minutes at the edge.
   pages.push(first);
-
-  const total = first.count || 0;
-  const totalPages = Math.min(MAX_LOT_PAGES, Math.ceil(total / LOT_PAGE_LIMIT));
-  const rest = [];
-  for (let p = 2; p <= totalPages; p++) {
-    const pp = new URLSearchParams(base);
-    pp.set('page', String(p));
-    rest.push(pp);
-  }
-  const BATCH = 8;
-  for (let i = 0; i < rest.length; i += BATCH) {
-    const batch = await Promise.all(rest.slice(i, i + BATCH).map(async pp => {
-      try {
-        const r = await auctionFetch(`${AUCTION_API}/auctions/lots/?${pp}`);
-        return r.ok ? r.json() : null;
-      } catch (e) {
-        console.log(`[Auction] lots fetch error: ${e.message}`);
-        return null;
-      }
-    }));
-    for (const b of batch) if (b && b.results) pages.push(b);
-  }
 
   const lots = [];
   for (const d of pages) {
@@ -412,7 +392,8 @@ async function fetchLotPool(ids, search, condition) {
       if (parsed) lots.push(parsed);
     }
   }
-  aCacheSet(cacheKey, lots, AUCTION_CACHE_TTL);
+  lots._total = first.count || lots.length;
+  aCacheSet(cacheKey, lots, LOT_CACHE_TTL);
   return lots;
 }
 
@@ -505,6 +486,7 @@ async function handleAuctions() {
 
 async function handleLots(url) {
   const auctionId = url.searchParams.get('auction_id') || '';
+  const requestedPage = Math.max(parseInt(url.searchParams.get('page') || '1', 10) || 1, 1);
   const auctionIds = url.searchParams.get('auction_ids') || '';
   const search = url.searchParams.get('search') || '';
   const condition = url.searchParams.get('condition') || 'all';
@@ -520,16 +502,19 @@ async function handleLots(url) {
   if (!ids.length) return json({ status: 'ok', total: 0, lots: [] });
 
   try {
-    const all = await fetchLotPool(ids, search, condition);
+    const all = await fetchLotPool(ids, search, condition, requestedPage);
 
     if (profile === 'resell' && sortBy === 'deal_score') sortBy = 'resale_score';
     if (!VALID_SORTS.has(sortBy)) sortBy = 'deal_score';
 
     const filtered = applyLotFilters(all, search, condition, profile);
     const total = filtered.length;
-    sortLots(filtered, sortBy, sortOrder);
-    const lots = filtered.slice(offset, offset + limit);
-    return json({ status: 'ok', total, lots });
+    sortLots(filtered, sortBy, sortOrder);    // API pagination already selected the page. Preserve the upstream
+    // catalog count; only apply a page-local slice for compatibility with
+    // callers that request a smaller limit.
+    const pageLots = filtered.slice(offset % LOT_PAGE_LIMIT, (offset % LOT_PAGE_LIMIT) + limit);
+    const upstreamTotal = all._total || all.length;
+    return json({ status: 'ok', total: upstreamTotal, page: requestedPage, per_page: LOT_PAGE_LIMIT, lots: pageLots });
   } catch (e) {
     return json({ error: e.message }, 502);
   }
