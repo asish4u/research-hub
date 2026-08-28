@@ -1877,6 +1877,7 @@ const DealFinder = (() => {
   let auctions = [];
   let currentLots = [];
   let selectedId = '';
+  let selectedDayKeys = [];
   let searchQuery = '';
   let conditionFilter = 'all';
   let sortBy = 'deal_score';
@@ -1930,6 +1931,33 @@ const DealFinder = (() => {
       (groups[d] = groups[d] || []).push(a);
     });
     return groups;
+  }
+
+  function dayKey(label) { return label.toLowerCase().replace(/[^a-z0-9]+/g, '-'); }
+
+  function renderDayTabs() {
+    const el = $('auctionDayTabs');
+    if (!el) return;
+    const groups = groupOptions();
+    const days = Object.keys(groups);
+    if (!selectedDayKeys.length && days.length) selectedDayKeys = [dayKey(days[0])];
+    el.innerHTML = days.map((day, i) => {
+      const key = dayKey(day);
+      const selected = selectedDayKeys.includes(key);
+      return `<button type="button" class="auction-profile-btn ${selected ? 'active' : ''}" data-day-key="${key}" data-day="${esc(day)}">${i === 0 ? '📅 Today' : '📅 ' + esc(day)}</button>`;
+    }).join('');
+  }
+
+  function applyDaySelection() {
+    const groups = groupOptions();
+    const ids = Object.keys(groups).filter(day => selectedDayKeys.includes(dayKey(day)))
+      .flatMap(day => groups[day].map(a => a.row_id));
+    if (!ids.length) return;
+    selectedId = 'unified:' + [...new Set(ids)].join(',');
+    renderDayTabs();
+    renderAuctionOptions();
+    page = 1;
+    if (watchlistMode) loadWatchlistView(); else loadFeed();
   }
 
   function renderAuctionOptions() {
@@ -2020,7 +2048,17 @@ const DealFinder = (() => {
   }
 
   function init() {
-    $('auctionSelect').addEventListener('change', e => { selectedId = e.target.value; setProfile(''); page = 1; loadFeed(); });
+    $('auctionSelect').addEventListener('change', e => { selectedId = e.target.value; selectedDayKeys = []; setProfile(''); page = 1; loadFeed(); renderDayTabs(); });
+    $('auctionDayTabs').addEventListener('click', e => {
+      const b = e.target.closest('[data-day-key]');
+      if (!b) return;
+      const key = b.dataset.dayKey;
+      selectedDayKeys = selectedDayKeys.includes(key)
+        ? selectedDayKeys.filter(k => k !== key)
+        : [...selectedDayKeys, key];
+      if (!selectedDayKeys.length) selectedDayKeys = [key];
+      applyDaySelection();
+    });
     $('auctionSearch').addEventListener('input', debounce(e => { searchQuery = e.target.value.trim(); page = 1; if (watchlistMode) loadWatchlistView(); else loadFeed(); }, 350));
     $('auctionCondition').addEventListener('change', e => { conditionFilter = e.target.value; reload(); });
     const ratioControl = $('auctionAcquisitionRatio');
@@ -2101,6 +2139,7 @@ const DealFinder = (() => {
           }
         }
         renderAuctionOptions();
+        renderDayTabs();
         $('auctionLoader').style.display = 'none';
         $('auctionContent').style.display = '';
         setStatus('Live from Cloudflare', true);
@@ -2795,6 +2834,7 @@ function toggleEventFilter(filter) {
 
         <div class="auction-controls">
           <select class="auction-select" id="auctionSelect" title="Choose auction feed"></select>
+          <div id="auctionDayTabs" class="auction-controls" style="flex:1 1 100%;padding:0;margin:0;gap:0.4rem;" aria-label="Filter by auction day"></div>
           <input type="text" class="auction-search" id="auctionSearch" placeholder="Search listings (try 'baby')…">
           <select class="auction-select" id="auctionCondition" title="Condition filter">
             <option value="all">All Conditions</option>
