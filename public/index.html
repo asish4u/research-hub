@@ -377,6 +377,11 @@
   .lot-badge.damaged { color: var(--orange); border-color: #4d3d1a; background: #1c1a10; }
   .lot-badge.baby { color: #f472b6; border-color: #4a1a5e; background: #1a0a2e; }
   .lot-badge.save { color: #818cf8; border-color: rgba(129,140,248,.35); background: rgba(129,140,248,.1); }
+  /* Live bid-standing badges (only shown in watchlist view) */
+  .lot-badge.standing-winning  { color: #34d399; border-color: #118a5c; background: #052e20; }
+  .lot-badge.standing-outbid   { color: #f87171; border-color: #8a241a; background: #2e0d0a; }
+  .lot-badge.standing-bidding  { color: #fbbf24; border-color: #7a5713; background: #241a05; }
+  .lot-badge.standing-watching { color: #94a3b8; border-color: #334155; background: #141d2b; }
   .lot-title {
     font-size: 0.85rem; font-weight: 600; color: var(--text); line-height: 1.4;
     display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 2.4em;
@@ -2194,9 +2199,20 @@ const DealFinder = (() => {
     return { text: 'Potentially Damaged', cls: 'damaged' };
   }
 
+  // Live bid-standing badge (filled by the worker's platform sync in the
+  // watchlist view). Returns null when there's no standing info.
+  function standingLabel(standing) {
+    if (standing === 'winning') return { text: '🏆 Winning Bid', cls: 'standing-winning' };
+    if (standing === 'outbid') return { text: '🏴 Outbid', cls: 'standing-outbid' };
+    if (standing === 'bidding') return { text: '⏳ Bidding', cls: 'standing-bidding' };
+    if (standing === 'watching') return { text: '👁 Watching', cls: 'standing-watching' };
+    return null;
+  }
+
   function lotCard(lot) {
     const deal = dealStatus(lot);
     const cond = condLabel(lot.condition_code);
+    const standing = watchlistMode ? standingLabel(lot.standing) : null;
     const isSteal = deal.cls === 'steal';
     const watched = watchedSet.has(lot.row_id);
     const images = (imagesCache[lot.row_id] && imagesCache[lot.row_id].length) ? imagesCache[lot.row_id] : [lot.image_url];
@@ -2218,6 +2234,7 @@ const DealFinder = (() => {
       </div>
       <div class="lot-body">
         <div class="lot-badges">
+          ${standing ? `<span class="lot-badge ${standing.cls}" title="Live status from the auction platform">${standing.text}</span>` : ''}
           <span class="lot-badge ${cond.cls}">${cond.text}</span>
           ${lot.baby_age_range ? `<span class="lot-badge baby">👶 ${esc(lot.baby_age_range)}</span>` : ''}
           ${lot.deal_score > 0 ? `<span class="lot-badge save">Save ${lot.deal_score}%</span>` : ''}

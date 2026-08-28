@@ -707,7 +707,12 @@ async function liveToggleWatch(env, period, lotId, watch) {
   }
 }
 
-// Pull the account's watchlist from the platform (platform → dashboard).
+// Pull the account's watchlist from the platform (platform → dashboard),
+// attaching a live bid-standing badge so watchlist cards show whether the
+// user is winning, outbid, bidding, or merely watching each lot. The
+// control-panel `/active/` endpoint groups lots into `winning` / `outbid` /
+// `watchlist` sections, and each lot carries `has_bid`. Precedence for a lot
+// that appears in more than one section: winning > outbid > has_bid > watch.
 async function liveWatchlistPull(env) {
   const token = await liveLogin(env);
   if (!token) return null;
@@ -718,9 +723,81 @@ async function liveWatchlistPull(env) {
     });
     if (!resp.ok) return null;
     const data = await resp.json();
-    const section = data && data.watchlist;
-    const rawLots = (section && section.results) || [];
-    return rawLots.map(parseLot).filter(Boolean);
+    if (!data || !data.watchlist) return null;
+
+    // Rank each lot by its status. Later (higher-priority) sections win on
+    // ties, so a lot you're in danger on shows "Outbid" not "Watching".
+    const rank = { watching: 1, bidding: 2, outbid: 3, winning: 4 };
+    const standingById = new Map();
+
+    const applySection = (rawLots, standing) => {
+      for (const lot of (rawLots || [])) {
+        if (!lot || lot.id == null) continue;
+        const rid = String(lot.id);
+        const cur = standingById.get(rid);
+        if (!cur || (rank[standing] || 0) >= (rank[cur] || 0)) {
+          standingById.set(rid, standing);
+        }
+      }
+    };
+
+    // Collect every watchlist lot, paging through the section (the API caps
+    // active/ results at 10 per page). Each page's lots may overlap the
+    // outbid/winning sections, so standings are applied across all of them.
+    const PGS = 10;
+    const allRaw = [];
+    let page = 1;
+    let total = data.watchlist.count || 0;
+    const appendPage = (section) => {
+      total = section.count != null ? section.count : total;
+      applySection(section.results, 'watching');
+      for (const lot of (section.results || [])) {
+        if (lot && lot.id != null) {
+          if (lot.has_bid) {
+            const rid = String(lot.id);
+            const cur = standingById.get(rid);
+            if (!cur || (rank.bidding || 0) >= (rank[cur] || 0)) standingById.set(rid, 'bidding');
+          }
+          allRaw.push(lot);
+        }
+      }
+    };
+    appendPage(data.watchlist);
+
+    if (total > PGS) {
+      const pagesNeeded = Math.ceil(total / PGS);
+      // Fetch remaining pages concurrently (bounded to stay subrequest-safe).
+      const BATCH = 4;
+      for (let start = 2; start <= pagesNeeded; start += BATCH) {
+        const pageFetches = [];
+        for (let p = start; p < Math.min(start + BATCH, pagesNeeded + 1); p++) {
+          pageFetches.push((async () => {
+            try {
+              const pr = await fetch(`${AUCTION_API}/auctions/control-panel/active/watchlist?page=${p}`, {
+                headers: { 'User-Agent': AUCTION_UA, 'Authorization': `Bearer ${token}` },
+                redirect: 'follow'
+              });
+              if (!pr.ok) return null;
+              const pd = await pr.json();
+              return (pd && pd.watchlist) ? pd.watchlist : pd;
+            } catch (e) { return null; }
+          })());
+        }
+        const res = await Promise.all(pageFetches);
+        for (const r of res) if (r && r.results) appendPage(r);
+      }
+    }
+
+    // Outbid (higher priority than watch/bidding) then winning (top).
+    applySection(data.outbid.results, 'outbid');
+    applySection(data.winning.results, 'winning');
+
+    const parsed = allRaw.map(parseLot).filter(Boolean);
+    for (const pl of parsed) {
+      const s = standingById.get(pl.row_id);
+      if (s) pl.standing = s;
+    }
+    return parsed;
   } catch (e) {
     console.log(`[Watchlist] pull error: ${e.message}`);
     return null;
