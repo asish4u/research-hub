@@ -475,9 +475,13 @@ const VALID_SORTS = new Set(['lot_number', 'current_bid', 'retail_price', 'deal_
 // User-facing deal-worthiness bands. Filtering is applied after the source
 // filters, so it remains compatible with search, condition, and location.
 const DEAL_WORTHINESS = {
-  excellent: l => l.retail_price != null && l.deal_score >= 50,
-  good: l => l.retail_price != null && l.deal_score >= 30,
-  any: l => l.retail_price != null && l.deal_score > 0
+  // Deal score is savings versus the estimated retail price, while the
+  // acquisition ratio is the actual all-in cost. Require both so a lot
+  // cannot pass as excellent merely because the bid is below retail while
+  // fees still make the acquisition expensive.
+  excellent: l => l.retail_price != null && l.amazon_price != null && l.deal_score >= 50 && l.total_price <= l.amazon_price * 0.50,
+  good: l => l.retail_price != null && l.amazon_price != null && l.deal_score >= 30 && l.total_price <= l.amazon_price * 0.70,
+  any: l => l.retail_price != null && l.amazon_price != null && l.total_price < l.amazon_price
 };
 
 function sortLots(lots, sortBy, sortOrder) {
