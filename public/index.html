@@ -2476,6 +2476,7 @@ const DealFinder = (() => {
           <div class="row"><span>+ Buyer's Premium (15.00%)</span><span>${fmtPrice((lot.current_bid || 0) * 0.15)}</span></div>
           <div class="row"><span>+ State Sales Tax (7.25%)</span><span>${fmtPrice((lot.current_bid || 0) * 0.0725)}</span></div>
           <div class="row"><span>+ Pick-up Fee</span><span>${fmtPrice(fee)}</span></div>
+          <div class="row"><span>Lot Fee</span><span>${fmtPrice(lot.lot_fee != null ? lot.lot_fee : 1.0)}</span></div>
           <div class="row total"><span>Total Acquisition Cost</span><span>${fmtPrice(lot.total_price)}</span></div>
         </div>
       </div>
@@ -2496,7 +2497,7 @@ const DealFinder = (() => {
           <div class="row"><span>Base target (${cond.text} condition: ${lot.recommend.base_pct}% of retail)</span><b>${lot.recommend.base_pct}%</b></div>
           <div class="row"><span>+ Popularity adjustment (score ${Math.round(lot.popularity_score || 0)}/100)</span><b>+${lot.recommend.popularity_adj}%</b></div>
           <div class="row"><span>+ Resale adjustment (score ${Math.round(lot.resale_score || 0)}/100)</span><b>+${lot.recommend.resale_adj}%</b></div>
-          <div class="row"><span>+ Buyer's premium (15%) + tax (7.25%) + pickup fee</span><b>factored in</b></div>
+          <div class="row"><span>+ Buyer's premium (15%) + tax (7.25%) + pickup fee + $1 lot fee</span><b>factored in</b></div>
           <div class="row total"><span>Target ${lot.recommend.target_pct}% of retail → Max bid</span><b>${fmtPrice(lot.recommended_bid)}</b></div>
         </div>
       </div>` : ''}

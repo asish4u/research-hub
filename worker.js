@@ -246,6 +246,8 @@ function parseLot(lot) {
 
   const locationName = (lot.location && lot.location.name) || 'Unknown Location';
   const pickupFee = (lot.is_transferable && lot.transfer_fee != null) ? Number(lot.transfer_fee) : 0;
+  // A flat $1 lot fee now applies to every product on the platform.
+  const LOT_FEE = 1.0;
 
   let currentBid = 1.0;
   if (lot.current_price != null) {
@@ -258,7 +260,7 @@ function parseLot(lot) {
     if (!isNaN(c)) bidCount = c;
   }
 
-  const totalPrice = Math.round((currentBid * 1.2225 + pickupFee) * 100) / 100;
+  const totalPrice = Math.round((currentBid * 1.2225 + pickupFee + LOT_FEE) * 100) / 100;
 
   // Brand popularity: the new list API exposes no brand field, so detect
   // popular brands from the title instead of the old "Brand: X" desc line.
@@ -307,7 +309,7 @@ function parseLot(lot) {
   let recommendedBid = null;
   let dealScore = 0.0;
   if (retailPrice != null) {
-    recommendedBid = Math.max(0, Math.round(((retailPrice * (targetPct / 100) - pickupFee) / 1.2225) * 100) / 100);
+    recommendedBid = Math.max(0, Math.round(((retailPrice * (targetPct / 100) - pickupFee - LOT_FEE) / 1.2225) * 100) / 100);
     if (amazonPrice > 0) {
       dealScore = Math.max(0, Math.round(((amazonPrice - totalPrice) / amazonPrice) * 100 * 10) / 10);
     }
@@ -339,6 +341,7 @@ function parseLot(lot) {
     resale_score: resaleScore,
     baby_age_range: babyAgeRange,
     pickup_fee: pickupFee,
+    lot_fee: LOT_FEE,
     location_name: locationName,
     detail_url: period ? `${AUCTION_SITE}/lots/${period}/${rowId}` : '',
     recommend: { base_pct: basePct, popularity_adj: popularityAdj, resale_adj: resaleAdj, target_pct: targetPct }
