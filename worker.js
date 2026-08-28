@@ -101,14 +101,18 @@ const BUZZ_BATCH = 4;   // concurrent news fetches per wave (Google 503s on burs
 const BROWSER_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36';
 
 // ═══════════════════════════════════════════════════════════════════
-// AUCTION FINDER — read-only proxy for auction.triangleliquidators.com
-// (scraping + scoring logic ported from the Deal project's backend/app.py)
+// AUCTION FINDER — read-only proxy for triangleliquidators.com
+// (Next.js platform REST API; scoring ported from the Deal project's
+// backend/app.py)
 // ═══════════════════════════════════════════════════════════════════
-const AUCTION_ORIGIN = 'https://auction.triangleliquidators.com';
+const AUCTION_API = 'https://triangleliquidators.com/backend/v1';
+const AUCTION_SITE = 'https://triangleliquidators.com';
+const AUCTION_CDN = 'https://cdn.triangleliquidators.com';
 const AUCTION_UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
-const AUCTION_CACHE_TTL = 120 * 1000;    // auctions + lots (fresh scrapes)
+const AUCTION_CACHE_TTL = 120 * 1000;    // auctions + lots (fresh fetches)
 const IMAGE_CACHE_TTL = 10 * 60 * 1000;  // lot image galleries
-const LOT_PAGE_LIMIT = 500;
+const LOT_PAGE_LIMIT = 100;              // API per_page cap
+const MAX_LOT_PAGES = 25;                // ~2,500 lots pool cap (subrequest-safe)
 
 const auctionCache = new Map(); // key -> { ts, ttl, value }
 
@@ -128,42 +132,28 @@ function auctionFetch(url) {
   });
 }
 
-function parseViewVars(html) {
-  const m = /viewVars\s*=\s*(\{.*?\});/.exec(html);
-  if (!m) return null;
-  try { return JSON.parse(m[1]); } catch (e) { return null; }
-}
-
 // ── Auctions ───────────────────────────────────────────────────────
+// The new platform (triangleliquidators.com) is a Next.js app backed by a
+// REST API. It has no separate "auction events" — its catalog is organized
+// by location (RDU = Raleigh, SCU = Anderson). We synthesize one auction
+// per location from the filter-config endpoint.
 async function fetchAuctions() {
   const cached = aCacheGet('auctions');
   if (cached) return cached;
 
-  const resp = await auctionFetch(AUCTION_ORIGIN + '/');
+  const resp = await auctionFetch(`${AUCTION_API}/auctions/filter-config/`);
   if (!resp.ok) throw new Error(`Auction site HTTP ${resp.status}`);
-  const html = await resp.text();
-  const vv = parseViewVars(html);
-  if (!vv) throw new Error('Could not parse auction homepage');
+  const cfg = await resp.json();
+  const locations = (cfg.locations || []).filter(l => l && l.value);
 
-  let list = (vv.upcomingAuctions && vv.upcomingAuctions.result_page) ||
-             (vv.auctions && vv.auctions.result_page) || [];
-  const nowMs = Date.now();
-  list = list
-    .filter(a => a && a.row_id)
-    .map(a => ({
-      row_id: a.row_id,
-      title: a.title || 'Unnamed Auction',
-      effective_end_time: a.effective_end_time || '',
-      lot_count: a.lot_count || 0,
-      location_name: a.location_name || 'Unknown Location',
-      cover_thumbnail: a.cover_thumbnail || ''
-    }))
-    .filter(a => {
-      if (!a.effective_end_time) return true;
-      const t = new Date(a.effective_end_time).getTime();
-      return !isNaN(t) && t >= nowMs;
-    })
-    .sort((a, b) => (a.effective_end_time || '').localeCompare(b.effective_end_time || ''));
+  const list = locations.map(l => ({
+    row_id: l.value,
+    title: `${l.name || l.value} — Live Auction`,
+    effective_end_time: '',
+    lot_count: l.active_lot_count || 0,
+    location_name: l.name || l.value,
+    cover_thumbnail: ''
+  }));
 
   aCacheSet('auctions', list, AUCTION_CACHE_TTL);
   return list;
@@ -187,30 +177,6 @@ const BABY_RANGE_PATTERNS = [
   /\b(\d+)[tT]\b/,
   /\b(\d+)[mM]\b/
 ];
-
-function parseRetailPrice(title, desc) {
-  const descMatch = /Retail\s+Price:\s*\$([\d,]+(?:\.\d{2})?)/i.exec(desc);
-  if (descMatch) {
-    const n = parseFloat(descMatch[1].replace(/,/g, ''));
-    if (!isNaN(n)) return n;
-  }
-  const titleMatch = /^\$([\d,]+(?:\.\d{2})?)/.exec(title);
-  if (titleMatch) {
-    const n = parseFloat(titleMatch[1].replace(/,/g, ''));
-    if (!isNaN(n)) return n;
-  }
-  return null;
-}
-
-function parseCondition(desc) {
-  const match = /Condition:\s*([A-C])\s*-\s*([^<]+)/i.exec(desc);
-  if (match) {
-    let text = match[2].trim();
-    if (text.endsWith('.')) text = text.slice(0, -1);
-    return [match[1].toUpperCase(), text];
-  }
-  return ['C', 'Used/Untested/Damaged (Default)'];
-}
 
 function parseBabyAgeRange(title, desc) {
   const text = `${title} ${desc}`.toLowerCase();
@@ -245,43 +211,60 @@ function sumCharCodes(s) {
   return sum;
 }
 
-function parseLot(lot, locationFee) {
-  const rowId = lot.row_id;
+function formatTimeLeft(endsAt) {
+  if (!endsAt) return '';
+  const t = new Date(endsAt).getTime();
+  if (isNaN(t)) return '';
+  const diff = t - Date.now();
+  if (diff <= 0) return 'Ended';
+  const d = Math.floor(diff / 86400000);
+  const h = Math.floor((diff % 86400000) / 3600000);
+  const m = Math.floor((diff % 3600000) / 60000);
+  if (d > 0) return `${d}d ${h}h`;
+  if (h > 0) return `${h}h ${m}m`;
+  return `${Math.max(1, m)}m`;
+}
+
+// New-platform lot → frontend lot shape. The new API (Next.js backend at
+// triangleliquidators.com/backend/v1) returns structured fields instead of
+// the old LiquidDeal HTML-embedded viewVars, so we map directly. All the
+// deal/resale/recommend scoring math is preserved 1:1 from the port.
+function parseLot(lot) {
+  const rowId = lot.id != null ? String(lot.id) : null;
   if (!rowId) return null;
 
   const title = lot.title || '';
-  const desc = lot.truncated_description || '';
-  const retailPrice = parseRetailPrice(title, desc);
-  const [condCode, condText] = parseCondition(desc);
+  const desc = ''; // new list API has no description; detail fetched lazily
+  const retailPrice = lot.estimated_retail_price != null ? Number(lot.estimated_retail_price) : null;
+  // Condition values: 1=New, 2=Like New, 3=Used, 4=As-is → A/B/C codes.
+  const condVal = lot.condition && lot.condition.value;
+  const condCode = condVal === 1 ? 'A' : condVal === 2 ? 'B' : 'C';
+  const condText = (lot.condition && lot.condition.display_name) ||
+    (condCode === 'A' ? 'New' : condCode === 'B' ? 'Like New' : 'Used/Untested/Damaged (Default)');
   const babyAgeRange = parseBabyAgeRange(title, desc);
 
-  let brand = '';
-  const brandMatch = /Brand:\s*([^<]+)/i.exec(desc);
-  if (brandMatch) brand = brandMatch[1].trim();
+  const locationName = (lot.location && lot.location.name) || 'Unknown Location';
+  const pickupFee = (lot.is_transferable && lot.transfer_fee != null) ? Number(lot.transfer_fee) : 0;
 
   let currentBid = 1.0;
+  if (lot.current_price != null) {
+    const n = Number(lot.current_price);
+    if (!isNaN(n)) currentBid = n;
+  }
   let bidCount = 0;
-  const bidInfo = lot.timed_auction_bid;
-  if (bidInfo) {
-    if (bidInfo.amount) {
-      const n = parseFloat(bidInfo.amount);
-      if (!isNaN(n)) currentBid = n;
-    }
-    if (bidInfo.bid_count != null) {
-      const c = parseInt(bidInfo.bid_count, 10);
-      if (!isNaN(c)) bidCount = c;
-    }
-  } else {
-    const sp = parseFloat(lot.starting_price);
-    if (!isNaN(sp)) currentBid = sp;
+  if (lot.bid_count != null) {
+    const c = parseInt(lot.bid_count, 10);
+    if (!isNaN(c)) bidCount = c;
   }
 
-  const totalPrice = Math.round((currentBid * 1.2225 + locationFee) * 100) / 100;
+  const totalPrice = Math.round((currentBid * 1.2225 + pickupFee) * 100) / 100;
 
-  const brandLower = brand.toLowerCase();
+  // Brand popularity: the new list API exposes no brand field, so detect
+  // popular brands from the title instead of the old "Brand: X" desc line.
+  const titleLower = title.toLowerCase();
   let brandPts = 5.0;
-  if (POPULAR_BRANDS_HIGH.some(b => brandLower.includes(b))) brandPts = 40.0;
-  else if (POPULAR_BRANDS_MED.some(b => brandLower.includes(b))) brandPts = 20.0;
+  if (POPULAR_BRANDS_HIGH.some(b => titleLower.includes(b))) brandPts = 40.0;
+  else if (POPULAR_BRANDS_MED.some(b => titleLower.includes(b))) brandPts = 20.0;
   const popularityScore = Math.min(100, bidCount * 8 + brandPts);
 
   // Estimated retail (Amazon-style) price: retail * 0.95 + small per-lot
@@ -323,73 +306,112 @@ function parseLot(lot, locationFee) {
   let recommendedBid = null;
   let dealScore = 0.0;
   if (retailPrice != null) {
-    recommendedBid = Math.max(0, Math.round(((retailPrice * (targetPct / 100) - locationFee) / 1.2225) * 100) / 100);
+    recommendedBid = Math.max(0, Math.round(((retailPrice * (targetPct / 100) - pickupFee) / 1.2225) * 100) / 100);
     if (amazonPrice > 0) {
       dealScore = Math.max(0, Math.round(((amazonPrice - totalPrice) / amazonPrice) * 100 * 10) / 10);
     }
   }
 
+  const images = (lot.images || []).slice().sort((a, b) => (a.position || 0) - (b.position || 0));
+  const firstImg = images[0] || {};
+  const imagePath = firstImg.image_card || firstImg.image_thumb || '';
+  const period = lot.auction_period || '';
+
   return {
     row_id: rowId,
-    auction_id: lot.auction_id || null,
+    auction_id: lot.location && lot.location.id != null ? String(lot.location.id) : '',
+    auction_period: period,
     lot_number: lot.lot_number != null ? lot.lot_number : 0,
     title,
     condition_code: condCode,
     condition_text: condText,
     description: desc,
-    image_url: lot.cover_thumbnail || '',
+    image_url: imagePath ? AUCTION_CDN + '/' + imagePath.replace(/^\/+/, '') : '',
     retail_price: retailPrice,
     amazon_price: amazonPrice,
     current_bid: currentBid,
     recommended_bid: recommendedBid,
     deal_score: dealScore,
-    time_left: lot.time_left || '',
+    time_left: formatTimeLeft(lot.ends_at),
     total_price: totalPrice,
     popularity_score: popularityScore,
     resale_score: resaleScore,
     baby_age_range: babyAgeRange,
-    // Use the site's slug-based public lot URL (the short /lots/view/{id}
-    // redirects to an auth-required page in browsers).
-    detail_url: (typeof lot._detail_url === 'string' && lot._detail_url.startsWith('/'))
-      ? AUCTION_ORIGIN + lot._detail_url
-      : '',
+    pickup_fee: pickupFee,
+    location_name: locationName,
+    detail_url: period ? `${AUCTION_SITE}/lots/${period}/${rowId}` : '',
     recommend: { base_pct: basePct, popularity_adj: popularityAdj, resale_adj: resaleAdj, target_pct: targetPct }
   };
 }
 
-async function scrapeAuctionLots(auctionId, locationName) {
-  const cacheKey = `lots:${auctionId}`;
+// ── Lot pool fetching (new platform REST API) ─────────────────────
+// The new API caps per_page at 100 and the worker is limited to ~50
+// subrequests per invocation, so we fetch a bounded pool of the most
+// recently-ending lots (API default order) and cache it. Search (>=3
+// chars) and condition (A→1, B→2, C→3,4) are pushed down to the API so
+// specific items stay findable even outside the pool.
+const CONDITION_API_MAP = { A: '1', B: '2', C: '3,4' };
+
+// row_id (lot id) -> raw lot from the platform, for the images endpoint.
+const lotRawIndex = new Map();
+
+async function fetchLotPool(ids, search, condition) {
+  const locationParam = ids.join(',');
+  const cacheKey = `pool:${locationParam}|${search || ''}|${condition || 'all'}`;
   const cached = aCacheGet(cacheKey);
   if (cached) return cached;
 
-  const isAnderson = (locationName || '').toLowerCase().includes('anderson');
-  const locationFee = isAnderson ? 5.0 : 0.0;
-
-  const lots = [];
-  let page = 1;
-  let hasMore = true;
-  while (hasMore) {
-    const url = `${AUCTION_ORIGIN}/ajax/lots/${auctionId}?limit=${LOT_PAGE_LIMIT}&page=${page}`;
-    let data;
-    try {
-      const resp = await auctionFetch(url);
-      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-      data = await resp.json();
-    } catch (e) {
-      console.log(`[Auction] error fetching lots page ${page} for ${auctionId}: ${e.message}`);
-      break;
-    }
-    const pageLots = data.result_page || [];
-    if (!pageLots.length) break;
-    for (const lot of pageLots) {
-      const parsed = parseLot(lot, locationFee);
-      if (parsed) lots.push(parsed);
-    }
-    const nextPage = data.query_info && data.query_info.next_page;
-    if (nextPage && pageLots.length === LOT_PAGE_LIMIT) page++;
-    else hasMore = false;
+  const base = new URLSearchParams({ per_page: String(LOT_PAGE_LIMIT), page: '1' });
+  if (locationParam) base.set('location', locationParam);
+  const q = (search || '').trim();
+  if (q.length >= 3) base.set('search', q);
+  if (condition && condition !== 'all' && CONDITION_API_MAP[condition]) {
+    base.set('condition', CONDITION_API_MAP[condition]);
   }
 
+  const pages = [];
+  let first;
+  try {
+    const resp = await auctionFetch(`${AUCTION_API}/auctions/lots/?${base}`);
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    first = await resp.json();
+  } catch (e) {
+    console.log(`[Auction] error fetching lots page 1: ${e.message}`);
+    aCacheSet(cacheKey, [], AUCTION_CACHE_TTL);
+    return [];
+  }
+  pages.push(first);
+
+  const total = first.count || 0;
+  const totalPages = Math.min(MAX_LOT_PAGES, Math.ceil(total / LOT_PAGE_LIMIT));
+  const rest = [];
+  for (let p = 2; p <= totalPages; p++) {
+    const pp = new URLSearchParams(base);
+    pp.set('page', String(p));
+    rest.push(pp);
+  }
+  const BATCH = 8;
+  for (let i = 0; i < rest.length; i += BATCH) {
+    const batch = await Promise.all(rest.slice(i, i + BATCH).map(async pp => {
+      try {
+        const r = await auctionFetch(`${AUCTION_API}/auctions/lots/?${pp}`);
+        return r.ok ? r.json() : null;
+      } catch (e) {
+        console.log(`[Auction] lots fetch error: ${e.message}`);
+        return null;
+      }
+    }));
+    for (const b of batch) if (b && b.results) pages.push(b);
+  }
+
+  const lots = [];
+  for (const d of pages) {
+    for (const lot of (d.results || [])) {
+      if (lot && lot.id != null) lotRawIndex.set(String(lot.id), lot);
+      const parsed = parseLot(lot);
+      if (parsed) lots.push(parsed);
+    }
+  }
   aCacheSet(cacheKey, lots, AUCTION_CACHE_TTL);
   return lots;
 }
@@ -472,21 +494,6 @@ function sortLots(lots, sortBy, sortOrder) {
   });
 }
 
-async function resolveAuctionsByIds(ids) {
-  const auctions = await fetchAuctions();
-  const byId = new Map(auctions.map(a => [a.row_id, a]));
-  const groups = [];
-  for (const id of ids) {
-    const auc = byId.get(id);
-    const lots = await scrapeAuctionLots(id, auc ? auc.location_name : '');
-    groups.push({
-      auction: auc || { row_id: id, title: id, location_name: '' },
-      lots
-    });
-  }
-  return groups;
-}
-
 async function handleAuctions() {
   try {
     const auctions = await fetchAuctions();
@@ -513,14 +520,7 @@ async function handleLots(url) {
   if (!ids.length) return json({ status: 'ok', total: 0, lots: [] });
 
   try {
-    const groups = await resolveAuctionsByIds(ids);
-    let all = [];
-    for (const g of groups) {
-      const auc = g.auction;
-      for (const l of g.lots) {
-        all.push({ ...l, location_name: auc.location_name, auction_title: auc.title });
-      }
-    }
+    const all = await fetchLotPool(ids, search, condition);
 
     if (profile === 'resell' && sortBy === 'deal_score') sortBy = 'resale_score';
     if (!VALID_SORTS.has(sortBy)) sortBy = 'deal_score';
@@ -548,9 +548,7 @@ async function handleStats(url) {
   if (!ids.length) return json(emptyStats);
 
   try {
-    const groups = await resolveAuctionsByIds(ids);
-    let all = [];
-    for (const g of groups) all.push(...g.lots);
+    const all = await fetchLotPool(ids, '', '');
     const list = applyLotFilters(all, '', 'all', profile);
     if (!list.length) return json(emptyStats);
 
@@ -581,33 +579,49 @@ async function handleLotImages(url) {
 
   const key = `images:${rowId}`;
   const cached = aCacheGet(key);
-  if (cached) return json({ status: 'ok', images: cached });
+  if (cached) return json({ status: 'ok', images: cached.images, description: cached.description });
 
   let images = [];
+  let description = '';
   try {
-    const resp = await auctionFetch(`${AUCTION_ORIGIN}/lots/view/${rowId}`);
-    if (resp.ok) {
-      const html = await resp.text();
-      const vv = parseViewVars(html);
-      const lot = vv && vv.lot;
-      if (lot && Array.isArray(lot.images)) {
-        images = lot.images.map(i => i.detail_url).filter(Boolean);
+    // Look the lot up in any cached pool to get its auction_period; the
+    // frontend also passes it for watchlist lots outside the pool.
+    const raw = lotRawIndex.get(rowId);
+    const period = raw && raw.auction_period ? raw.auction_period : url.searchParams.get('period') || '';
+    if (period) {
+      const resp = await auctionFetch(`${AUCTION_API}/auctions/lots/${period}/${rowId}/`);
+      if (resp.ok) {
+        const detail = await resp.json();
+        description = detail.description || '';
+        images = (detail.images || [])
+          .map(i => i.image_large || i.image_card)
+          .filter(Boolean)
+          .map(p => AUCTION_CDN + '/' + p.replace(/^\/+/, ''));
       }
+    }
+    // Fallback: the pool lot itself carries image paths.
+    if (!images.length && raw && Array.isArray(raw.images)) {
+      images = raw.images
+        .map(i => i.image_large || i.image_card)
+        .filter(Boolean)
+        .map(p => AUCTION_CDN + '/' + p.replace(/^\/+/, ''));
     }
   } catch (e) {
     console.log(`[Auction] error fetching images for ${rowId}: ${e.message}`);
   }
 
-  aCacheSet(key, images, IMAGE_CACHE_TTL);
-  return json({ status: 'ok', images });
+  aCacheSet(key, { images, description }, IMAGE_CACHE_TTL);
+  return json({ status: 'ok', images, description });
 }
 
-// ── Watchlist (KV-persisted + live-synced to the auction account) ──
-// Ported from the Deal project's LiveAuctionSessionManager: POST the
-// credentials to /login, keep the PHPSESSID cookie, then hit
-// /ajax/{watch-lot|unwatch-lot}/{id}. Credentials live in Worker
-// secrets (AUCTION_USERNAME / AUCTION_PASSWORD) — never in code.
+// ── Watchlist (KV-persisted + two-way sync with the auction account) ──
+// The new platform authenticates via NextAuth credentials: fetch the CSRF
+// token, POST /api/auth/callback/credentials, then use the `token` cookie
+// as `Authorization: Bearer <token>` on the REST API. Credentials live in
+// Worker secrets (AUCTION_USERNAME / AUCTION_PASSWORD) — never in code.
 const WATCHLIST_KEY = 'watchlist';
+const AUTH_CACHE_TTL = 30 * 60 * 1000;
+const authCache = { token: null, ts: 0 };
 
 async function watchlistGet(env) {
   try {
@@ -626,50 +640,115 @@ async function watchlistSet(env, list) {
   }
 }
 
+// NextAuth credentials login → Bearer token (cached briefly).
 async function liveLogin(env) {
   const username = env.AUCTION_USERNAME;
   const password = env.AUCTION_PASSWORD;
   if (!username || !password) return null;
+  if (authCache.token && Date.now() - authCache.ts < AUTH_CACHE_TTL) return authCache.token;
   try {
-    const resp = await fetch(AUCTION_ORIGIN + '/login', {
+    // 1. Get a CSRF token + its cookie (NextAuth validates both)
+    const csrfResp = await fetch(AUCTION_SITE + '/api/auth/csrf', {
+      headers: { 'User-Agent': AUCTION_UA },
+      redirect: 'follow'
+    });
+    const csrf = await csrfResp.json();
+    const csrfToken = csrf && csrf.csrfToken;
+    if (!csrfToken) return null;
+    const csrfCookies = csrfResp.headers.getSetCookie
+      ? csrfResp.headers.getSetCookie().map(c => c.split(';')[0])
+      : [];
+    const csrfCookie = csrfCookies.join('; ');
+
+    // 2. Credentials sign-in (must send the CSRF cookie back; the app sets
+    //    a `token` cookie on success)
+    const resp = await fetch(AUCTION_SITE + '/api/auth/callback/credentials', {
       method: 'POST',
       headers: {
         'User-Agent': AUCTION_UA,
-        'Content-Type': 'application/x-www-form-urlencoded'
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Cookie': csrfCookie
       },
-      body: new URLSearchParams({ username, password }).toString(),
+      body: new URLSearchParams({ csrfToken, email: username, password, json: 'true' }).toString(),
       redirect: 'manual'
     });
     const setCookies = resp.headers.getSetCookie ? resp.headers.getSetCookie() : [];
-    const cookie = setCookies.map(c => c.split(';')[0]).join('; ');
-    return cookie || null;
+    const tokenCookie = setCookies.map(c => c.split(';')[0]).find(c => c.startsWith('token='));
+    const token = tokenCookie ? tokenCookie.slice('token='.length) : null;
+    if (token) {
+      authCache.token = token;
+      authCache.ts = Date.now();
+    }
+    return token;
   } catch (e) {
     console.log(`[Watchlist] login error: ${e.message}`);
     return null;
   }
 }
 
-async function liveToggleWatch(env, rowId, watch) {
-  const cookie = await liveLogin(env);
-  if (!cookie) return { ok: false, error: 'Could not authenticate with auction platform (secrets missing?)' };
+// Push a watch/unwatch to the account on the platform.
+async function liveToggleWatch(env, period, lotId, watch) {
+  const token = await liveLogin(env);
+  if (!token) return { ok: false, error: 'Could not authenticate with auction platform (secrets missing?)' };
   try {
-    const action = watch ? 'watch-lot' : 'unwatch-lot';
-    const resp = await fetch(`${AUCTION_ORIGIN}/ajax/${action}/${rowId}`, {
-      headers: { 'User-Agent': AUCTION_UA, 'Cookie': cookie },
+    const resp = await fetch(`${AUCTION_API}/auctions/control-panel/lots/${period}/${lotId}/watchlist/`, {
+      method: watch ? 'POST' : 'DELETE',
+      headers: {
+        'User-Agent': AUCTION_UA,
+        'Authorization': `Bearer ${token}`,
+        'X-CSRF-Protection': '1'
+      },
       redirect: 'follow'
     });
     if (!resp.ok) return { ok: false, error: `HTTP ${resp.status}` };
-    const data = await resp.json().catch(() => null);
-    const code = data && data.responseCode;
-    if (code === 200) return { ok: true };
-    return { ok: false, error: (data && (data.message || data.error)) || `responseCode ${code}` };
+    return { ok: true };
   } catch (e) {
     return { ok: false, error: e.message };
   }
 }
 
+// Pull the account's watchlist from the platform (platform → dashboard).
+async function liveWatchlistPull(env) {
+  const token = await liveLogin(env);
+  if (!token) return null;
+  try {
+    const resp = await fetch(`${AUCTION_API}/auctions/control-panel/active/`, {
+      headers: { 'User-Agent': AUCTION_UA, 'Authorization': `Bearer ${token}` },
+      redirect: 'follow'
+    });
+    if (!resp.ok) return null;
+    const data = await resp.json();
+    const section = data && data.watchlist;
+    const rawLots = (section && section.results) || [];
+    return rawLots.map(parseLot).filter(Boolean);
+  } catch (e) {
+    console.log(`[Watchlist] pull error: ${e.message}`);
+    return null;
+  }
+}
+
 async function handleWatchlistGet(env) {
   const list = await watchlistGet(env);
+
+  // Two-way sync: merge the account's platform watchlist into KV so lots
+  // watched on the auction site itself appear in the dashboard too.
+  try {
+    const platformLots = await liveWatchlistPull(env);
+    if (platformLots && platformLots.length) {
+      const byId = new Map(list.map(l => [String(l.row_id), l]));
+      for (const pl of platformLots) {
+        const rid = String(pl.row_id);
+        const existing = byId.get(rid);
+        byId.set(rid, existing ? { ...existing, ...pl } : { ...pl, added_at: new Date().toISOString() });
+      }
+      const merged = [...byId.values()];
+      await watchlistSet(env, merged);
+      return json({ status: 'ok', lots: merged });
+    }
+  } catch (e) {
+    console.log(`[Watchlist] merge error: ${e.message}`);
+  }
+
   return json({ status: 'ok', lots: list });
 }
 
@@ -693,7 +772,10 @@ async function handleWatchlistToggle(request, env) {
   await watchlistSet(env, list);
 
   // Best-effort live sync to the account on the auction platform.
-  const sync = await liveToggleWatch(env, rowId, watched);
+  const period = (body.lot && body.lot.auction_period) || '';
+  const sync = period
+    ? await liveToggleWatch(env, period, rowId, watched)
+    : { ok: false, error: 'missing auction_period' };
   return json({
     status: 'ok',
     watched,
@@ -701,7 +783,6 @@ async function handleWatchlistToggle(request, env) {
     sync_error: sync && !sync.ok ? sync.error : null
   });
 }
-
 
 // ═══════════════════════════════════════════════════════════════════
 // EVENTS API — Ticketmaster Discovery API (recommended config)

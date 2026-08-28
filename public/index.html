@@ -265,7 +265,7 @@
   .empty { text-align: center; padding: 3rem 1rem; color: var(--text2); }
   .footer { border-top: 1px solid var(--border); padding: 1.5rem; text-align: center; color: var(--text2); font-size: 0.8rem; }
 
-  /* ── AUCTION FINDER (LiquidDeal, powered by Worker) ── */
+  /* ── AUCTION FINDER (triangleliquidators.com, powered by Worker) ── */
   .auction-h2 { color: var(--green); }
   .auction-h2::before { content: '🔨'; font-size: 1.1rem; }
   .auction-status {
@@ -1782,7 +1782,7 @@ function render() {
 // Initialize
 render();
 
-// AUCTION FINDER — LiquidDeal-style browser backed by the Worker
+// AUCTION FINDER — triangleliquidators.com catalog backed by the Worker
 // (read-only: /api/auctions, /api/lots, /api/stats, /api/lot/images)
 // ═══════════════════════════════════════════════════════════════════
 const DealFinder = (() => {
@@ -2273,7 +2273,9 @@ const DealFinder = (() => {
     const card = document.querySelector(`.lot-card[data-row="${CSS.escape(rowId)}"]`);
     const imgEl = card && card.querySelector('.lot-thumb img');
     imagesCache[rowId] = [imgEl ? imgEl.src : ''];
-    fetch('/api/lot/images?row_id=' + encodeURIComponent(rowId))
+    const lot = currentLots.find(l => l.row_id === rowId);
+    const period = lot && lot.auction_period ? '&period=' + encodeURIComponent(lot.auction_period) : '';
+    fetch('/api/lot/images?row_id=' + encodeURIComponent(rowId) + period)
       .then(r => r.json())
       .then(data => {
         if (data && data.images && data.images.length > 1) {
@@ -2319,7 +2321,8 @@ const DealFinder = (() => {
     $('modalOverlay').style.display = 'flex';
     document.body.style.overflow = 'hidden';
     if (modalImages.length <= 1) {
-      fetch('/api/lot/images?row_id=' + encodeURIComponent(rowId))
+      const period = lot && lot.auction_period ? '&period=' + encodeURIComponent(lot.auction_period) : '';
+      fetch('/api/lot/images?row_id=' + encodeURIComponent(rowId) + period)
         .then(r => r.json())
         .then(data => {
           if (data && data.images && data.images.length > 1) {
@@ -2328,6 +2331,10 @@ const DealFinder = (() => {
             renderModalImages();
             renderModalThumbs();
           }
+          if (data && data.description) {
+            const d = $('modalDesc');
+            if (d) d.textContent = data.description;
+          }
         })
         .catch(() => {});
     }
@@ -2335,8 +2342,8 @@ const DealFinder = (() => {
 
   function renderModal(lot) {
     const cond = condLabel(lot.condition_code);
-    const fee = (lot.location_name || '').toLowerCase().includes('anderson') ? 5.0 : 0.0;
-    const platformUrl = lot.detail_url || ('https://auction.triangleliquidators.com/lots/view/' + encodeURIComponent(lot.row_id));
+    const fee = lot.pickup_fee != null ? lot.pickup_fee : ((lot.location_name || '').toLowerCase().includes('anderson') ? 5.0 : 0.0);
+    const platformUrl = lot.detail_url || ('https://triangleliquidators.com/lots/' + encodeURIComponent(lot.row_id));
     $('modalContent').innerHTML = `
       <button class="modal-close" id="modalClose" title="Close">✕</button>
       <div class="modal-lot-no">LOT #${esc(lot.lot_number)} · ID: ${esc(lot.row_id)}</div>
@@ -2392,7 +2399,7 @@ const DealFinder = (() => {
 
       <div class="modal-section">
         <h4>Retailer Specifications & Description</h4>
-        <div class="modal-desc">${lot.description || 'No detailed specifications listed.'}</div>
+        <div class="modal-desc" id="modalDesc">${lot.description || 'No detailed specifications listed.'}</div>
       </div>
 
       <div class="modal-actions">
@@ -2666,7 +2673,7 @@ function toggleEventFilter(filter) {
   </div>
 
   <div id="dealAuctionsSub">
-  <!-- ── Sub-section 1: Auction Finder (LiquidDeal, powered by Worker) ── -->
+  <!-- ── Sub-section 1: Auction Finder (triangleliquidators.com, powered by Worker) ── -->
   <div class="featured-section" id="auctionFinder">
     <h2 class="auction-h2">Live Auction Finder <span style="font-size:0.75rem;color:var(--text2);font-weight:400;">— Triangle Liquidators · scraped live by the Cloudflare Worker</span></h2>
 
