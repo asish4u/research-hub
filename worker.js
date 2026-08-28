@@ -480,8 +480,14 @@ const DEAL_WORTHINESS = {
   // cannot pass as excellent merely because the bid is below retail while
   // fees still make the acquisition expensive.
   excellent: l => l.retail_price != null && l.amazon_price != null && l.deal_score >= 50 && l.total_price <= l.amazon_price * 0.50,
-  good: l => l.retail_price != null && l.amazon_price != null && l.deal_score >= 30 && l.total_price <= l.amazon_price * 0.70,
-  any: l => l.retail_price != null && l.amazon_price != null && l.total_price < l.amazon_price
+  good: l => l.retail_price != null && l.amazon_price != null && l.deal_score >= 30 && l.total_price <= l.amazon_price * 0.70,    any: l => l.retail_price != null && l.amazon_price != null && l.total_price < l.amazon_price
+};
+
+const ACQUISITION_RATIO_FILTERS = {
+  under_25: l => l.retail_price != null && l.total_price / l.retail_price <= 0.25,
+  under_50: l => l.retail_price != null && l.total_price / l.retail_price <= 0.50,
+  under_70: l => l.retail_price != null && l.total_price / l.retail_price <= 0.70,
+  under_100: l => l.retail_price != null && l.total_price / l.retail_price < 1
 };
 
 function sortLots(lots, sortBy, sortOrder) {
@@ -520,6 +526,7 @@ async function handleLots(url) {
   const sortOrder = url.searchParams.get('sort_order') || 'desc';
   const profile = url.searchParams.get('profile') || '';
   const worthiness = url.searchParams.get('worthiness') || '';
+  const acquisitionRatio = url.searchParams.get('acquisition_ratio') || '';
   const limit = Math.min(parseInt(url.searchParams.get('limit') || '100', 10) || 100, 200);
   const offset = Math.max(parseInt(url.searchParams.get('offset') || '0', 10) || 0, 0);
 
@@ -545,6 +552,7 @@ async function handleLots(url) {
     const all = await fetchLotPool(ids, search, condition, sourcePage, sourceOrder, SOURCE_PAGE_LIMIT);
     let filtered = applyLotFilters(all, search, condition, profile);
     if (DEAL_WORTHINESS[worthiness]) filtered = filtered.filter(DEAL_WORTHINESS[worthiness]);
+    if (ACQUISITION_RATIO_FILTERS[acquisitionRatio]) filtered = filtered.filter(ACQUISITION_RATIO_FILTERS[acquisitionRatio]);
     sortLots(filtered, sortBy, sortOrder);
     const pageLots = filtered.slice(sourceOffset, sourceOffset + limit);
     // A source page is not enough to globally rank locally-computed scores;

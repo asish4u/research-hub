@@ -1883,6 +1883,7 @@ const DealFinder = (() => {
   let sortOrder = 'desc';
   let activeProfile = '';
   let dealWorthiness = '';
+  let acquisitionRatio = '';
   let page = 1;
   let total = 0;
   let started = false;
@@ -1963,6 +1964,7 @@ const DealFinder = (() => {
     p.set('sort_order', sortOrder);
     p.set('profile', activeProfile);
     p.set('worthiness', dealWorthiness);
+    p.set('acquisition_ratio', acquisitionRatio);
     p.set('limit', String(LIMIT));
     p.set('page', String(Math.ceil(((page - 1) * LIMIT) / 100) + 1));
     p.set('offset', String(((page - 1) * LIMIT) % 100));
@@ -2025,6 +2027,8 @@ const DealFinder = (() => {
     $('auctionCondition').addEventListener('change', e => { conditionFilter = e.target.value; reload(); });
     const worthinessControl = $('auctionWorthiness');
     if (worthinessControl) worthinessControl.addEventListener('change', e => { dealWorthiness = e.target.value; reload(); });
+    const ratioControl = $('auctionAcquisitionRatio');
+    if (ratioControl) ratioControl.addEventListener('change', e => { acquisitionRatio = e.target.value; reload(); });
     $('auctionSort').addEventListener('change', e => { sortBy = e.target.value; reload(); });
     $('auctionOrder').addEventListener('change', e => { sortOrder = e.target.value; reload(); });
     $('auctionRefresh').addEventListener('click', () => { if (watchlistMode) loadWatchlistView(); else loadFeed(); });
@@ -2806,6 +2810,13 @@ function toggleEventFilter(filter) {
             <option value="excellent">Excellent · all-in cost ≤ 50% retail</option>
             <option value="good">Good · all-in cost ≤ 70% retail</option>
             <option value="any">Any value · below retail
+          </select>
+          <select class="auction-select" id="auctionAcquisitionRatio" title="Filter by acquisition ratio">
+            <option value="">All Acquisition Ratios</option>
+            <option value="under_25">≤ 25% of retail</option>
+            <option value="under_50">≤ 50% of retail</option>
+            <option value="under_70">≤ 70% of retail</option>
+            <option value="under_100">Under 100% of retail</option>
           </select>
           <select class="auction-select" id="auctionSort" title="Sort & rank">
             <option value="deal_score">Highest Savings</option>
