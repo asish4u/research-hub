@@ -483,11 +483,13 @@ const DEAL_WORTHINESS = {
   good: l => l.retail_price != null && l.amazon_price != null && l.deal_score >= 30 && l.total_price <= l.amazon_price * 0.70,    any: l => l.retail_price != null && l.amazon_price != null && l.total_price < l.amazon_price
 };
 
+// Categories use the same acquisition-ratio thresholds shown on each card:
+// bid/fees total divided by estimated retail value.
 const ACQUISITION_RATIO_FILTERS = {
-  under_25: 0.25,
-  under_50: 0.50,
-  under_70: 0.70,
-  under_100: 1.00
+  dealworthy: l => l.retail_price != null && l.recommended_bid != null && l.current_bid <= l.recommended_bid,
+  good_price: l => l.retail_price != null && l.recommended_bid != null && l.current_bid > l.recommended_bid && l.current_bid <= l.recommended_bid * 1.25,
+  fair_price: l => l.retail_price != null && l.recommended_bid != null && l.current_bid > l.recommended_bid * 1.25 && l.current_bid <= l.recommended_bid * 1.50,
+  overpriced: l => l.retail_price != null && l.recommended_bid != null && l.current_bid > l.recommended_bid * 1.50
 };
 
 function sortLots(lots, sortBy, sortOrder) {
@@ -552,9 +554,8 @@ async function handleLots(url) {
     const all = await fetchLotPool(ids, search, condition, sourcePage, sourceOrder, SOURCE_PAGE_LIMIT);
     let filtered = applyLotFilters(all, search, condition, profile);
     if (DEAL_WORTHINESS[worthiness]) filtered = filtered.filter(DEAL_WORTHINESS[worthiness]);
-    const ratioLimit = Number(ACQUISITION_RATIO_FILTERS[acquisitionRatio]);
-    if (Number.isFinite(ratioLimit)) {
-      filtered = filtered.filter(l => l.retail_price != null && l.retail_price > 0 && (l.total_price / l.retail_price) <= ratioLimit);
+    if (ACQUISITION_RATIO_FILTERS[acquisitionRatio]) {
+      filtered = filtered.filter(ACQUISITION_RATIO_FILTERS[acquisitionRatio]);
     }
     sortLots(filtered, sortBy, sortOrder);
     const pageLots = filtered.slice(sourceOffset, sourceOffset + limit);
