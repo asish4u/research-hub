@@ -112,6 +112,7 @@ const AUCTION_UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/
 const AUCTION_CACHE_TTL = 120 * 1000;    // auctions + lots (fresh fetches)
 const IMAGE_CACHE_TTL = 10 * 60 * 1000;  // lot image galleries
 const LOT_PAGE_LIMIT = 100;              // Source API max page size
+const FULL_SORT_PAGE_LIMIT = 100;         // Pages used for global score sorting
 const LOT_CACHE_TTL = 5 * 60 * 1000;     // Individual catalog pages
 
 const auctionCache = new Map(); // key -> { ts, ttl, value }
@@ -353,13 +354,13 @@ const CONDITION_API_MAP = { A: '1', B: '2', C: '3,4' };
 // row_id (lot id) -> raw lot from the platform, for the images endpoint.
 const lotRawIndex = new Map();
 
-async function fetchLotPool(ids, search, condition, pageNumber = 1, orderBy = '') {
+async function fetchLotPool(ids, search, condition, pageNumber = 1, orderBy = '', perPage = LOT_PAGE_LIMIT) {
   const locationParam = ids.join(',');
-  const cacheKey = `pool:${locationParam}|${search || ''}|${condition || 'all'}|${orderBy || 'default'}|page:${pageNumber}`;
+  const cacheKey = `pool:${locationParam}|${search || ''}|${condition || 'all'}|${orderBy || 'default'}|per:${perPage}|page:${pageNumber}`;
   const cached = aCacheGet(cacheKey);
   if (cached) return cached;
 
-  const base = new URLSearchParams({ per_page: String(LOT_PAGE_LIMIT), page: String(pageNumber) });
+  const base = new URLSearchParams({ per_page: String(perPage), page: String(pageNumber) });
   if (locationParam) base.set('location', locationParam);
   const q = (search || '').trim();
   if (q.length >= 3) base.set('search', q);
@@ -393,6 +394,7 @@ async function fetchLotPool(ids, search, condition, pageNumber = 1, orderBy = ''
   }
   lots._total = first.count || lots.length;
   lots._upstream_page = pageNumber;
+  lots._per_page = perPage;
   aCacheSet(cacheKey, lots, LOT_CACHE_TTL);
   return lots;
 }
@@ -505,14 +507,25 @@ async function handleLots(url) {
     if (profile === 'resell' && sortBy === 'deal_score') sortBy = 'resale_score';
     if (!VALID_SORTS.has(sortBy)) sortBy = 'deal_score';
 
-    const sourceSort = sortBy === 'current_bid' ? 'current_price' :
-      sortBy === 'retail_price' ? 'estimated_retail_price' :
-      sortBy === 'lot_number' ? 'lot_number' : '';
-    const sourceOrder = sourceSort && sortOrder.toLowerCase() === 'desc' ? `${sourceSort}_desc` : sourceSort;
-    const all = await fetchLotPool(ids, search, condition, requestedPage, sourceOrder);
+    const sourceSort = sortBy === 'current_bid' ? 'price-lowest' :
+      // The platform has no retail-price sort; price-highest is a safe
+      // non-empty fallback so the retail view still returns useful lots.
+      sortBy === 'retail_price' ? 'price-highest' :
+      sortBy === 'popularity_score' ? 'bids-most' : '';
+    const sourceOrder = sourceSort ? (sortOrder.toLowerCase() === 'asc' && sourceSort === 'price-lowest' ? sourceSort :
+      sortOrder.toLowerCase() === 'asc' && sourceSort === 'price-highest' ? 'price-lowest' :
+      sortOrder.toLowerCase() === 'asc' && sourceSort === 'bids-most' ? 'bids-fewest' : sourceSort) : '';
+    const isLocalSort = !sourceSort;
+    const sourcePage = Math.max(Math.floor(offset / LOT_PAGE_LIMIT) + 1, 1);
+    const sourceOffset = offset % LOT_PAGE_LIMIT;
+    const all = isLocalSort
+      ? await fetchLotPool(ids, search, condition, 1, '', FULL_SORT_PAGE_LIMIT)
+      : await fetchLotPool(ids, search, condition, sourcePage, sourceOrder, LOT_PAGE_LIMIT);
     const filtered = applyLotFilters(all, search, condition, profile);
     sortLots(filtered, sortBy, sortOrder);
-    const pageLots = filtered.slice(offset % LOT_PAGE_LIMIT, (offset % LOT_PAGE_LIMIT) + limit);
+    const pageLots = isLocalSort
+      ? filtered.slice(offset, offset + limit)
+      : filtered.slice(sourceOffset, sourceOffset + limit);
     return json({ status: 'ok', total: all._total || filtered.length, page: requestedPage, per_page: LOT_PAGE_LIMIT, lots: pageLots });
   } catch (e) {
     return json({ error: e.message }, 502);
