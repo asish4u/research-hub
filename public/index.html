@@ -1882,6 +1882,7 @@ const DealFinder = (() => {
   let sortBy = 'deal_score';
   let sortOrder = 'desc';
   let activeProfile = '';
+  let dealWorthiness = '';
   let page = 1;
   let total = 0;
   let started = false;
@@ -1961,6 +1962,7 @@ const DealFinder = (() => {
     p.set('sort_by', sortBy);
     p.set('sort_order', sortOrder);
     p.set('profile', activeProfile);
+    p.set('worthiness', dealWorthiness);
     p.set('limit', String(LIMIT));
     p.set('page', String(Math.ceil(((page - 1) * LIMIT) / 100) + 1));
     p.set('offset', String(((page - 1) * LIMIT) % 100));
@@ -2021,6 +2023,8 @@ const DealFinder = (() => {
     $('auctionSelect').addEventListener('change', e => { selectedId = e.target.value; setProfile(''); page = 1; loadFeed(); });
     $('auctionSearch').addEventListener('input', debounce(e => { searchQuery = e.target.value.trim(); page = 1; if (watchlistMode) loadWatchlistView(); else loadFeed(); }, 350));
     $('auctionCondition').addEventListener('change', e => { conditionFilter = e.target.value; reload(); });
+    const worthinessControl = $('auctionWorthiness');
+    if (worthinessControl) worthinessControl.addEventListener('change', e => { dealWorthiness = e.target.value; reload(); });
     $('auctionSort').addEventListener('change', e => { sortBy = e.target.value; reload(); });
     $('auctionOrder').addEventListener('change', e => { sortOrder = e.target.value; reload(); });
     $('auctionRefresh').addEventListener('click', () => { if (watchlistMode) loadWatchlistView(); else loadFeed(); });
@@ -2796,6 +2800,12 @@ function toggleEventFilter(filter) {
             <option value="A">New only</option>
             <option value="B">Like New only</option>
             <option value="C">Used & Damaged only</option>
+          </select>
+          <select class="auction-select" id="auctionWorthiness" title="Filter by deal worthiness">
+            <option value="">All Deal Quality</option>
+            <option value="excellent">Excellent deals · 50%+ savings</option>
+            <option value="good">Good deals · 30%+ savings</option>
+            <option value="any">Any savings · above break-even</option>
           </select>
           <select class="auction-select" id="auctionSort" title="Sort & rank">
             <option value="deal_score">Highest Savings</option>

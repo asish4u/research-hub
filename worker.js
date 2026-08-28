@@ -111,8 +111,8 @@ const AUCTION_CDN = 'https://cdn.triangleliquidators.com';
 const AUCTION_UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 const AUCTION_CACHE_TTL = 120 * 1000;    // auctions + lots (fresh fetches)
 const IMAGE_CACHE_TTL = 10 * 60 * 1000;  // lot image galleries
-const LOT_PAGE_LIMIT = 100;              // Source API max page size
-const FULL_SORT_PAGE_LIMIT = 100;         // Pages used for global score sorting
+const LOT_PAGE_LIMIT = 24;              // Dashboard page size; keeps page boundaries stable
+const SOURCE_PAGE_LIMIT = 100;           // Source API max page size
 const LOT_CACHE_TTL = 5 * 60 * 1000;     // Individual catalog pages
 
 const auctionCache = new Map(); // key -> { ts, ttl, value }
@@ -354,7 +354,7 @@ const CONDITION_API_MAP = { A: '1', B: '2', C: '3,4' };
 // row_id (lot id) -> raw lot from the platform, for the images endpoint.
 const lotRawIndex = new Map();
 
-async function fetchLotPool(ids, search, condition, pageNumber = 1, orderBy = '', perPage = LOT_PAGE_LIMIT) {
+async function fetchLotPool(ids, search, condition, pageNumber = 1, orderBy = '', perPage = SOURCE_PAGE_LIMIT) {
   const locationParam = ids.join(',');
   const cacheKey = `pool:${locationParam}|${search || ''}|${condition || 'all'}|${orderBy || 'default'}|per:${perPage}|page:${pageNumber}`;
   const cached = aCacheGet(cacheKey);
@@ -395,8 +395,20 @@ async function fetchLotPool(ids, search, condition, pageNumber = 1, orderBy = ''
   lots._total = first.count || lots.length;
   lots._upstream_page = pageNumber;
   lots._per_page = perPage;
-  aCacheSet(cacheKey, lots, LOT_CACHE_TTL);
-  return lots;
+  // Defensive de-duplication: source APIs can repeat a lot across pages or
+  // locations. Keep the first occurrence so a product is never rendered twice.
+  const unique = [];
+  const seen = new Set();
+  for (const lot of lots) {
+    if (seen.has(lot.row_id)) continue;
+    seen.add(lot.row_id);
+    unique.push(lot);
+  }
+  unique._total = lots._total;
+  unique._upstream_page = lots._upstream_page;
+  unique._per_page = lots._per_page;
+  aCacheSet(cacheKey, unique, LOT_CACHE_TTL);
+  return unique;
 }
 
 // ── Filtering / sorting / stats ────────────────────────────────────
@@ -460,6 +472,14 @@ function applyLotFilters(lots, search, condition, profile) {
 
 const VALID_SORTS = new Set(['lot_number', 'current_bid', 'retail_price', 'deal_score', 'popularity_score', 'resale_score']);
 
+// User-facing deal-worthiness bands. Filtering is applied after the source
+// filters, so it remains compatible with search, condition, and location.
+const DEAL_WORTHINESS = {
+  excellent: l => l.retail_price != null && l.deal_score >= 50,
+  good: l => l.retail_price != null && l.deal_score >= 30,
+  any: l => l.retail_price != null && l.deal_score > 0
+};
+
 function sortLots(lots, sortBy, sortOrder) {
   const dir = sortOrder.toLowerCase() === 'asc' ? 1 : -1;
   const isScore = sortBy === 'deal_score' || sortBy === 'resale_score';
@@ -495,6 +515,7 @@ async function handleLots(url) {
   let sortBy = url.searchParams.get('sort_by') || 'deal_score';
   const sortOrder = url.searchParams.get('sort_order') || 'desc';
   const profile = url.searchParams.get('profile') || '';
+  const worthiness = url.searchParams.get('worthiness') || '';
   const limit = Math.min(parseInt(url.searchParams.get('limit') || '100', 10) || 100, 200);
   const offset = Math.max(parseInt(url.searchParams.get('offset') || '0', 10) || 0, 0);
 
@@ -515,13 +536,17 @@ async function handleLots(url) {
     const sourceOrder = sourceSort ? (sortOrder.toLowerCase() === 'asc' && sourceSort === 'price-lowest' ? sourceSort :
       sortOrder.toLowerCase() === 'asc' && sourceSort === 'price-highest' ? 'price-lowest' :
       sortOrder.toLowerCase() === 'asc' && sourceSort === 'bids-most' ? 'bids-fewest' : sourceSort) : '';
-    const sourcePage = Math.max(Math.floor(offset / LOT_PAGE_LIMIT) + 1, 1);
-    const sourceOffset = offset % LOT_PAGE_LIMIT;
-    const all = await fetchLotPool(ids, search, condition, sourcePage, sourceOrder, LOT_PAGE_LIMIT);
-    const filtered = applyLotFilters(all, search, condition, profile);
+    const sourcePage = Math.max(Math.floor(offset / SOURCE_PAGE_LIMIT) + 1, 1);
+    const sourceOffset = offset % SOURCE_PAGE_LIMIT;
+    const all = await fetchLotPool(ids, search, condition, sourcePage, sourceOrder, SOURCE_PAGE_LIMIT);
+    let filtered = applyLotFilters(all, search, condition, profile);
+    if (DEAL_WORTHINESS[worthiness]) filtered = filtered.filter(DEAL_WORTHINESS[worthiness]);
     sortLots(filtered, sortBy, sortOrder);
     const pageLots = filtered.slice(sourceOffset, sourceOffset + limit);
-    return json({ status: 'ok', total: all._total || filtered.length, page: requestedPage, per_page: LOT_PAGE_LIMIT, lots: pageLots });
+    // A source page is not enough to globally rank locally-computed scores;
+    // expose that limitation explicitly rather than returning misleading totals.
+    const sourceFiltered = all._total || filtered.length;
+    return json({ status: 'ok', total: sourceFiltered, page: requestedPage, per_page: limit, lots: pageLots, deduplicated: true });
   } catch (e) {
     return json({ error: e.message }, 502);
   }
