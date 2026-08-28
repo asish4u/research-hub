@@ -2331,7 +2331,7 @@ const DealFinder = (() => {
         <div class="lot-prices">
           <div class="lot-price"><span class="k">Current Bid</span><span class="v bid">${fmtPrice(lot.current_bid)}</span></div>
           <div class="lot-price"><span class="k">Total Cost</span><span class="v total">${fmtPrice(lot.total_price)}</span></div>
-          <div class="lot-price"><span class="k">Target Max</span><span class="v">${fmtPrice(lot.recommended_bid)}</span></div>
+          <div class="lot-price"><span class="k">Target Max Bid</span><span class="v">${lot.recommended_bid == null ? 'N/A' : '$' + Math.round(lot.recommended_bid)}</span></div>
           <div class="lot-price"><span class="k">Amazon Est.</span><span class="v amazon">${fmtPrice(lot.amazon_price)}</span></div>
         </div>
         <div class="lot-rank">
@@ -2486,7 +2486,7 @@ const DealFinder = (() => {
         <div class="lot-prices" style="grid-template-columns:repeat(3,1fr);">
           <div class="lot-price"><span class="k">Retail Value</span><span class="v">${fmtPrice(lot.retail_price)}</span></div>
           <div class="lot-price"><span class="k">Amazon Market</span><span class="v amazon">${fmtPrice(lot.amazon_price)}</span></div>
-          <div class="lot-price"><span class="k">Target Max Bid</span><span class="v">${fmtPrice(lot.recommended_bid)}</span></div>
+          <div class="lot-price"><span class="k">Target Max Bid</span><span class="v">${lot.recommended_bid == null ? 'N/A' : '$' + Math.round(lot.recommended_bid)}</span></div>
         </div>
       </div>
 
@@ -2498,7 +2498,7 @@ const DealFinder = (() => {
           <div class="row"><span>+ Popularity adjustment (score ${Math.round(lot.popularity_score || 0)}/100)</span><b>+${lot.recommend.popularity_adj}%</b></div>
           <div class="row"><span>+ Resale adjustment (score ${Math.round(lot.resale_score || 0)}/100)</span><b>+${lot.recommend.resale_adj}%</b></div>
           <div class="row"><span>+ Buyer's premium (15%) + tax (7.25%) + pickup fee + $1 lot fee</span><b>factored in</b></div>
-          <div class="row total"><span>Target ${lot.recommend.target_pct}% of retail → Max bid</span><b>${fmtPrice(lot.recommended_bid)}</b></div>
+          <div class="row total"><span>Target ${lot.recommend.target_pct}% of retail → Max bid</span><b>${lot.recommended_bid == null ? 'N/A' : '$' + Math.round(lot.recommended_bid)}</b></div>
         </div>
       </div>` : ''}
 

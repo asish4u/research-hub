@@ -309,7 +309,9 @@ function parseLot(lot) {
   let recommendedBid = null;
   let dealScore = 0.0;
   if (retailPrice != null) {
-    recommendedBid = Math.max(0, Math.round(((retailPrice * (targetPct / 100) - pickupFee - LOT_FEE) / 1.2225) * 100) / 100);
+    // This is the maximum HAMMER/BID amount. Fees are removed before the
+    // limit is calculated, then rounded to a whole dollar for bidding.
+    recommendedBid = Math.max(0, Math.round((retailPrice * (targetPct / 100) - pickupFee - LOT_FEE) / 1.2225));
     if (amazonPrice > 0) {
       dealScore = Math.max(0, Math.round(((amazonPrice - totalPrice) / amazonPrice) * 100 * 10) / 10);
     }
