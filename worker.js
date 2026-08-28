@@ -515,17 +515,12 @@ async function handleLots(url) {
     const sourceOrder = sourceSort ? (sortOrder.toLowerCase() === 'asc' && sourceSort === 'price-lowest' ? sourceSort :
       sortOrder.toLowerCase() === 'asc' && sourceSort === 'price-highest' ? 'price-lowest' :
       sortOrder.toLowerCase() === 'asc' && sourceSort === 'bids-most' ? 'bids-fewest' : sourceSort) : '';
-    const isLocalSort = !sourceSort;
     const sourcePage = Math.max(Math.floor(offset / LOT_PAGE_LIMIT) + 1, 1);
     const sourceOffset = offset % LOT_PAGE_LIMIT;
-    const all = isLocalSort
-      ? await fetchLotPool(ids, search, condition, 1, '', FULL_SORT_PAGE_LIMIT)
-      : await fetchLotPool(ids, search, condition, sourcePage, sourceOrder, LOT_PAGE_LIMIT);
+    const all = await fetchLotPool(ids, search, condition, sourcePage, sourceOrder, LOT_PAGE_LIMIT);
     const filtered = applyLotFilters(all, search, condition, profile);
     sortLots(filtered, sortBy, sortOrder);
-    const pageLots = isLocalSort
-      ? filtered.slice(offset, offset + limit)
-      : filtered.slice(sourceOffset, sourceOffset + limit);
+    const pageLots = filtered.slice(sourceOffset, sourceOffset + limit);
     return json({ status: 'ok', total: all._total || filtered.length, page: requestedPage, per_page: LOT_PAGE_LIMIT, lots: pageLots });
   } catch (e) {
     return json({ error: e.message }, 502);
