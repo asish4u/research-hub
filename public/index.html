@@ -1882,7 +1882,6 @@ const DealFinder = (() => {
   let sortBy = 'deal_score';
   let sortOrder = 'desc';
   let activeProfile = '';
-  let dealWorthiness = '';
   let acquisitionRatio = '';
   let page = 1;
   let total = 0;
@@ -1963,7 +1962,6 @@ const DealFinder = (() => {
     p.set('sort_by', sortBy);
     p.set('sort_order', sortOrder);
     p.set('profile', activeProfile);
-    p.set('worthiness', dealWorthiness);
     p.set('acquisition_ratio', acquisitionRatio);
     p.set('limit', String(LIMIT));
     p.set('page', String(Math.ceil(((page - 1) * LIMIT) / 100) + 1));
@@ -2025,8 +2023,6 @@ const DealFinder = (() => {
     $('auctionSelect').addEventListener('change', e => { selectedId = e.target.value; setProfile(''); page = 1; loadFeed(); });
     $('auctionSearch').addEventListener('input', debounce(e => { searchQuery = e.target.value.trim(); page = 1; if (watchlistMode) loadWatchlistView(); else loadFeed(); }, 350));
     $('auctionCondition').addEventListener('change', e => { conditionFilter = e.target.value; reload(); });
-    const worthinessControl = $('auctionWorthiness');
-    if (worthinessControl) worthinessControl.addEventListener('change', e => { dealWorthiness = e.target.value; reload(); });
     const ratioControl = $('auctionAcquisitionRatio');
     if (ratioControl) ratioControl.addEventListener('change', e => { acquisitionRatio = e.target.value; reload(); });
     $('auctionSort').addEventListener('change', e => { sortBy = e.target.value; reload(); });
@@ -2805,12 +2801,6 @@ function toggleEventFilter(filter) {
             <option value="A">New only</option>
             <option value="B">Like New only</option>
             <option value="C">Used & Damaged only</option>
-          </select>
-          <select class="auction-select" id="auctionWorthiness" title="Filter by deal worthiness">
-            <option value="">All Deal Quality</option>
-            <option value="excellent">Excellent · all-in cost ≤ 50% retail</option>
-            <option value="good">Good · all-in cost ≤ 70% retail</option>
-            <option value="any">Any value · below retail
           </select>
           <label class="profile-label" for="auctionAcquisitionRatio">Target ratio:</label>
           <select class="auction-select" id="auctionAcquisitionRatio" title="Show lots at or below the target acquisition ratio">
