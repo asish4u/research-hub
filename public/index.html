@@ -2811,12 +2811,13 @@ function toggleEventFilter(filter) {
             <option value="good">Good · all-in cost ≤ 70% retail</option>
             <option value="any">Any value · below retail
           </select>
-          <select class="auction-select" id="auctionAcquisitionRatio" title="Filter by acquisition ratio">
-            <option value="">All Acquisition Ratios</option>
+          <label class="profile-label" for="auctionAcquisitionRatio">Target ratio:</label>
+          <select class="auction-select" id="auctionAcquisitionRatio" title="Show lots at or below the target acquisition ratio">
+            <option value="">Any ratio</option>
             <option value="under_25">≤ 25% of retail</option>
             <option value="under_50">≤ 50% of retail</option>
             <option value="under_70">≤ 70% of retail</option>
-            <option value="under_100">Under 100% of retail</option>
+            <option value="under_100">≤ 100% of retail</option>
           </select>
           <select class="auction-select" id="auctionSort" title="Sort & rank">
             <option value="deal_score">Highest Savings</option>

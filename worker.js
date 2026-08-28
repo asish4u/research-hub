@@ -484,10 +484,10 @@ const DEAL_WORTHINESS = {
 };
 
 const ACQUISITION_RATIO_FILTERS = {
-  under_25: l => l.retail_price != null && l.total_price / l.retail_price <= 0.25,
-  under_50: l => l.retail_price != null && l.total_price / l.retail_price <= 0.50,
-  under_70: l => l.retail_price != null && l.total_price / l.retail_price <= 0.70,
-  under_100: l => l.retail_price != null && l.total_price / l.retail_price < 1
+  under_25: 0.25,
+  under_50: 0.50,
+  under_70: 0.70,
+  under_100: 1.00
 };
 
 function sortLots(lots, sortBy, sortOrder) {
@@ -552,7 +552,10 @@ async function handleLots(url) {
     const all = await fetchLotPool(ids, search, condition, sourcePage, sourceOrder, SOURCE_PAGE_LIMIT);
     let filtered = applyLotFilters(all, search, condition, profile);
     if (DEAL_WORTHINESS[worthiness]) filtered = filtered.filter(DEAL_WORTHINESS[worthiness]);
-    if (ACQUISITION_RATIO_FILTERS[acquisitionRatio]) filtered = filtered.filter(ACQUISITION_RATIO_FILTERS[acquisitionRatio]);
+    const ratioLimit = Number(ACQUISITION_RATIO_FILTERS[acquisitionRatio]);
+    if (Number.isFinite(ratioLimit)) {
+      filtered = filtered.filter(l => l.retail_price != null && l.retail_price > 0 && (l.total_price / l.retail_price) <= ratioLimit);
+    }
     sortLots(filtered, sortBy, sortOrder);
     const pageLots = filtered.slice(sourceOffset, sourceOffset + limit);
     // A source page is not enough to globally rank locally-computed scores;
