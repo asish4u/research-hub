@@ -111,7 +111,7 @@ const AUCTION_CDN = 'https://cdn.triangleliquidators.com';
 const AUCTION_UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 const AUCTION_CACHE_TTL = 120 * 1000;    // auctions + lots (fresh fetches)
 const IMAGE_CACHE_TTL = 10 * 60 * 1000;  // lot image galleries
-const LOT_PAGE_LIMIT = 24;               // Match the mobile/desktop card page size
+const LOT_PAGE_LIMIT = 100;              // Source API max page size
 const LOT_CACHE_TTL = 5 * 60 * 1000;     // Individual catalog pages
 
 const auctionCache = new Map(); // key -> { ts, ttl, value }
@@ -353,9 +353,9 @@ const CONDITION_API_MAP = { A: '1', B: '2', C: '3,4' };
 // row_id (lot id) -> raw lot from the platform, for the images endpoint.
 const lotRawIndex = new Map();
 
-async function fetchLotPool(ids, search, condition, pageNumber = 1) {
+async function fetchLotPool(ids, search, condition, pageNumber = 1, orderBy = '') {
   const locationParam = ids.join(',');
-  const cacheKey = `pool:${locationParam}|${search || ''}|${condition || 'all'}|page:${pageNumber}`;
+  const cacheKey = `pool:${locationParam}|${search || ''}|${condition || 'all'}|${orderBy || 'default'}|page:${pageNumber}`;
   const cached = aCacheGet(cacheKey);
   if (cached) return cached;
 
@@ -366,6 +366,7 @@ async function fetchLotPool(ids, search, condition, pageNumber = 1) {
   if (condition && condition !== 'all' && CONDITION_API_MAP[condition]) {
     base.set('condition', CONDITION_API_MAP[condition]);
   }
+  if (orderBy) base.set('order_by', orderBy);
 
   const pages = [];
   let first;
@@ -378,10 +379,8 @@ async function fetchLotPool(ids, search, condition, pageNumber = 1) {
     aCacheSet(cacheKey, [], LOT_CACHE_TTL);
     return [];
   }
-  // Fetch exactly one catalog page per request. The previous implementation
-  // eagerly downloaded 2,500 lots for every filter and still missed the rest
-  // of the catalog. The frontend now asks for the page it needs, while this
-  // page remains cached for five minutes at the edge.
+  // Fetch one source page per request. The source count is preserved so the
+  // dashboard can navigate the complete catalog without eager downloading.
   pages.push(first);
 
   const lots = [];
@@ -393,6 +392,7 @@ async function fetchLotPool(ids, search, condition, pageNumber = 1) {
     }
   }
   lots._total = first.count || lots.length;
+  lots._upstream_page = pageNumber;
   aCacheSet(cacheKey, lots, LOT_CACHE_TTL);
   return lots;
 }
@@ -502,19 +502,18 @@ async function handleLots(url) {
   if (!ids.length) return json({ status: 'ok', total: 0, lots: [] });
 
   try {
-    const all = await fetchLotPool(ids, search, condition, requestedPage);
-
     if (profile === 'resell' && sortBy === 'deal_score') sortBy = 'resale_score';
     if (!VALID_SORTS.has(sortBy)) sortBy = 'deal_score';
 
+    const sourceSort = sortBy === 'current_bid' ? 'current_price' :
+      sortBy === 'retail_price' ? 'estimated_retail_price' :
+      sortBy === 'lot_number' ? 'lot_number' : '';
+    const sourceOrder = sourceSort && sortOrder.toLowerCase() === 'desc' ? `${sourceSort}_desc` : sourceSort;
+    const all = await fetchLotPool(ids, search, condition, requestedPage, sourceOrder);
     const filtered = applyLotFilters(all, search, condition, profile);
-    const total = filtered.length;
-    sortLots(filtered, sortBy, sortOrder);    // API pagination already selected the page. Preserve the upstream
-    // catalog count; only apply a page-local slice for compatibility with
-    // callers that request a smaller limit.
+    sortLots(filtered, sortBy, sortOrder);
     const pageLots = filtered.slice(offset % LOT_PAGE_LIMIT, (offset % LOT_PAGE_LIMIT) + limit);
-    const upstreamTotal = all._total || all.length;
-    return json({ status: 'ok', total: upstreamTotal, page: requestedPage, per_page: LOT_PAGE_LIMIT, lots: pageLots });
+    return json({ status: 'ok', total: all._total || filtered.length, page: requestedPage, per_page: LOT_PAGE_LIMIT, lots: pageLots });
   } catch (e) {
     return json({ error: e.message }, 502);
   }
