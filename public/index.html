@@ -767,6 +767,10 @@
         <strong>🔔 Tracked visa bill changes</strong>
         <div id="lawsAlertList" style="margin-top:0.4rem;"></div>
       </div>
+      <div id="regulationPanel" class="laws-alert-panel" style="display:none;margin:0 0 0.75rem;padding:0.75rem;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface2);">
+        <strong>📢 Public comment — proposed U.S. immigration/visa regulations</strong>
+        <div id="regulationList" style="margin-top:0.4rem;"></div>
+      </div>
       <div id="visaTimelinePanel" class="laws-alert-panel" style="margin:0 0 0.75rem;padding:0.75rem;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface2);">
         <strong>🇮🇳 What changed this month</strong>
         <div id="visaTimelineSummary" style="margin-top:0.35rem;color:var(--text2);font-size:0.78rem;">Loading recent visa-law activity…</div>
@@ -1360,6 +1364,63 @@ function plainLawTitle(item) {
   return PLAIN_LAW_TITLES[item.number] || '';
 }
 
+const REGULATION_PLAIN_TITLES = {
+  '2026-17324': 'Would create a new large fee for certain H-1B petitions',
+  '2025-18473': 'Would change how H-1B lottery registrations are selected',
+  '2026-06017': 'Would change how prevailing wages for foreign workers are set',
+  '2026-11285': 'Would clarify when work authorization (EAD) can be granted',
+  '2025-16554': 'Would change how long visa holders are admitted and extend stays',
+  '2026-13392': 'Would update rules for the EB-5 investor visa program',
+  '2026-12542': 'Would adjust citizenship (naturalization) application fees',
+  '2026-03595': 'Would change work authorization rules for asylum applicants',
+  '2025-19747': 'Would change how USCIS collects and uses biometrics',
+  '2025-19642': 'Would change rules for employment-based EB-5 immigrant visas',
+  '2025-14784': 'Would change how the diversity green-card lottery is vetted'
+};
+
+function daysUntil(dateStr) {
+  if (!dateStr) return null;
+  const t = new Date(dateStr + 'T23:59:59').getTime();
+  if (isNaN(t)) return null;
+  return Math.ceil((t - Date.now()) / 86400000);
+}
+
+function renderRegulations() {
+  const panel = document.getElementById('regulationPanel');
+  const list = document.getElementById('regulationList');
+  if (!panel || !list || !regulations) return;
+  const items = regulations.items || [];
+  if (!items.length) { panel.style.display = 'none'; return; }
+  const open = items.filter(r => r.openForComment);
+  const closed = items.filter(r => !r.openForComment);
+  const row = r => {
+    const days = daysUntil(r.commentsCloseOn);
+    const plain = REGULATION_PLAIN_TITLES[r.number];
+    const title = plain ? `${plain} — ${r.title}` : r.title;
+    const openBadge = r.openForComment
+      ? `<span class="badge badge-enacted" style="font-size:0.65rem;">📭 Open — ${days != null ? `${days} day${days===1?'':'s'} left` : 'open for comment'}</span>`
+      : `<span class="badge badge-law" style="font-size:0.65rem;">🔒 Comment period closed</span>`;
+    const ag = (r.agencies || []).join(', ');
+    return `<div style="border-top:1px solid var(--border);padding:0.45rem 0;">` +
+      `<div style="font-size:0.8rem;"><a href="${escapeHtml(r.htmlUrl||'#')}" target="_blank" rel="noopener"><strong>${escapeHtml(title)}</strong></a> ${openBadge}</div>` +
+      `<div style="color:var(--text2);font-size:0.72rem;margin-top:0.15rem;">${escapeHtml(ag ? ag : '')}${r.publicationDate ? ` · Published ${formatDate(r.publicationDate)}` : ''}${r.commentsCloseOn ? ` · Submitted by ${formatDate(r.commentsCloseOn)}` : ''}
+${r.openForComment && r.commentUrl ? ` · <a href="${escapeHtml(r.commentUrl)}" target="_blank" rel="noopener" style="color:var(--green);">✍️ Submit a comment</a>` : ''}</div>` +
+      `</div>`;
+  };
+  const parts = [];
+  if (open.length) parts.push(`<div style="font-size:0.72rem;color:var(--green);font-weight:600;">Currently open for public comment (${open.length})</div>${open.map(row).join('')}`);
+  if (closed.length) parts.push(`<div style="font-size:0.72rem;color:var(--text2);font-weight:600;margin-top:0.3rem;">Recently closed (${closed.length})</div>${closed.map(row).join('')}`);
+  list.innerHTML = parts.join('');
+  panel.style.display = 'block';
+}
+
+let regulations = null;
+function fetchRegulations() {
+  apiFetch('/api/laws/regulations?v=2')
+    .then(data => { regulations = data; renderRegulations(); })
+    .catch(() => { /* silent — bills still load */ });
+}
+
 function categorizeLaw(item) {
   const t = (item.title || '').toLowerCase();
   const tags = [];
@@ -1387,6 +1448,7 @@ function fetchLaws() {
       renderLaws(activeLawsFilter);
       renderVisaTimeline();
       checkVisaLawAlerts(false);
+      fetchRegulations();
       // Public sentiment arrives separately so the list renders immediately
       fetchLawsBuzz();
     })

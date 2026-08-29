@@ -64,6 +64,13 @@ const cache = { ts: 0, byCategory: {}, all: null };
 // The default India Visa view additionally searches the whole current Congress.
 const GOVTRACK_BASE = 'https://www.govtrack.us/api/v2/bill';
 const LAWS_MONTHS = 12; // legacy category window; visa tracking spans current Congress
+
+// Federal Register API — free, no API key. Tracks agency regulations and their
+// public-comment periods (the real "public comment stage" for H-1B / H-4 / PERM
+// rulemaking, which Congressional bills don't have).
+const FR_BASE = 'https://www.federalregister.gov/api/v1/documents.json';
+const REGULATION_CACHE_TTL = 6 * 60 * 60 * 1000; // 6h (deadlines move slowly)
+const REGULATION_SEARCH_TERMS = ['H-1B', 'immigration', 'nonimmigrant', 'employment authorization'];
 const LAWS_ALERT_KEY = 'https://api.local/laws/visa-alert-state/v1';
 
 // Build GovTrack queries since `sinceDate` (YYYY-MM-DD).
@@ -1359,6 +1366,10 @@ export default {
       return safe(handleVisaAlerts());
     }
 
+    if (url.pathname === '/api/laws/regulations') {
+      return safe(handleRegulations());
+    }
+
     if (url.pathname === '/api/auctions') return handleAuctions();
     if (url.pathname === '/api/lots') return handleLots(url);
     if (url.pathname === '/api/stats') return handleStats(url);
@@ -1403,7 +1414,7 @@ export default {
   // Cron warm-up: keep the laws + buzz caches fresh so user requests
   // hit the edge cache instead of waiting on GovTrack/Google upstream.
   async scheduled(event, env, ctx) {
-    ctx.waitUntil(Promise.allSettled([handleLaws(), handleLawsBuzz(), detectVisaLawChanges()]));
+    ctx.waitUntil(Promise.allSettled([handleLaws(), handleLawsBuzz(), detectVisaLawChanges(), handleRegulations()]));
   }
 };
 
@@ -1891,6 +1902,86 @@ async function detectVisaLawChanges() {
   } catch (e) {
     console.log(`[Laws] alert snapshot failed: ${e.message}`);
   }
+}
+
+// Immigration / visa regulations currently (or recently) in a public-comment
+// period — the "lobbying/rulemaking" stage Americans weigh in on. Pulls recent
+// proposed rules from the Federal Register for H-1B, H-4, PERM, and related
+// visa matters, enriched with each document's comment deadline.
+async function handleRegulations() {
+  const cacheKey = 'https://api.local/regulations/v2';
+  const cacheApi = caches.default;
+  const cachedRes = await cacheApi.match(cacheKey);
+  if (cachedRes) return cachedRes;
+
+  const since = new Date(Date.now() - 300 * 24 * 3600 * 1000).toISOString().slice(0, 10);
+  const seen = new Map();
+  try {
+    const results = await Promise.allSettled(REGULATION_SEARCH_TERMS.map(term => {
+      const q = new URLSearchParams([
+        ['conditions[type][]', 'PRORULE'],
+        ['conditions[term]', term],
+        ['conditions[publication_date][gte]', since],
+        ['per_page', '20']
+      ]);
+      return fetchWithTimeout(`${FR_BASE}?${q}`, 15000).then(r => r.json()).then(d => d.results || []);
+    }));
+    for (const r of results) for (const doc of (r.status === 'fulfilled' ? r.value : [])) {
+      if (doc && doc.document_number) seen.set(doc.document_number, doc);
+    }
+  } catch (e) {
+    console.log(`[Regulations] search error: ${e.message}`);
+  }
+
+  // Enrich the most recent candidates with comment deadlines (list projection
+  // omits them). Bounded to stay subrequest-safe.
+  const IMMIGRATION_AGENCY = /(homeland security|citizenship and immigration|immigration|customs|labor department|employment and training|state department)|justice department/i;
+  const candidates = [...seen.values()]
+    .filter(d => {
+      const inAgency = (d.agencies || []).some(a => IMMIGRATION_AGENCY.test(a.name || a.slug || ''));
+      const inText = /(?:h-1b|h-4|h4|l-1|l1|visa|green card|perm|immigr|nonimmigrant|aliens?s|asylum|citizenship|naturaliz|lawful permanent|prevail|worker|labor)/i.test(`${d.title || ''} ${d.abstract || ''}`);
+      return inAgency && inText;
+    })
+    .sort((a, b) => ((b.publication_date || '') < (a.publication_date || '') ? -1 : 1))
+    .slice(0, 8);
+
+  const items = [];
+  await Promise.all(candidates.map(async (doc) => {
+    try {
+      const resp = await fetchWithTimeout(`https://www.federalregister.gov/api/v1/documents/${doc.document_number}.json`, 12000);
+      const full = await resp.json();
+      const close = full.comments_close_on || '';
+      items.push({
+        number: full.document_number || '',
+        title: full.title || '',
+        abstract: (full.abstract || '').slice(0, 400),
+        publicationDate: full.publication_date || '',
+        commentsCloseOn: close,
+        openForComment: !!(close && close >= new Date().toISOString().slice(0, 10)),
+        htmlUrl: full.html_url || '',
+        commentUrl: full.comment_url || '',
+        agencies: (full.agencies || []).map(a => a.name).filter(Boolean),
+        citation: full.citation || ''
+      });
+    } catch (e) { /* skip this one */ }
+  }));
+
+  items.sort((a, b) => {
+    if (a.openForComment !== b.openForComment) return a.openForComment ? -1 : 1;
+    if (a.openForComment) return (a.commentsCloseOn || '9999') < (b.commentsCloseOn || '9999') ? -1 : 1;
+    return (b.publicationDate || '') < (a.publicationDate || '') ? -1 : 1;
+  });
+
+  const payload = JSON.stringify({ status: 'ok', items, asOf: new Date().toISOString() });
+  const resp = new Response(payload, {
+    headers: {
+      'Content-Type': 'application/json; charset=utf-8',
+      'Access-Control-Allow-Origin': '*',
+      'Cache-Control': 'public, max-age=3600'
+    }
+  });
+  if (items.length) await cacheApi.put(cacheKey, resp.clone());
+  return resp;
 }
 
 async function handleLaws() {
