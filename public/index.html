@@ -759,7 +759,7 @@
         <span class="badge badge-housing">🏠 Housing</span>
         <span class="badge badge-investing">📈 Investing</span>
         <span class="badge badge-law">Other</span>
-        <span style="margin-left:0.5rem;">⚠️ = passed a chamber · 🔥 = top news coverage (public sentiment) · 🇮🇳 <strong>India Visa</strong> = current &amp; upcoming visa laws for Indian immigrants (H-1B · H-4 · L-1 · green card · PERM backlog), spanning the whole current Congress with no time cutoff; other tabs cover the last 12 months · profile: <strong>H-1B immigrant · family · homeowner · investor</strong> — via <a href="https://www.govtrack.us/" target="_blank" style="color:var(--accent);">GovTrack</a> + <a href="https://news.google.com" target="_blank" style="color:var(--accent);">Google News</a></span>
+        <span style="margin-left:0.5rem;">⚠️ = passed a chamber · 🔥 = top news coverage (public sentiment) · 🇮🇳 <strong>India Visa</strong> = current &amp; upcoming visa laws for Indian immigrants (H-1B · H-4 · L-1 · green card · PERM backlog), spanning the whole current Congress with no time cutoff; H-4 EAD changes are included · other tabs cover the last 12 months · profile: <strong>H-1B immigrant · family · homeowner · investor</strong> — via <a href="https://www.govtrack.us/" target="_blank" style="color:var(--accent);">GovTrack</a> + <a href="https://news.google.com" target="_blank" style="color:var(--accent);">Google News</a></span>
       </div>
 
       <div class="laws-grid" id="lawsGrid" role="feed" aria-label="USA Laws">
@@ -1334,7 +1334,7 @@ function categorizeLaw(item) {
     if (rule.words.some(w => t.includes(w))) tags.push(rule.key);
   }
   if (VISA_BILL_NUMBERS.has(item.number)) tags.push('visa');
-  return tags.length ? tags : ['other'];
+  return [...new Set(tags.length ? tags : ['other'])];
 }
 
 function fetchLaws() {
@@ -1401,7 +1401,15 @@ function statusClass(statusKey) {
 
 function renderLaws(filter) {
   const grid = document.getElementById('lawsGrid');
-  const filtered = allLaws.filter(item => lawMatchesFilter(item, filter));
+  const filtered = allLaws
+    .filter(item => lawMatchesFilter(item, filter))
+    .sort((a, b) => {
+      // Keep enacted/current items first, then the most recently acted-on bills.
+      const ae = a.statusKey && a.statusKey.startsWith('enacted') ? 1 : 0;
+      const be = b.statusKey && b.statusKey.startsWith('enacted') ? 1 : 0;
+      if (ae !== be) return be - ae;
+      return (b.statusDateMs || 0) - (a.statusDateMs || 0);
+    });
 
   // Update relevance-filter counts (respecting the active status filter)
   document.querySelectorAll('.laws-controls .laws-filter').forEach(t => {

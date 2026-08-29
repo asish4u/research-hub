@@ -61,6 +61,7 @@ const cache = { ts: 0, byCategory: {}, all: null };
 
 // GovTrack API — free, no key required. Returns individual bills.
 // Enacted laws + in-progress bills (yet to be enacted) from the past 12 months.
+// The default India Visa view additionally searches the whole current Congress.
 const GOVTRACK_BASE = 'https://www.govtrack.us/api/v2/bill';
 const LAWS_MONTHS = 12; // how far back to look
 
@@ -77,7 +78,12 @@ const VISA_SEARCHES = [
   ['nonimmigrant', 40],
   ['"H-1B and L-1"', 30],
   ['"immigrant backlog"', 25],
-  ['"H-4 employment"', 30]
+  ['"H-4 employment"', 30],
+  ['"H-4 EAD"', 30],
+  ['"Equal Employment for All Act"', 10],
+  ['"PERM Backlog Reduction Act"', 10],
+  ['"employment-based immigration"', 30],
+  ['"green card backlog"', 30]
 ];
 
 function lawsQueries(sinceDate) {
