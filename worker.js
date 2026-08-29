@@ -63,7 +63,8 @@ const cache = { ts: 0, byCategory: {}, all: null };
 // Enacted laws + in-progress bills (yet to be enacted) from the past 12 months.
 // The default India Visa view additionally searches the whole current Congress.
 const GOVTRACK_BASE = 'https://www.govtrack.us/api/v2/bill';
-const LAWS_MONTHS = 12; // how far back to look
+const LAWS_MONTHS = 12; // legacy category window; visa tracking spans current Congress
+const LAWS_ALERT_KEY = 'https://api.local/laws/visa-alert-state/v1';
 
 // Build GovTrack queries since `sinceDate` (YYYY-MM-DD).
 // Enacted statuses: signed by the President, 10-day rule (unsigned), veto override.
@@ -1354,6 +1355,10 @@ export default {
       return safe(handleLawsBuzz());
     }
 
+    if (url.pathname === '/api/laws/alerts') {
+      return safe(handleVisaAlerts());
+    }
+
     if (url.pathname === '/api/auctions') return handleAuctions();
     if (url.pathname === '/api/lots') return handleLots(url);
     if (url.pathname === '/api/stats') return handleStats(url);
@@ -1398,7 +1403,7 @@ export default {
   // Cron warm-up: keep the laws + buzz caches fresh so user requests
   // hit the edge cache instead of waiting on GovTrack/Google upstream.
   async scheduled(event, env, ctx) {
-    ctx.waitUntil(Promise.allSettled([handleLaws(), handleLawsBuzz()]));
+    ctx.waitUntil(Promise.allSettled([handleLaws(), handleLawsBuzz(), detectVisaLawChanges()]));
   }
 };
 
@@ -1824,6 +1829,68 @@ async function handleLawsBuzz() {
   });
   await cacheApi.put(cacheKey, resp.clone());
   return resp;
+}
+
+async function handleVisaAlerts() {
+  const lawsResponse = await handleLaws();
+  const data = await lawsResponse.clone().json();
+  const items = (data.items || []).filter(isTrackedVisaBill);
+  const state = await readVisaAlertState();
+  const changes = items
+    .map(item => {
+      const previous = state.items && state.items[item.number];
+      if (!previous || previous.statusKey === item.statusKey && previous.statusDate === item.statusDate) return null;
+      return {
+        number: item.number,
+        title: item.title,
+        link: item.link,
+        previousStatus: previous.status || '',
+        status: item.status,
+        statusKey: item.statusKey,
+        statusDate: item.statusDate,
+        changedAt: new Date().toISOString()
+      };
+    })
+    .filter(Boolean);
+  return json({ status: 'ok', changes, tracked: items.length, checkedAt: new Date().toISOString() });
+}
+
+async function readVisaAlertState() {
+  const cached = await caches.default.match(LAWS_ALERT_KEY);
+  if (!cached) return { items: {} };
+  try { return await cached.json(); } catch (e) { return { items: {} }; }
+}
+
+async function writeVisaAlertState(items) {
+  const response = new Response(JSON.stringify({ items, updatedAt: new Date().toISOString() }), {
+    headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=600' }
+  });
+  await caches.default.put(LAWS_ALERT_KEY, response);
+}
+
+function isTrackedVisaBill(item) {
+  return item && item.number && (VISA_BILL_NUMBERS_FOR_ALERTS.has(item.number) ||
+    /(?:h-?1b|h-?4|l-?1|visa|green card|perm|immigration|nonimmigrant|work authorization|employment-based)/i.test(item.title || ''));
+}
+
+const VISA_BILL_NUMBERS_FOR_ALERTS = new Set([
+  'H.R. 5354', 'S. 2798', 'H.R. 9157', 'S. 2821', 'H.R. 5283', 'S. 2759',
+  'H.R. 10023', 'S. 5186', 'S. 2928', 'H.R. 6937', 'S. 5097', 'H.R. 8443',
+  'H.R. 10051', 'H.R. 9457', 'H.R. 8683'
+]);
+
+async function detectVisaLawChanges() {
+  try {
+    const lawsResponse = await handleLaws();
+    const data = await lawsResponse.clone().json();
+    const next = {};
+    for (const item of (data.items || []).filter(isTrackedVisaBill)) {
+      next[item.number] = { status: item.status, statusKey: item.statusKey, statusDate: item.statusDate, title: item.title, link: item.link };
+    }
+    await writeVisaAlertState(next);
+  } catch (e) {
+    console.log(`[Laws] alert snapshot failed: ${e.message}`);
+  }
 }
 
 async function handleLaws() {

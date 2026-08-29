@@ -743,6 +743,7 @@
         <button class="laws-filter" data-laws="investing" role="tab">📈 Investing <span class="count"></span></button>
         <button class="laws-filter" data-laws="other" role="tab">🗂️ Other <span class="count"></span></button>
         <button class="laws-refresh" id="lawsRefresh" title="Refresh laws">⟳ Refresh</button>
+        <button class="laws-refresh" id="lawsAlerts" title="Check tracked visa bill status changes">🔔 Alerts <span id="lawsAlertCount" class="count"></span></button>
       </div>
 
       <div class="laws-status-filter" role="tablist" aria-label="Law status">
@@ -760,6 +761,11 @@
         <span class="badge badge-investing">📈 Investing</span>
         <span class="badge badge-law">Other</span>
         <span style="margin-left:0.5rem;">⚠️ = passed a chamber · 🔥 = top news coverage (public sentiment) · 🇮🇳 <strong>India Visa</strong> = current &amp; upcoming visa laws for Indian immigrants (H-1B · H-4 · L-1 · green card · PERM backlog), spanning the whole current Congress with no time cutoff; H-4 EAD changes are included · other tabs cover the last 12 months · profile: <strong>H-1B immigrant · family · homeowner · investor</strong> — via <a href="https://www.govtrack.us/" target="_blank" style="color:var(--accent);">GovTrack</a> + <a href="https://news.google.com" target="_blank" style="color:var(--accent);">Google News</a></span>
+      </div>
+
+      <div id="lawsAlertPanel" class="laws-alert-panel" style="display:none;margin:0 0 0.75rem;padding:0.75rem;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface2);">
+        <strong>🔔 Tracked visa bill changes</strong>
+        <div id="lawsAlertList" style="margin-top:0.4rem;"></div>
       </div>
 
       <div class="laws-grid" id="lawsGrid" role="feed" aria-label="USA Laws">
@@ -1296,6 +1302,8 @@ document.getElementById('newsRefresh').addEventListener('click', () => {
 let activeLawsFilter = 'visa';
 let allLaws = [];
 let lawsLoaded = false;
+let visaLawAlerts = [];
+const VISA_ALERTS_STORAGE_KEY = 'research-hub-visa-alerts-v1';
 
 // Personal profile: H-1B immigrant, family (wife + 8-month daughter),
 // homeowner with mortgage, stock/ETF investor.
@@ -1352,6 +1360,7 @@ function fetchLaws() {
       allLaws = items.map(item => ({ ...item, tags: categorizeLaw(item), buzz: 0 }));
       lawsLoaded = true;
       renderLaws(activeLawsFilter);
+      checkVisaLawAlerts(false);
       // Public sentiment arrives separately so the list renders immediately
       fetchLawsBuzz();
     })
@@ -1359,6 +1368,43 @@ function fetchLaws() {
       grid.innerHTML = `<div class="news-error">⚠️ Could not load laws. ${err.message} — try the ⟳ Refresh button.</div>`;
     });
 }
+
+async function checkVisaLawAlerts(showPanel = true) {
+  const button = document.getElementById('lawsAlerts');
+  if (button) button.disabled = true;
+  try {
+    const data = await apiFetch('/api/laws/alerts?v=1');
+    visaLawAlerts = Array.isArray(data.changes) ? data.changes : [];
+    if (showPanel) renderVisaLawAlerts();
+    const count = document.getElementById('lawsAlertCount');
+    if (count) count.textContent = visaLawAlerts.length ? `(${visaLawAlerts.length})` : '';
+    if (visaLawAlerts.length && 'Notification' in window && Notification.permission === 'granted') {
+      visaLawAlerts.slice(0, 3).forEach(change => new Notification('Visa bill status changed', { body: `${change.number}: ${change.status}` }));
+    }
+  } catch (e) {
+    const list = document.getElementById('lawsAlertList');
+    if (showPanel && list) list.textContent = 'Alerts are temporarily unavailable.';
+  } finally {
+    if (button) button.disabled = false;
+  }
+}
+
+function renderVisaLawAlerts() {
+  const panel = document.getElementById('lawsAlertPanel');
+  const list = document.getElementById('lawsAlertList');
+  if (!panel || !list) return;
+  panel.style.display = 'block';
+  if (!visaLawAlerts.length) {
+    list.innerHTML = '<span style="color:var(--text2);">No new tracked visa bill status changes.</span>';
+    return;
+  }
+  list.innerHTML = visaLawAlerts.map(change => `<div style="padding:0.35rem 0;border-top:1px solid var(--border);"><a href="${escapeHtml(change.link || '#')}" target="_blank" rel="noopener"><strong>${escapeHtml(change.number)}</strong>: ${escapeHtml(change.title || '')}</a><br><span style="color:var(--accent);">${escapeHtml(change.previousStatus || 'Previously tracked')} → ${escapeHtml(change.status || change.statusKey || 'Updated')}</span></div>`).join('');
+}
+
+document.getElementById('lawsAlerts').addEventListener('click', async () => {
+  if ('Notification' in window && Notification.permission === 'default') await Notification.requestPermission();
+  await checkVisaLawAlerts(true);
+});
 
 function fetchLawsBuzz() {
   apiFetch('/api/laws/buzz?v=3')
