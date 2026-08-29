@@ -1340,6 +1340,26 @@ const LAW_RULES = [
     words: ['capital gain', 'stock', 'etf', 'retirement', '401(k)', '401k', 'roth ira', 'traditional ira', 'individual retirement', 'dividend', 'securities', 'stock exchange', 'investment', 'index fund', 'tax-deferred', 'rmd', 'pension', 'annuity', 'mutual fund', 'savings bond', 'investor', 'inflation'] }
 ];
 
+const PLAIN_LAW_TITLES = {
+  'H.R. 5354': 'Would end H-4 spouse work permits',
+  'S. 2798': 'Would end H-4 spouse work permits',
+  'H.R. 9157': 'Would tighten H-1B and H-4 work rules',
+  'S. 2821': 'Would reduce H-1B visa availability',
+  'S. 2928': 'Would change H-1B and L-1 visa rules',
+  'H.R. 6937': 'Would end the H-1B program',
+  'S. 5097': 'Would change H-1B visa requirements',
+  'H.R. 8443': 'Would change H-1B visa requirements',
+  'H.R. 10051': 'Would reduce PERM green-card backlogs',
+  'H.R. 9457': 'Would protect and update diversity visas',
+  'H.R. 5283': 'Would make more healthcare green cards available',
+  'S. 2759': 'Would make more healthcare green cards available',
+  'H.R. 8683': 'Would protect OPT work authorization'
+};
+
+function plainLawTitle(item) {
+  return PLAIN_LAW_TITLES[item.number] || '';
+}
+
 function categorizeLaw(item) {
   const t = (item.title || '').toLowerCase();
   const tags = [];
@@ -1432,7 +1452,9 @@ function renderVisaTimeline() {
   }
   timeline.innerHTML = recent.slice(0, 12).map(item => {
     const kind = item.statusKey === 'introduced' ? '🆕 New introduction' : `🔄 ${statusText(item).replace(/^\S+\s*/, '')}`;
-    return `<div style="border-top:1px solid var(--border);padding:0.45rem 0;font-size:0.78rem;"><span style="color:var(--text2);">${escapeHtml(formatDate(item.statusDate))}</span> · <strong>${escapeHtml(kind)}</strong> · <a href="${escapeHtml(item.link || '#')}" target="_blank" rel="noopener">${escapeHtml(item.number)}: ${escapeHtml(item.title)}</a></div>`;
+    const plain = plainLawTitle(item);
+    const title = plain ? `${plain} — ${item.title}` : item.title;
+    return `<div style="border-top:1px solid var(--border);padding:0.45rem 0;font-size:0.78rem;"><span style="color:var(--text2);">${escapeHtml(formatDate(item.statusDate))}</span> · <strong>${escapeHtml(kind)}</strong> · <a href="${escapeHtml(item.link || '#')}" target="_blank" rel="noopener"><strong>${escapeHtml(item.number)}</strong>: ${escapeHtml(title)}</a></div>`;
   }).join('');
 }
 
@@ -1531,7 +1553,8 @@ function renderLaws(filter) {
 
     return `<a href="${item.link}" target="_blank" rel="noopener" class="laws-item">
       <div class="laws-body">
-        <div class="laws-title">${escapeHtml(cleanTitle(item.number))}: ${escapeHtml(cleanTitle(item.title))}</div>
+        <div class="laws-title">${escapeHtml(cleanTitle(item.number))}: ${escapeHtml(plainLawTitle(item) || cleanTitle(item.title))}</div>
+        ${plainLawTitle(item) ? `<div style="margin-top:0.15rem;color:var(--text2);font-size:0.72rem;">Official title: ${escapeHtml(cleanTitle(item.title))}</div>` : ''}
         <div class="laws-meta">
           ${tagsHtml}
           ${statusHtml}
