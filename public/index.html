@@ -767,6 +767,11 @@
         <strong>🔔 Tracked visa bill changes</strong>
         <div id="lawsAlertList" style="margin-top:0.4rem;"></div>
       </div>
+      <div id="visaTimelinePanel" class="laws-alert-panel" style="margin:0 0 0.75rem;padding:0.75rem;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface2);">
+        <strong>🇮🇳 What changed this month</strong>
+        <div id="visaTimelineSummary" style="margin-top:0.35rem;color:var(--text2);font-size:0.78rem;">Loading recent visa-law activity…</div>
+        <div id="visaTimeline" style="margin-top:0.55rem;"></div>
+      </div>
 
       <div class="laws-grid" id="lawsGrid" role="feed" aria-label="USA Laws">
         <div class="news-loader"><div class="spinner"></div>Loading laws…</div>
@@ -1360,6 +1365,7 @@ function fetchLaws() {
       allLaws = items.map(item => ({ ...item, tags: categorizeLaw(item), buzz: 0 }));
       lawsLoaded = true;
       renderLaws(activeLawsFilter);
+      renderVisaTimeline();
       checkVisaLawAlerts(false);
       // Public sentiment arrives separately so the list renders immediately
       fetchLawsBuzz();
@@ -1405,6 +1411,30 @@ document.getElementById('lawsAlerts').addEventListener('click', async () => {
   if ('Notification' in window && Notification.permission === 'default') await Notification.requestPermission();
   await checkVisaLawAlerts(true);
 });
+
+function renderVisaTimeline() {
+  const timeline = document.getElementById('visaTimeline');
+  const summary = document.getElementById('visaTimelineSummary');
+  if (!timeline || !summary) return;
+  const visaItems = allLaws.filter(item => lawMatchesRelevance(item, 'visa'));
+  const now = new Date();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+  const recent = visaItems.filter(item => (item.statusDateMs || 0) >= monthStart)
+    .sort((a, b) => (b.statusDateMs || 0) - (a.statusDateMs || 0));
+  const introductions = recent.filter(item => item.statusKey === 'introduced');
+  const statusChanges = recent.filter(item => item.statusKey !== 'introduced');
+  summary.textContent = recent.length
+    ? `${recent.length} India Visa item${recent.length === 1 ? '' : 's'} updated this month · ${introductions.length} new introduction${introductions.length === 1 ? '' : 's'} · ${statusChanges.length} other status change${statusChanges.length === 1 ? '' : 's'}`
+    : 'No India Visa introductions or status changes recorded this month.';
+  if (!recent.length) {
+    timeline.innerHTML = '<span style="color:var(--text2);font-size:0.78rem;">The timeline will update as GovTrack records new activity.</span>';
+    return;
+  }
+  timeline.innerHTML = recent.slice(0, 12).map(item => {
+    const kind = item.statusKey === 'introduced' ? '🆕 New introduction' : `🔄 ${statusText(item).replace(/^\S+\s*/, '')}`;
+    return `<div style="border-top:1px solid var(--border);padding:0.45rem 0;font-size:0.78rem;"><span style="color:var(--text2);">${escapeHtml(formatDate(item.statusDate))}</span> · <strong>${escapeHtml(kind)}</strong> · <a href="${escapeHtml(item.link || '#')}" target="_blank" rel="noopener">${escapeHtml(item.number)}: ${escapeHtml(item.title)}</a></div>`;
+  }).join('');
+}
 
 function fetchLawsBuzz() {
   apiFetch('/api/laws/buzz?v=3')
@@ -1548,7 +1578,7 @@ document.querySelectorAll('.laws-status-filter .laws-filter').forEach(tab => {
     document.querySelectorAll('.laws-status-filter .laws-filter').forEach(t => t.classList.remove('active'));
     tab.classList.add('active');
     activeLawsStatus = tab.dataset.lawstatus;
-    if (lawsLoaded) renderLaws(activeLawsFilter);
+    if (lawsLoaded) { renderLaws(activeLawsFilter); renderVisaTimeline(); }
   });
 });
 
