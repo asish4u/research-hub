@@ -731,11 +731,12 @@
   <!-- ════════════════════════════════════════════════════════════ -->
   <div id="lawsSection" style="display:none;">
     <div class="featured-section">
-      <h2 class="laws-h2">⚖️ US Laws — Enacted & In Progress <span style="font-size:0.75rem;color:var(--text2);font-weight:400;">— last 12 months · realtime via GovTrack</span></h2>
+      <h2 class="laws-h2">⚖️ US Laws — Enacted & In Progress <span style="font-size:0.75rem;color:var(--text2);font-weight:400;">— 🇮🇳 India Visa view · current &amp; upcoming, whole current Congress (no time cutoff) · realtime via GovTrack</span></h2>
 
       <div class="laws-controls" role="tablist" aria-label="Law categories">
+        <button class="laws-filter active" data-laws="visa" role="tab" aria-selected="true">🇮🇳 India Visa <span class="count"></span></button>
         <button class="laws-filter" data-laws="all" role="tab">📋 All <span class="count"></span></button>
-        <button class="laws-filter active" data-laws="for-you" role="tab" aria-selected="true">⭐ For You <span class="count"></span></button>
+        <button class="laws-filter" data-laws="for-you" role="tab">⭐ For You <span class="count"></span></button>
         <button class="laws-filter" data-laws="immigration" role="tab">🛂 Immigration <span class="count"></span></button>
         <button class="laws-filter" data-laws="family" role="tab">👨‍👩‍👧 Family <span class="count"></span></button>
         <button class="laws-filter" data-laws="housing" role="tab">🏠 Housing <span class="count"></span></button>
@@ -758,7 +759,7 @@
         <span class="badge badge-housing">🏠 Housing</span>
         <span class="badge badge-investing">📈 Investing</span>
         <span class="badge badge-law">Other</span>
-        <span style="margin-left:0.5rem;">⚠️ = passed a chamber · 🔥 = top news coverage (public sentiment) · All laws & bills from the last <strong>12 months</strong>, tagged for your profile: <strong>H-1B immigrant · family · homeowner · investor</strong> — via <a href="https://www.govtrack.us/" target="_blank" style="color:var(--accent);">GovTrack</a> + <a href="https://news.google.com" target="_blank" style="color:var(--accent);">Google News</a></span>
+        <span style="margin-left:0.5rem;">⚠️ = passed a chamber · 🔥 = top news coverage (public sentiment) · 🇮🇳 <strong>India Visa</strong> = current &amp; upcoming visa laws for Indian immigrants (H-1B · H-4 · L-1 · green card · PERM backlog), spanning the whole current Congress with no time cutoff; other tabs cover the last 12 months · profile: <strong>H-1B immigrant · family · homeowner · investor</strong> — via <a href="https://www.govtrack.us/" target="_blank" style="color:var(--accent);">GovTrack</a> + <a href="https://news.google.com" target="_blank" style="color:var(--accent);">Google News</a></span>
       </div>
 
       <div class="laws-grid" id="lawsGrid" role="feed" aria-label="USA Laws">
@@ -1292,14 +1293,30 @@ document.getElementById('newsRefresh').addEventListener('click', () => {
 
 // ═══════════════════════════════════════════════════════════════════
 // USA LAWS
-let activeLawsFilter = 'for-you';
+let activeLawsFilter = 'visa';
 let allLaws = [];
 let lawsLoaded = false;
 
 // Personal profile: H-1B immigrant, family (wife + 8-month daughter),
 // homeowner with mortgage, stock/ETF investor.
 // Keyword rules used to tag each bill's relevance to this profile.
+// 🇮🇳 India Visa — current & upcoming US visa laws for Indian immigrants.
+// Covers H-1B, H-4, L-1, green card / per-country cap, PERM backlog, EAD, OPT,
+// diversity/student visas, EB categories, etc. Bills are fetched across the whole
+// current Congress (no 12-month cutoff).
+const VISA_BILL_NUMBERS = new Set([
+  // Titles hide the visa relevance (matched by GovTrack full-text), so tag by number:
+  'H.R. 5354', 'S. 2798',          // Equal Employment for All Act of 2025 (would revoke H-4 EAD work authorization)
+  'H.R. 9157',                     // American White-Collar Worker Jobs Act of 2026 (H-1B / H-4 restrictions)
+  'S. 2821',                       // American Tech Workforce Act of 2025 (H-1B cap cuts)
+  'H.R. 5283', 'S. 2759',          // Healthcare Workforce Resilience Act (recaptures unused immigrant visas for healthcare workers)
+  'H.R. 10023', 'S. 5186'          // ASSET Act (H-1B / talent visas)
+]);
 const LAW_RULES = [
+  { key: 'visa', label: 'India Visa', icon: '🇮🇳',
+    // Short substrings like ead/stem/perm/opt over-match (Leadership, Stem Cell,
+    // Permanency…), so only longer unambiguous phrases are used for those.
+    words: ['h-1b', 'h1b', 'h-4', 'h4', 'l-1', 'l1', 'l-2', 'l2', 'o-1', 'f-1', 'f-2', 'j-1', 'j-2', 'visa', 'green card', 'immigrant visa', 'nonimmigrant', 'work authorization', 'employment authorization', 'employment authorization document', 'optional practical training', 'stem opt', 'per country', 'per-country', 'country cap', 'immigrant backlog', 'backlog reduction', 'perm backlog', 'labor certification', 'adjustment of status', 'lawful permanent', 'immigrant investor', 'foreign worker', 'diversity visa', 'student visa', 'h-2b', 'h-2a', 'eb-1', 'eb-2', 'eb-3', 'eb-4', 'eb-5', 'immigrant worker'] },
   { key: 'immigration', label: 'Immigration', icon: '🛂',
     words: ['immigration', 'immigrant', 'visa', 'h-1b', 'h1b', 'green card', 'citizenship', 'naturaliz', 'alien', 'deport', 'asylum', 'work authorization', 'nonimmigrant', 'foreign worker', 'dhs', 'border', 'permanent resident', 'lawful permanent', 'immigrant visa'] },
   { key: 'family', label: 'Family', icon: '👨‍👩‍👧',
@@ -1310,12 +1327,13 @@ const LAW_RULES = [
     words: ['capital gain', 'stock', 'etf', 'retirement', '401(k)', '401k', 'roth ira', 'traditional ira', 'individual retirement', 'dividend', 'securities', 'stock exchange', 'investment', 'index fund', 'tax-deferred', 'rmd', 'pension', 'annuity', 'mutual fund', 'savings bond', 'investor', 'inflation'] }
 ];
 
-function categorizeLaw(title) {
-  const t = title.toLowerCase();
+function categorizeLaw(item) {
+  const t = (item.title || '').toLowerCase();
   const tags = [];
   for (const rule of LAW_RULES) {
     if (rule.words.some(w => t.includes(w))) tags.push(rule.key);
   }
+  if (VISA_BILL_NUMBERS.has(item.number)) tags.push('visa');
   return tags.length ? tags : ['other'];
 }
 
@@ -1324,14 +1342,14 @@ function fetchLaws() {
   grid.innerHTML = '<div class="news-loader"><div class="spinner"></div><p>Loading laws…</p></div>';
 
   // ?v= busts the CDN/edge cache when the payload format changes
-  apiFetch('/api/laws?v=4')
+  apiFetch('/api/laws?v=5')
     .then(data => {
       const items = data.items || [];
       if (!items.length) {
         grid.innerHTML = '<div class="empty"><p>No laws available right now — the GovTrack data source is slow or unreachable. Try the ⟳ Refresh button in a moment.</p></div>';
         return;
       }
-      allLaws = items.map(item => ({ ...item, tags: categorizeLaw(item.title), buzz: 0 }));
+      allLaws = items.map(item => ({ ...item, tags: categorizeLaw(item), buzz: 0 }));
       lawsLoaded = true;
       renderLaws(activeLawsFilter);
       // Public sentiment arrives separately so the list renders immediately

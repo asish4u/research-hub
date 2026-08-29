@@ -68,6 +68,18 @@ const LAWS_MONTHS = 12; // how far back to look
 // Enacted statuses: signed by the President, 10-day rule (unsigned), veto override.
 // Pending statuses: bills that passed at least one chamber (closest to becoming law)
 // plus the newest introductions for breadth.
+// Visa-specific full-text searches (relevance-ranked, whole current Congress — no
+// 12-month cutoff) so current & upcoming US visa laws for Indian immigrants —
+// H-1B, H-4, L-1, green card / PERM backlog, etc. — are always included.
+const VISA_SEARCHES = [
+  ['"H-1B"', 40],
+  ['visa', 40],
+  ['nonimmigrant', 40],
+  ['"H-1B and L-1"', 30],
+  ['"immigrant backlog"', 25],
+  ['"H-4 employment"', 30]
+];
+
 function lawsQueries(sinceDate) {
   const enacted = [
     ['enacted_signed', 150],
@@ -85,7 +97,9 @@ function lawsQueries(sinceDate) {
     ...enacted.map(([s, l]) => `${GOVTRACK_BASE}?congress=119&current_status=${s}&current_status_date__gte=${sinceDate}&order_by=-current_status_date&limit=${l}`),
     ...pending.map(([s, l]) => `${GOVTRACK_BASE}?congress=119&current_status=${s}&current_status_date__gte=${sinceDate}&order_by=-current_status_date&limit=${l}`),
     // Newest introductions within the window (breadth)
-    `${GOVTRACK_BASE}?congress=119&introduced_date__gte=${sinceDate}&order_by=-introduced_date&limit=50`
+    `${GOVTRACK_BASE}?congress=119&introduced_date__gte=${sinceDate}&order_by=-introduced_date&limit=50`,
+    // Visa-relevant bills across the whole current Congress (disregarding time)
+    ...VISA_SEARCHES.map(([q, l]) => `${GOVTRACK_BASE}?congress=119&q=${encodeURIComponent(q)}&limit=${l}`)
   ];
 }
 
@@ -1807,7 +1821,7 @@ async function handleLawsBuzz() {
 }
 
 async function handleLaws() {
-  const cacheKey = 'https://api.local/laws/v4';
+  const cacheKey = 'https://api.local/laws/v5';
 
   // Edge cache (Cloudflare Cache API) — serves the payload without re-hitting GovTrack.
   const cacheApi = caches.default;
