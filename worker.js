@@ -366,6 +366,8 @@ function parseLot(lot) {
     recommended_bid: recommendedBid,
     deal_score: dealScore,
     time_left: formatTimeLeft(lot.ends_at),
+    ends_at: lot.ends_at || null,
+    status: lot.status || 'live',
     total_price: totalPrice,
     popularity_score: popularityScore,
     resale_score: resaleScore,
@@ -845,7 +847,13 @@ async function liveWatchlistPull(env) {
     applySection(data.outbid.results, 'outbid');
     applySection(data.winning.results, 'winning');
 
-    const parsed = allRaw.map(parseLot).filter(Boolean);
+    // Keep only unsold, still-open lots: the platform marks sold/ended lots
+    // with a non-live status (and ended lots carry a past ends_at), and a
+    // sold product must never resurface in the dashboard's watchlist.
+    const parsed = allRaw
+      .filter(raw => !raw.status || raw.status === 'live')
+      .filter(raw => !raw.ends_at || new Date(raw.ends_at).getTime() > Date.now())
+      .map(parseLot).filter(Boolean);
     for (const pl of parsed) {
       const s = standingById.get(pl.row_id);
       if (s) pl.standing = s;
@@ -871,9 +879,19 @@ async function handleWatchlistGet(env) {
         const existing = byId.get(rid);
         byId.set(rid, existing ? { ...existing, ...pl } : { ...pl, added_at: new Date().toISOString() });
       }
-      const merged = [...byId.values()];
+      // Prune entries the platform no longer tracks: once a lot is sold or
+      // its auction ends it drops out of the control-panel watchlist, so any
+      // KV entry absent from a successful full pull is stale (sold/ended).
+      // A short grace window keeps just-toggled lots from being culled
+      // mid-race between a toggle and this pull.
+      const platformIds = new Set(platformLots.map(l => String(l.row_id)));
+      const GRACE_MS = 15 * 60 * 1000;
+      const merged = [...byId.values()].filter(entry =>
+        platformIds.has(String(entry.row_id)) ||
+        (entry.added_at && Date.now() - new Date(entry.added_at).getTime() < GRACE_MS)
+      );
       await watchlistSet(env, merged);
-      return json({ status: 'ok', lots: merged });
+      return json({ status: 'ok', lots: merged, pruned: list.length - merged.length });
     }
   } catch (e) {
     console.log(`[Watchlist] merge error: ${e.message}`);
