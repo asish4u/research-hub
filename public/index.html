@@ -1851,8 +1851,8 @@ const databases = [
   { name: 'Gale Ebooks', desc: 'Encyclopedias, almanacs, specialized reference ebooks.', cat: 'Ebooks', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/galevirtual' },
   { name: 'NoveList Plus', desc: 'Book recommendations — read-alikes, series guides.', cat: 'Ebooks', access: 'shared', section: 'nc', url: 'https://login.proxy189.nclive.org/login?url=https://resources.nclive.org/novelistplus' },
   // Wake County
-  { name: 'Wake County Library Catalog', desc: 'Books, audiobooks, DVDs, and physical materials.', cat: 'General', access: 'wake', section: 'nc', url: 'https://catalog.wake.gov/' },
-  { name: 'Libby / OverDrive', desc: 'Borrow ebooks & audiobooks from Wake County.', cat: 'Ebooks', access: 'wake', section: 'nc', url: 'https://wakecounty.overdrive.com/' },
+  { name: 'Wake County Library Catalog', desc: 'Books, audiobooks, DVDs, and physical materials.', cat: 'General', access: 'wake', section: 'nc', popular: true, url: 'https://catalog.wake.gov/' },
+  { name: 'Libby / OverDrive', desc: 'Borrow ebooks & audiobooks from Wake County.', cat: 'Ebooks', access: 'wake', section: 'nc', popular: true, url: 'https://wakecounty.overdrive.com/' },
 
   // ═══ INTERNATIONAL & OPEN ACCESS ═══
   { name: 'Sci-Hub', desc: 'Free access to 85M+ scholarly articles. Bypass paywalls.', cat: 'General', access: 'scihub', section: 'intl', popular: true, url: 'https://sci-hub.ru/' },
@@ -1978,7 +1978,9 @@ function filterDB(db) {
 
 function render() {
   const filtered = databases.filter(filterDB);
-  const featured = filtered.filter(d => d.popular && d.section === 'nc');
+  // Wake County library links first, then the rest of the popular NC picks
+  const featured = filtered.filter(d => d.popular && d.section === 'nc')
+    .sort((a, b) => (b.access === 'wake') - (a.access === 'wake'));
   const scihubItems = filtered.filter(d => d.access === 'scihub');
   const indiaFeatured = filtered.filter(d => d.section === 'india' && d.popular);
   const intlFeatured = filtered.filter(d => d.popular && d.section === 'intl' && d.access !== 'scihub');
@@ -1990,7 +1992,7 @@ function render() {
     document.getElementById('featuredSection').style.display = 'block';
     featuredEl.innerHTML = featured.map(d => {
       const b = getAccessInfo(d.access);
-      return `<a href="${d.url}" target="_blank" class="card featured"><div class="top"><div class="name">${d.name}</div><span class="badge ${b.badge}">${b.label}</span></div><div class="desc">${d.desc}</div></a>`;
+      return `<a href="${d.url}" target="_blank" class="card featured"><div class="top"><div class="name">${d.name}</div>${d.access === 'wake' ? '<span class="popular-badge">★ Popular</span>' : ''}<span class="badge ${b.badge}">${b.label}</span></div><div class="desc">${d.desc}</div></a>`;
     }).join('');
   } else document.getElementById('featuredSection').style.display = 'none';
 
