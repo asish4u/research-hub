@@ -1392,6 +1392,8 @@ export default {
     if (url.pathname === '/api/lots') return handleLots(url);
     if (url.pathname === '/api/stats') return handleStats(url);
     if (url.pathname === '/api/lot/images') return handleLotImages(url);
+    if (url.pathname === '/api/baby') return handleBaby();
+
     if (url.pathname === '/api/watchlist') {
       if (request.method === 'GET') return handleWatchlistGet(env);
       if (request.method === 'POST') return handleWatchlistToggle(request, env);
@@ -1435,6 +1437,155 @@ export default {
     ctx.waitUntil(Promise.allSettled([handleLaws(), handleLawsBuzz(), detectVisaLawChanges(), handleRegulations()]));
   }
 };
+
+
+// ── Baby & Parenting ────────────────────────────────────────────────────
+// Curated, plain-language prep content for parents of a 9-month-old, with
+// immigrant-parent context (visa/residency/employment authorization notes,
+// WIC, NC child care subsidy, FMLA/leave, dependent care tax credit). This is
+// curated content, not medical advice — always confirm with a pediatrician and
+// official sources for the child's actual schedule and eligibility.
+const BABY_CACHE_TTL_MS = 5 * 60 * 1000;
+let babyCache = { ts: 0, sections: null };
+
+async function handleBaby() {
+  const now = Date.now();
+  if (babyCache.sections && now - babyCache.ts < BABY_CACHE_TTL_MS) {
+    return json({ status: 'ok', sections: babyCache.sections, cached: true });
+  }
+
+  babyCache.ts = now;
+  babyCache.sections = BABY_SECTIONS;
+  return json({ status: 'ok', sections: BABY_SECTIONS, cached: false });
+}
+
+const BABY_SECTIONS = [
+  {
+    id: 'milestones',
+    title: 'What most 9-month-olds are doing',
+    summary: 'Every baby develops at their own pace, but these are common 9-month milestones. If you have concerns, mention them at the next pediatric visit — early support helps.',
+    items: [
+      { heading: 'Moving', body: 'Many 9-month-olds sit without support, crawl or scoot, pull to stand, and cruise along furniture. Some skip crawling and go straight to pulling up — both are normal.' },
+      { heading: 'Hands and understanding', body: 'Pincer grasp (thumb + forefinger) is often developing, so picking up small bits of food becomes possible. Babies this age often look for hidden objects and understand "no" better, though they do not always obey it.' },
+      { heading: 'Sounds and communication', body: 'Babbling usually includes repeated syllables like "mamamama" and "bababa." Many babies use gestures — pointing, waving, reaching to be picked up. They often respond to their name and recognize familiar people.' },
+      { heading: 'Feeding', body: 'At 9 months, many babies eat a wider range of textures — mashed, finely chopped, and soft finger foods. Iron-rich foods still matter. Avoid choking hazards: whole grapes, nuts, popcorn, chunks of hard raw vegetables/fruit, globs of nut butter, and hot dogs cut in rounds.' },
+      { heading: 'Sleep', body: 'Many 9-month-olds sleep through the night and have 2 naps, but sleep can regress with teething, illness, or developmental leaps. A consistent bedtime routine helps.' }
+    ],
+    cta: { label: 'When to call the pediatrician', body: 'Call if your baby loses skills they once had, does not sit with help, does not respond to sounds or their name, does not make babbling sounds, or seems unusually floppy or stiff. When in doubt, ask — that is what the clinic is for.' }
+  },
+  {
+    id: 'food-and-feeding',
+    title: 'Food, feeding, and choking safety',
+    summary: 'At 9 months, food is increasingly about practice, nutrients, and building habits — not just calories. Keep mealtimes calm and let the baby explore.',
+    items: [
+      { heading: 'Continue breast milk or formula', body: 'Breast milk or formula is still an important part of nutrition at 9 months. As solid foods increase, many babies gradually reduce formula/breast milk feeds — but there is no fixed schedule that fits every baby.' },
+      { heading: 'Iron and zinc matter', body: 'Iron-rich foods are especially important around this age: meats, poultry, beans, lentils, iron-fortified cereals, and combinations like meat + veggies. Pair plant-based iron with vitamin C foods when possible to help absorption.' },
+      { heading: 'Allergens', body: 'Early introduction of common allergens (peanut, egg, dairy, soy, wheat, fish, shellfish) is now generally encouraged, ideally under guidance if your baby is high-risk. If you have not yet introduced a common allergen, ask the pediatrician how to do it safely.' },
+      { heading: 'Self-feeding practice', body: 'Let the baby practice picking up soft finger foods and bringing them to the mouth. Mess is normal. Offer soft pieces they can hold: ripe banana pieces, soft cooked vegetables, small bits of shredded meat, toast strips, soft cheese.' },
+      { heading: 'Fluids', body: 'Small amounts of water can be offered with meals in a cup. Avoid juice as a routine drink — whole fruit is usually a better choice.' },
+      { heading: 'Choking safety', body: 'Sit the baby upright for meals, stay nearby, and avoid high-risk foods. Learn infant choking response/CPR — many parents take a pediatric first-aid class before or soon after the first birthday.' }
+    ],
+    cta: { label: 'Practical tip', body: 'Offer a mix of textures and let the baby decide how much to eat from what you provide. A "no" face or spitting food out is often just learning, not rejection.' }
+  },
+  {
+    id: 'daily-routine',
+    title: 'A realistic 9-month routine',
+    summary: 'There is no perfect schedule. The goal is enough sleep, regular meals/snacks, play, and predictable caregiving — with room for bad days.',
+    items: [
+      { heading: 'Sleep', body: 'Many 9-month-olds need about 12–14 hours total sleep in 24 hours, including naps. Bedtime routines (bath, book, feed, bed) help signal sleep time. Some babies wake more often during sleep regressions — that usually passes.' },
+      { heading: 'Meals and snacks', body: 'Aim for 3 meals and 1–2 snacks, with breast milk/formula between or with them. Keep mealtimes short and low-pressure.' },
+      { heading: 'Play and movement', body: 'Tummy time may be less formal now, but lots of floor time, crawling practice, safe climbing/cruising, and simple games (peek-a-boo, stacking, banging, object permanence games) support development.' },
+      { heading: 'Reading and talking', body: 'Reading, naming things, singing, and talking throughout the day build language. Even if the baby does not speak yet, they are learning from what they hear.' },
+      { heading: 'Screen time', body: 'For children under 18–24 months, many families keep screens minimal and focus on interaction. Video calls with family are different from solo screen time. If you do use screens, co-viewing and very limited, intentional use is the common guidance.' }
+    ],
+    cta: { label: 'For immigrant parents far from family', body: 'If you do not have nearby grandparents or helpers, build a small support circle early: a pediatrician you trust, a parent group (in-person or online), and a few reliable people you can text when you are overwhelmed. Parenting alone or far from home is hard — seeking help is not a failure.' }
+  },
+  {
+    id: 'health-and-immunity',
+    title: 'Health, vaccines, and when to worry',
+    summary: 'Vaccines and well-child visits are the backbone of routine infant care. The exact schedule depends on your child and your clinic — confirm with the pediatrician.',
+    items: [
+      { heading: 'Well-child visits', body: 'Regular well-child visits track growth, development, hearing/vision, and parenting questions. At 9 months, the visit often includes developmental screening and guidance on feeding, sleep, and safety.' },
+      { heading: 'Vaccines at around 9 months', body: 'Vaccine timing varies. Some babies get final doses of vaccines started earlier (for example, Hib, PCV, IPV, hepatitis B) at or near this age, depending on the schedule used. The CDC child immunization schedule is the standard reference in the U.S., but your clinic may follow a specific plan.' },
+      { heading: 'If your baby is behind', body: 'If doses were missed, the CDC catch-up schedule can help the pediatrician plan. Do not worry about "starting over" — catch-up is normal and common.' },
+      { heading: 'Common illnesses', body: 'Babies this age commonly get colds, ear infections, and stomach bugs as they explore and put things in their mouths. Most are viral and improve with supportive care. Know when to call — fever in a young infant, breathing trouble, dehydration, or a baby who is unusually lethargic or inconsolable.' },
+      { heading: 'Teething', body: 'Teething can cause drooling, gum swelling, fussiness, and disrupted sleep. Cold teething rings, gentle gum massage, and extra comfort help some babies. Avoid unsafe numbing products or remedies not recommended by the pediatrician.' },
+      { heading: 'When to seek care urgently', body: 'Trouble breathing, blue/gray lips, dehydration (very few wet diapers, no tears, dry mouth), a fever with a baby who looks very ill, a seizure, or a significant fall with altered behavior are reasons to seek urgent care.' }
+    ],
+    cta: { label: 'Keep a record', body: 'Keep a simple folder or phone note with vaccine dates, growth checks, medications, allergies, and questions for the next visit. It makes appointments much easier.' }
+  },
+  {
+    id: 'safety',
+    title: 'Baby-proofing and safety at 9 months',
+    summary: 'At 9 months, curiosity and mobility make safety more urgent. The goal is not a perfect environment — it is reducing the most dangerous risks.',
+    items: [
+      { heading: 'Falls', body: 'Keep stairs gated, windows screened/locked appropriately, and furniture that can tip anchored. A baby who cruises can fall more often than you expect.' },
+      { heading: 'Small objects and choking', body: 'Anything that fits through a toilet-paper-tube-style gap is a choking risk. Keep coins, batteries, buttons, magnets, small toy parts, and loose food pieces out of reach. Button batteries are especially dangerous.' },
+      { heading: 'Poisoning', body: 'Lock up medicines, cleaners, pods, and chemicals. Keep them in original containers and out of sight. Save the poison-control number in your phone now, before you need it.' },
+      { heading: 'Water safety', body: 'Never leave a baby alone near water — bathtubs, buckets, pools, or even shallow water. Drowning is quick and silent. Stay within arm reach during baths.' },
+      { heading: 'Cords, strings, and blinds', body: 'Keep blind cords, appliance cords, and strings out of reach. Strangulation risk is real and easy to miss.' },
+      { heading: 'Car safety', body: 'Use a properly installed rear-facing car seat appropriate for the baby’s size. Do not use bulky coats in the car seat — they can make the harness less effective.' },
+      { heading: 'Sleep safety', body: 'Even at 9 months, follow safe sleep practices for naps and night sleep if the baby is still in a crib: firm flat surface, no loose bedding or soft toys that could pose a risk, and avoid overheating.' }
+    ],
+    cta: { label: 'Emergency prep', body: 'Learn infant CPR and choking rescue, save emergency numbers, and share your pediatrician and preferred hospital with anyone caring for the baby.' }
+  },
+  {
+    id: 'parent-wellbeing',
+    title: 'Taking care of the parents',
+    summary: 'A 9-month-old is easier in some ways and harder in others. Parents often hit a stretch of sleep debt, constant vigilance, and less time for everything else. That is normal — and it is also the point where support matters a lot.',
+    items: [
+      { heading: 'Sleep and exhaustion', body: 'Chronic sleep loss affects mood, concentration, and safety. Trade off night shifts if possible, nap when you can, and lower nonessential expectations. If exhaustion feels unmanageable, mention it to a clinician — parental burnout and depression are real and treatable.' },
+      { heading: 'Mental health', body: 'Feeling overwhelmed, tearful, angry, detached, or afraid you might hurt the baby are signals to get help. Postpartum depression and anxiety can happen months after birth, not only right away. Reach out to a clinician, a hotline, or a trusted person.' },
+      { heading: 'Partner and family dynamics', body: 'If you have a partner, explicit division of labor helps more than vague "we will figure it out." If you are solo, identify even one or two supports and use them.' },
+      { heading: 'Asking for help', body: 'Specific help is easier for people to give: "Can you hold the baby for 30 minutes so I can shower and eat?" works better than "Let me know if you can help."' },
+      { heading: 'Returning to work / study', body: 'If you are planning to return to work or school, start planning child care early. Good child care slots can fill up fast, especially for infants.' }
+    ],
+    cta: { label: 'If you feel unsafe', body: 'If you ever feel you might shake or harm the baby, put the baby in a safe place and step away for a few minutes, then get help. That is a real emergency for support, and help exists.' }
+  },
+  {
+    id: 'immigrant-family',
+    title: 'For immigrant parents in the U.S.',
+    summary: 'If you are an immigrant family, there are practical systems and legal nuances worth knowing early — medical care, food/nutrition support, child care, leave from work, taxes, and immigration status issues that can touch a child’s life.',
+    items: [
+      { heading: 'Medical care for the baby', body: 'In the U.S., babies usually get care through a pediatrician or family clinic. Community health centers and public programs can help if you do not have insurance. Do not delay care because of uncertainty about coverage — bring what documents you have and ask the clinic what options exist.' },
+      { heading: 'WIC (nutrition support)', body: 'WIC provides supplemental nutritious foods, nutrition education, and breastfeeding support for eligible women, infants, and children up to age 5. An infant can be eligible even if the parent’s situation is complicated. If you think you might qualify, ask a local WIC office — applying is generally straightforward and does not require perfect paperwork on day one.' },
+      { heading: 'Child care and subsidies', body: 'If you need child care to work or study, ask early about child care subsidies and Early Head Start / Head Start. Eligibility and waitlists vary by location and income, and infant care is often the hardest to find.' },
+      { heading: 'Leave from work', body: 'If you or a partner are working in the U.S., learn whether you qualify for FMLA (job-protected unpaid leave) and whether any state or employer paid leave applies. FMLA has eligibility rules (for example, employer size and hours worked), so do not assume — check.' },
+      { heading: 'Taxes and credits', body: 'If you file U.S. taxes, ask a qualified tax preparer or reliable resource about credits and benefits that may apply to families with children, such as the Child Tax Credit and the Child and Dependent Care Credit. Eligibility depends on income, filing status, and other factors.' },
+      { heading: 'Immigration status and the child', body: 'A child’s citizenship or immigration status can be separate from a parent’s, and some benefits available to a child may depend on the child’s status rather than the parent’s. This is a specialized area — if it affects your family, consult a reputable immigration legal aid or accredited representative rather than relying on general advice.' },
+      { heading: 'Language and records', body: 'Keep copies of birth records, vaccine records, immigration documents, and any benefit letters in one place. If English is not your first language, ask whether interpretation or translated materials are available for clinic visits and key services.' }
+    ],
+    cta: { label: 'Practical first steps', body: 'Locate your nearest WIC office, pediatric clinic, and child care resource/referral service now, even if you are not ready to enroll. Knowing where to go makes a huge difference when you need something quickly.' }
+  },
+  {
+    id: 'local-nc',
+    title: 'Local Wake County / North Carolina resources',
+    summary: 'If you are in Wake County, these are the kinds of local services worth knowing about. Verify current eligibility and hours directly with each office.',
+    items: [
+      { heading: 'WIC', body: 'Wake County WIC serves eligible women, infants, and children. Contact Wake County Human Services / WIC for appointments, food packages, and breastfeeding support.' },
+      { heading: 'Child care subsidy', body: 'Wake County and North Carolina offer child care subsidy programs for eligible families. Infant/toddler care is often the least available, so start the conversation early.' },
+      { heading: 'Early Head Start / Head Start', body: 'Early Head Start serves infants and toddlers in eligible families; Head Start serves preschool-age children. These programs can provide child development and family support services.' },
+      { heading: 'Pediatric and community health', body: 'Wake County public health and community clinics can be important resources for well-child visits, vaccines, and care if you do not have a regular pediatrician.' },
+      { heading: 'Parent support', body: 'Look for local parent groups, library baby programs, and early intervention resources if you have developmental concerns. Wake County SmartStart and related local programs are a good starting point for early childhood resources.' }
+    ],
+    cta: { label: 'Keep a short list', body: 'Save phone numbers/contacts for your pediatrician, WIC, child care referral, poison control, and after-hours advice line in your phone now.' }
+  },
+  {
+    id: 'checklist',
+    title: 'A 9-month parent checklist',
+    summary: 'A simple list you can use today and revisit. Do not try to do everything at once — pick one or two items and come back to the rest.',
+    items: [
+      { heading: 'Medical', body: 'Schedule or confirm the 9-month well-child visit. Bring or update vaccine records. Ask about the immunization schedule and any catch-up needs.' },
+      { heading: 'Nutrition', body: 'Review iron-rich foods and allergens with the pediatrician if you have not already. Make a short list of safe finger foods you can keep on hand.' },
+      { heading: 'Safety', body: 'Do a quick baby-proofing walk-through: small objects, poisons, cords, water, furniture tip risk, stairs, car seat fit.' },
+      { heading: 'Emergency', body: 'Save poison-control and emergency numbers. Consider a pediatric first-aid/CPR class.' },
+      { heading: 'Benefits and paperwork', body: 'Check WIC eligibility, child care subsidy/Early Head Start interest, and leave/tax questions if relevant to your family.' },
+      { heading: 'Support', body: 'Identify one or two people or groups you can lean on. If you are feeling overwhelmed, mention it to a clinician or support contact.' },
+      { heading: 'Records', body: 'Start a simple folder or notes file for vaccines, growth checks, documents, and questions for the next visit.' }
+    ]
+  }
+];
+
 
 // ── News ──────────────────────────────────────────────────────────────
 async function handleNews(category, refresh) {

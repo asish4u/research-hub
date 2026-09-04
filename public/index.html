@@ -688,6 +688,7 @@
     <button class="section-btn" data-section="nc">🏫 NC Wake Resources</button>
     <button class="section-btn" data-section="intl">🌐 International</button>
     <button class="section-btn" data-section="india">🇮🇳 India</button>
+    <button class="section-btn" data-section="baby">👶 Baby &amp; Parenting</button>
     <button class="section-btn" data-section="laws">⚖️ Laws</button>
   </div>
 
@@ -725,6 +726,17 @@
     </div>
   </div>
 
+
+  <!-- ════════════════════════════════════════════════════════════ -->
+  <!-- BABY & PARENTING SECTION -->
+  <!-- ════════════════════════════════════════════════════════════ -->
+  <div id="babySection" style="display:none;">
+    <div class="featured-section">
+      <h2 class="laws-h2" style="color:var(--pink);">👶 Baby &amp; Parenting — 9-Month Prep <span style="font-size:0.75rem;color:var(--text2);font-weight:400;">— curated, plain-language prep for parents of a 9-month-old · immigrant-parent context · not medical advice — confirm with your pediatrician</span></h2>
+      <div class="baby-controls" id="babyControls"></div>
+      <div id="babyGrid" style="display:grid;grid-template-columns:1fr;gap:1rem;"></div>
+    </div>
+  </div>
 
   <!-- ════════════════════════════════════════════════════════════ -->
   <!-- LAWS SECTION -->
@@ -1699,7 +1711,7 @@ document.getElementById('mainToggle').addEventListener('click', e => {
   const lawsEl = document.getElementById('lawsSection');
 
   // Hide all primary sections first
-  ['newsSection', 'dbSection', 'lawsSection', 'archivesSection', 'aiSection', 'dealsSection', 'eventsSection'].forEach(id => {
+  ['newsSection', 'dbSection', 'lawsSection', 'archivesSection', 'aiSection', 'dealsSection', 'eventsSection', 'babySection'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
@@ -1727,6 +1739,9 @@ document.getElementById('mainToggle').addEventListener('click', e => {
     document.getElementById('eventsSection').style.display = 'block';
     if (!eventsData.items || !eventsData.items.length) fetchEvents();
     else renderEvents();
+  } else if (section === 'baby') {
+    document.getElementById('babySection').style.display = 'block';
+    if (!babySections) fetchBaby();
   } else {
     // all, nc, intl, india → show database section
     dbEl.style.display = 'block';
@@ -1747,6 +1762,138 @@ document.getElementById('mainToggle').addEventListener('click', e => {
 });
 
 // ═══════════════════════════════════════════════════════════════════
+
+// ═══════════════════════════════════════════════════════════════════
+// BABY & PARENTING — curated prep for parents of a 9-month-old
+// ═══════════════════════════════════════════════════════════════════
+let babySections = null;
+let babyCurrentSection = '';
+let babyCurrentItemIndex = 0;
+
+const BABY_ICONS = {
+  milestones: '👶', 'food-and-feeding': '🍼', 'daily-routine': '⏰',
+  'health-and-immunity': '💉', safety: '🛡️', 'parent-wellbeing': '🧠',
+  'immigrant-family': '🧳', 'local-nc': '📍', checklist: '✅'
+};
+
+function fetchBaby() {
+  babySections = null;
+  const grid = document.getElementById('babyGrid');
+  const controls = document.getElementById('babyControls');
+  if (!grid) return;
+  grid.innerHTML = '<div class="news-loader"><div class="spinner"></div>Loading baby prep…</div>';
+  apiFetch('/api/baby')
+    .then(data => {
+      if (!data || !data.sections || !data.sections.length) {
+        grid.innerHTML = '<div class="empty"><p>Baby prep content is not available right now.</p></div>';
+        if (controls) controls.innerHTML = '';
+        return;
+      }
+      babySections = data.sections;
+      babyCurrentSection = babySections[0].id;
+      babyCurrentItemIndex = 0;
+      renderBabyControls();
+      renderBaby();
+    })
+    .catch(err => {
+      grid.innerHTML = '<div class="news-error">⚠️ Could not load baby prep. ' + err.message + '</div>';
+      if (controls) controls.innerHTML = '';
+    });
+}
+
+function renderBabyControls() {
+  const controls = document.getElementById('babyControls');
+  if (!controls || !babySections) return;
+  controls.innerHTML = '';
+  babySections.forEach(sec => {
+    const btn = document.createElement('button');
+    btn.className = 'laws-filter' + (sec.id === babyCurrentSection ? ' active' : '');
+    btn.type = 'button';
+    btn.style.borderRadius = '20px';
+    btn.style.fontSize = '0.82rem';
+    btn.style.padding = '0.4rem 0.9rem';
+    btn.style.background = 'var(--surface)';
+    btn.style.border = '1px solid var(--border)';
+    btn.style.color = 'var(--text2)';
+    btn.style.cursor = 'pointer';
+    btn.style.whiteSpace = 'nowrap';
+    btn.style.transition = 'all 0.15s';
+    btn.style.display = 'inline-flex';
+    btn.style.alignItems = 'center';
+    btn.style.gap = '0.4rem';
+    btn.innerHTML = '<span style="font-size:1rem;">' + (BABY_ICONS[sec.id] || '📌') + '</span> ' +
+      escapeHtml(sec.title) +
+      '<span class="count" style="opacity:0.7;font-weight:400;margin-left:0.25rem;">' +
+      ((sec.items && sec.items.length) || 0) + '</span>';
+    btn.dataset.sectionId = sec.id;
+    btn.addEventListener('click', () => {
+      controls.querySelectorAll('[data-section-id]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      babyCurrentSection = sec.id;
+      babyCurrentItemIndex = 0;
+      renderBaby();
+    });
+    controls.appendChild(btn);
+  });
+}
+
+function findBabySection() {
+  if (!babySections || !babySections.length) return null;
+  return babySections.find(s => s.id === babyCurrentSection) || babySections[0];
+}
+
+function renderBaby() {
+  const grid = document.getElementById('babyGrid');
+  if (!grid) return;
+  const section = findBabySection();
+  if (!section) { grid.innerHTML = '<div class="empty"><p>No baby prep content.</p></div>'; return; }
+
+  const items = section.items || [];
+  const total = items.length;
+  const idx = Math.min(babyCurrentItemIndex, Math.max(0, total - 1));
+  babyCurrentItemIndex = idx;
+  const item = items[idx];
+  const prevDisabled = idx <= 0 ? 'disabled' : '';
+  const nextDisabled = idx >= total - 1 ? 'disabled' : '';
+
+  let itemsHtml = '';
+  if (item) {
+    itemsHtml = '<div style="border:1px solid var(--border);border-radius:12px;background:var(--surface2);padding:0.9rem 1rem;">' +
+      '<div style="font-size:0.72rem;color:var(--text2);letter-spacing:0.04em;text-transform:uppercase;margin-bottom:0.3rem;">' + escapeHtml(item.heading || ('Item ' + (idx + 1))) + '</div>' +
+      '<div style="font-size:0.86rem;line-height:1.55;color:var(--text);white-space:pre-line;">' + escapeHtml(item.body || '') + '</div>' +
+      '</div>';
+  }
+  if (section.cta) {
+    itemsHtml += '<div style="border:1px solid var(--green);border-radius:12px;background:rgba(74,222,128,0.06);padding:0.75rem 1rem;">' +
+      '<div style="font-size:0.72rem;color:var(--green);letter-spacing:0.04em;text-transform:uppercase;margin-bottom:0.25rem;">' + escapeHtml(section.cta.label || '') + '</div>' +
+      '<div style="font-size:0.84rem;line-height:1.55;color:var(--text);white-space:pre-line;">' + escapeHtml(section.cta.body || '') + '</div>' +
+      '</div>';
+  }
+
+  grid.innerHTML =
+    '<div style="display:flex;flex-direction:column;gap:0.6rem;">' +
+      '<div style="display:flex;flex-wrap:wrap;gap:0.5rem;align-items:center;">' +
+        '<div style="font-size:0.95rem;font-weight:600;color:var(--text);">' + (BABY_ICONS[section.id] || '📌') + ' ' + escapeHtml(section.title) + '</div>' +
+        (total > 1 ? '<span class="badge" style="font-size:0.7rem;border-radius:20px;">Item ' + (idx + 1) + ' of ' + total + '</span>' : '') +
+      '</div>' +
+      (section.summary ? '<div style="font-size:0.82rem;color:var(--text2);line-height:1.5;">' + escapeHtml(section.summary) + '</div>' : '') +
+      itemsHtml +
+      (total > 1 ? '<div style="display:flex;justify-content:space-between;gap:0.5rem;margin-top:0.25rem;">' +
+        '<button type="button" data-baby-nav="prev" ' + prevDisabled + ' style="border-radius:20px;padding:0.35rem 0.8rem;font-size:0.8rem;background:var(--surface2);border:1px solid var(--border);color:var(--text2);cursor:pointer;">← Previous</button>' +
+        '<button type="button" data-baby-nav="next" ' + nextDisabled + ' style="border-radius:20px;padding:0.35rem 0.8rem;font-size:0.8rem;background:var(--surface2);border:1px solid var(--border);color:var(--text2);cursor:pointer;">Next →</button>' +
+      '</div>' : '') +
+    '</div>';
+
+  grid.querySelectorAll('[data-baby-nav]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const dir = btn.dataset.babyNav;
+      if (dir === 'prev' && babyCurrentItemIndex > 0) babyCurrentItemIndex--;
+      else if (dir === 'next' && babyCurrentItemIndex < total - 1) babyCurrentItemIndex++;
+      else return;
+      renderBaby();
+    });
+  });
+}
 // DATABASE CATALOG
 // ═══════════════════════════════════════════════════════════════════
 const databases = [
